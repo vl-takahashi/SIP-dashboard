@@ -1,6 +1,6 @@
 import {refreshJsonData,nextJsonData} from "./useStore";
 import React,{useRef,useState} from 'react';
-import FolderUpload from "./Folderupload.jpg";
+// import FolderUpload from "./Folderupload.jpg"; // File not found
 
 const ExistedData=()=>{
     const dirRef=useRef();
