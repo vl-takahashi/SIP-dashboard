@@ -8,7 +8,7 @@ import LiptRender from "./components/LiptRender";
 import Tabcontroller from "./components/TabController";
 import Jmds from "./components/Jmds";
 import Header from './components/Header';
-import Footercomponent from './components/footer';
+import Footercomponent from './components/Footer';
 import "./App.css";
 function App() {
   const [activeTab, setActiveTab] = useState('default');
