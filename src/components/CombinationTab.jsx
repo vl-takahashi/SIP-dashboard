@@ -4,7 +4,7 @@ import Map from 'react-map-gl/mapbox';
 // If using with mapbox-gl v1:
 // import Map from 'react-map-gl/mapbox-legacy';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import UpdateLayers from './CombinationRenderLayers';
+import UpdateLayers from './CombinationRenderLayers'; // TODO: Migrate to Mapbox
 
 import SidebarVisualizemenu from "./SidebarVisualizeMenu";
 import { Slider, Box, Typography } from '@mui/material';
@@ -139,7 +139,7 @@ const CombinationTab = () => {
                         {/* 右上：マウスオーバー情報＋データ操作（可視化/アップロード）パネル */}
                         <div style={floatingStyle({ top: isTablet ? 8 : 16, right: isTablet ? 8 : 16, background: 'transparent', boxShadow: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: isTablet ? 6 : 8 })}>
                           <div style={{ display: 'flex', gap: isTablet ? 8 : 12, alignItems: 'center', background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', padding: isTablet ? 6 : 8 }}>
-                            <Mouseover1/>
+                            <MouseOver1/>
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: isTablet ? 4 : 6, background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', padding: isTablet ? 6 : 8 }}>
                             {/*<Fetch_test/>*/}

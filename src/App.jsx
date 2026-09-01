@@ -4,7 +4,6 @@ import React from 'react'
 // import Map from 'react-map-gl/mapbox-legacy';
 import 'mapbox-gl/dist/mapbox-gl.css';
 //import "./index.css";
-import {DeckGL} from '@deck.gl/react';
 import LiptRender from "./components/LiptRender";
 import Tabcontroller from "./components/TabController";
 import Jmds from "./components/Jmds";

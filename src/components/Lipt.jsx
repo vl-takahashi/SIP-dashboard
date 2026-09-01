@@ -4,7 +4,7 @@ import Map from 'react-map-gl/mapbox';
 // If using with mapbox-gl v1:
 // import Map from 'react-map-gl/mapbox-legacy';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import {DeckGL} from '@deck.gl/react';
+
 import UpdateLayers from './AccessibilityRenderLayers';
 
 const Lipttab = () => {

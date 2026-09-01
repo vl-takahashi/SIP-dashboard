@@ -5,7 +5,7 @@ import { FieldLabel, FileField, TextField, SelectField, PrimaryButton } from "./
 import { COLORS } from "./Globalvariable";
 import JSZip from "jszip";
 
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+// import { fetch as tauriFetch } from '@tauri-apps/plugin-http'; // Tauri removed
 
 // If using with mapbox-gl v1:
 // import Map from 'react-map-gl/mapbox-legacy';

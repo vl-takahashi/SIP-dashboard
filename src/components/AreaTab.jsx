@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
-import AreaLayers from './AreaRenderLayers';
+// import AreaLayers from './AreaRenderLayers'; // TODO: Migrate to Mapbox
 import BusStopNetworkMap from './BusStopNetworkMap';
 import AccessibilityMatrixWithMeshid from './AccessibilityMatrixWithMeshid';
 import { useBusNetworkStore } from './useBusNetworkStore';
@@ -84,7 +84,7 @@ const AreaTab = () => {
           overflow: 'hidden',
         }}
       >
-        <AreaLayers />
+        {/* <AreaLayers /> */} {/* TODO: Migrate to Mapbox */}
         
       </Box>
 
