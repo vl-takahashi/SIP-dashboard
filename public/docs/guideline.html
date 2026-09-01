@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公共交通ダッシュボード ガイドライン</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #0066cc;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #0088dd;
+            margin-top: 30px;
+            padding: 10px;
+            background-color: #e6f2ff;
+            border-left: 4px solid #0066cc;
+        }
+        h3 {
+            color: #005fa3;
+        }
+        section {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .feature-box {
+            background-color: #f0f8ff;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .step {
+            background-color: #fff9e6;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 3px;
+            border-left: 4px solid #ff9800;
+        }
+        ul, ol {
+            margin: 15px 0;
+        }
+        li {
+            margin: 8px 0;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        table th {
+            background-color: #0066cc;
+            color: white;
+        }
+        .toc {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 公共交通ダッシュボード ガイドライン</h1>
+    <p><strong>作成日:</strong> 2026年8月6日 | <strong>バージョン:</strong> 1.0（サンプル）</p>
+
+    <div class="toc">
+        <h3>📑 目次</h3>
+        <ul>
+            <li><a href="#intro">はじめに</a></li>
+            <li><a href="#area">地区分け</a></li>
+            <li><a href="#all">一括表示</a></li>
+            <li><a href="#point">ポイント表示</a></li>
+            <li><a href="#area-mesh">区域・メッシュ表示</a></li>
+            <li><a href="#line">線形表示</a></li>
+            <li><a href="#frequency">リンク間運行本数</a></li>
+            <li><a href="#lipt">期待待ち時間（LIPT）</a></li>
+            <li><a href="#spatial-gap">空間的空白</a></li>
+            <li><a href="#temporal-gap">時間帯空白</a></li>
+            <li><a href="#fare">運賃</a></li>
+            <li><a href="#delay">バス遅延</a></li>
+        </ul>
+    </div>
+
+    <section id="intro">
+        <h2>はじめに</h2>
+        <p>このガイドラインは、公共交通ダッシュボードの各機能の使い方と解釈方法を説明しています。</p>
+        <div class="feature-box">
+            <strong>🎯 対象者:</strong> 自治体職員、交通事業者、研究者
+        </div>
+    </section>
+
+    <section id="area">
+        <h2>地区分け</h2>
+        <h3>概要</h3>
+        <p>地域を複数の地区に分割し、各地区の交通状況を可視化します。</p>
+        <h3>使い方</h3>
+        <div class="step">
+            <strong>ステップ1:</strong> 「地区分け」ボタンをクリック
+        </div>
+        <div class="step">
+            <strong>ステップ2:</strong> 地区分割ファイル（GeoJSON）をアップロード
+        </div>
+        <div class="step">
+            <strong>ステップ3:</strong> 地図上に各地区が表示されます
+        </div>
+        <h3>注意点</h3>
+        <ul>
+            <li>ファイル形式は GeoJSON（.geojson）に対応</li>
+            <li>座標系は WGS84（EPSG:4326）を使用</li>
+            <li>ファイルサイズは 50MB 以下</li>
+        </ul>
+    </section>
+
+    <section id="all">
+        <h2>一括表示（ポイント、区域・メッシュ、線形）</h2>
+        <h3>概要</h3>
+        <p>複数の地理情報を同時に表示する機能です。ポイント、ポリゴン、ラインを一度に可視化できます。</p>
+        <h3>対応ファイル形式</h3>
+        <table>
+            <tr>
+                <th>データ型</th>
+                <th>ファイル形式</th>
+                <th>説明</th>
+            </tr>
+            <tr>
+                <td>ポイント</td>
+                <td>CSV, GeoJSON</td>
+                <td>駅、バス停など</td>
+            </tr>
+            <tr>
+                <td>ポリゴン</td>
+                <td>GeoJSON, Shapefile</td>
+                <td>地区、メッシュ</td>
+            </tr>
+            <tr>
+                <td>ラインストリング</td>
+                <td>GeoJSON, Shapefile</td>
+                <td>路線、道路</td>
+            </tr>
+        </table>
+    </section>
+
+    <section id="point">
+        <h2>ポイント表示</h2>
+        <h3>概要</h3>
+        <p>バス停、駅などのポイント情報を地図上に表示します。</p>
+        <h3>対応ファイル形式</h3>
+        <ul>
+            <li><code>CSV</code>：緯度・経度列を指定</li>
+            <li><code>GeoJSON</code>：Point geometry</li>
+        </ul>
+        <h3>CSV の場合の必須列</h3>
+        <ul>
+            <li>緯度列（例：<code>lat</code>, <code>stop_lat</code>）</li>
+            <li>経度列（例：<code>lon</code>, <code>stop_lon</code>）</li>
+            <li>名前列（オプション：例：<code>name</code>, <code>stop_name</code>）</li>
+        </ul>
+    </section>
+
+    <section id="area-mesh">
+        <h2>区域・メッシュ表示</h2>
+        <h3>概要</h3>
+        <p>行政区画や統計メッシュなどの面的データを表示します。</p>
+        <h3>メッシュレベル</h3>
+        <table>
+            <tr>
+                <th>レベル</th>
+                <th>セルサイズ</th>
+                <th>用途</th>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>10 km</td>
+                <td>広域分析</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>1 km</td>
+                <td>市町村レベル</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>100 m</td>
+                <td>詳細分析</td>
+            </tr>
+        </table>
+    </section>
+
+    <section id="line">
+        <h2>線形表示</h2>
+        <h3>概要</h3>
+        <p>バス路線、鉄道路線などの線形データを表示します。</p>
+        <h3>使用データ</h3>
+        <ul>
+            <li>GTFS データの shapes.txt から自動生成</li>
+            <li>GeoJSON の LineString geometry</li>
+        </ul>
+    </section>
+
+    <section id="frequency">
+        <h2>リンク間運行本数</h2>
+        <h3>概要</h3>
+        <p>路線上のリンク（区間）ごとの運行本数を可視化します。運行本数が多いほど色が濃くなります。</p>
+        <h3>解釈ポイント</h3>
+        <div class="feature-box">
+            <ul>
+                <li><strong>濃い色：</strong> 運行本数が多い → 主要路線</li>
+                <li><strong>薄い色：</strong> 運行本数が少ない → 補完路線</li>
+                <li><strong>色なし：</strong> 運行なし → 廃止路線の検討対象</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="lipt">
+        <h2>期待待ち時間（LIPT）</h2>
+        <h3>概要</h3>
+        <p>LIPT（Line-based Interval of Public Transit）は、公共交通の利便性を測る指標です。待ち時間が短いほど利便性が高い。</p>
+        <h3>計算方法</h3>
+        <p>指定の時間帯において、ランダムに到着した利用者の平均待ち時間を計算します。</p>
+        <h3>目安</h3>
+        <ul>
+            <li>LIPT &lt; 5分：優秀</li>
+            <li>5分 ≤ LIPT &lt; 10分：良好</li>
+            <li>10分 ≤ LIPT &lt; 15分：注視</li>
+            <li>LIPT ≥ 15分：改善必要</li>
+        </ul>
+    </section>
+
+    <section id="spatial-gap">
+        <h2>空間的空白</h2>
+        <h3>概要</h3>
+        <p>公共交通サービスが及んでいない地域（空白地域）を特定します。</p>
+        <h3>定義</h3>
+        <p>バス停から徒歩 300m 以上離れた人口集中地区を空白地域として定義します（カスタマイズ可）。</p>
+        <h3>用途</h3>
+        <ul>
+            <li>新路線設定の候補地抽出</li>
+            <li>デマンド交通導入の対象地域</li>
+            <li>自動運転サービス実験地域の選定</li>
+        </ul>
+    </section>
+
+    <section id="temporal-gap">
+        <h2>時間帯空白</h2>
+        <h3>概要</h3>
+        <p>特定の時間帯に公共交通サービスが不足している状況を可視化します。</p>
+        <h3>対象者別分析</h3>
+        <ul>
+            <li><strong>通勤者：</strong> 朝 7-9 時、夕方 17-19 時</li>
+            <li><strong>学生：</strong> 朝 7-8 時、15-17 時</li>
+            <li><strong>高齢者：</strong> 日中（9-17 時）の運行頻度</li>
+        </ul>
+    </section>
+
+    <section id="fare">
+        <h2>運賃</h2>
+        <h3>概要</h3>
+        <p>各路線・区間の運賃を表示します。</p>
+        <h3>運賃体系</h3>
+        <ul>
+            <li>区間制：乗降距離に応じた運賃</li>
+            <li>均一制：全路線同一運賃</li>
+            <li>ゾーン制：ゾーンによる運賃差</li>
+        </ul>
+    </section>
+
+    <section id="delay">
+        <h2>バス遅延</h2>
+        <h3>概要</h3>
+        <p>GTFS Realtime データから、バスの遅延状況をリアルタイムで可視化します。</p>
+        <h3>遅延時間の解釈</h3>
+        <ul>
+            <li>遅延 &lt; 2分：ほぼ定時</li>
+            <li>2分 ≤ 遅延 &lt; 5分：軽度遅延</li>
+            <li>5分 ≤ 遅延 &lt; 10分：中度遅延</li>
+            <li>遅延 ≥ 10分：重度遅延</li>
+        </ul>
+    </section>
+
+    <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
+        <p>このガイドラインは定期的に更新されます。最新版を確認してください。</p>
+        <p>お問い合わせ：VitalLead | support@vitallead.co.jp</p>
+    </footer>
+</body>
+</html>
