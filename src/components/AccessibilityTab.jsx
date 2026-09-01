@@ -658,11 +658,6 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                         </Box>}
                       </div>
 
-                      {layercheckcurrent==="複数レイヤー表示"&&
-                    <div>
-                      <h1>タイムスライダー表示は利用できません</h1>
-
-                    </div>}
                     {/* 📌 ドラッグ・リサイズ可能なデータ表示パネル */}
                     {(showBarChart || showAccessibleList) && (
                     <div
