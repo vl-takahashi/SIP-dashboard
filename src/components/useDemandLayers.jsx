@@ -1,6 +1,6 @@
 import { createContext, useState,useReducer,useMemo } from "react";
 import { useDemandStore } from "./useStore";
-import { GeoJsonLayer,TextLayer, ScatterplotLayer,IconLayer } from '@deck.gl/layers';
+;
 export function useDemandLayers() {
   const data = useDemandStore((state) => state.demandData);
 

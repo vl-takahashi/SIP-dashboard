@@ -1,13 +1,7 @@
 import { useContext, useMemo,useState,useRef,useEffect,ClickareaCount,useCallback} from 'react';
-import { DeckGL } from '@deck.gl/react';
 
-import { GeoJsonLayer,TextLayer, ScatterplotLayer,IconLayer,PathLayer } from '@deck.gl/layers';
 import Map from 'react-map-gl/mapbox';
-import React from 'react';
-import {PathStyleExtension} from '@deck.gl/extensions';
-import {MVTLayer} from '@deck.gl/geo-layers';
-import { TileLayer } from '@deck.gl/geo-layers';
-import { BitmapLayer } from '@deck.gl/layers';
+
 import {mapboxAccessToken, mapstyle,initialCheck,vividColors } from "./Globalvariable";
 import {useHoverStore,useViewDemandStore,useAreaStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
 const DemandRenderLayers = () => {

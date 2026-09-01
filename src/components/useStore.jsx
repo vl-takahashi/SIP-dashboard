@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import {useState,useEffect} from 'react';
 import { ChevronsUp } from "lucide-react";
-import { resourceDir,join } from '@tauri-apps/api/path';
-import { readDir } from '@tauri-apps/plugin-fs';
+// import { resourceDir,join } from '@tauri-apps/api/path'; // Tauri removed
+// import { readDir } from '@tauri-apps/plugin-fs'; // Tauri removed
 import { yakuba } from "./Globalvariable";
 
 // レイヤー種別のキー一覧（読み込み対象の器）
@@ -487,13 +487,12 @@ export async function nextJsonData(path) {
           
         }
                             
-        ls==="area"?json.data.features.forEach((num)=>{
-                              useAreaStore.getState().setarea({selectedarea:[num[selectedarea],num.centlatlon]})
-                            }):null;
+        ls==="area_addressed"?useAreaStore.getState().setArea(json.area)
+                            :null;
         ls.includes("ridingtime")?freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","",json.destpoint]):null;
         ls.includes("ridingtime")?useDataStore.getState().setRidingtime(json.data):null;
         
-        console.log(json.area);
+        
       } catch (fileError) {
         // 1ファイル分の失敗はここで握って、次のファイルの処理を継続する
         failedFileCount += 1;
@@ -732,16 +731,14 @@ export const useAreaStore = create((set) => ({
   area: [],
   setArea: (newItem) =>
     set((state) => {
-      const prevArray = state.area || [];
-      const newItemStr = JSON.stringify(newItem);
-      
-      const isDuplicate = prevArray.some(
-        (item) => JSON.stringify(item) === newItemStr
-      );
-      
-      return {
-        area: isDuplicate ? prevArray : [...prevArray, newItem],
-      };
+        const prevArray = state.area || [];
+        console.log(newItem);
+        const arrayA=[...prevArray, newItem];
+        const arrayB = Array.from(new Set(arrayA));
+        return {
+          
+            area: arrayB,
+            }
     }),
   areaid:[],
   setAreaid: ((newItem) => 

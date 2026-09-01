@@ -1,13 +1,7 @@
-import { useContext, useMemo,useState,useRef,useEffect,ClickareaCount,useCallback} from 'react';
-import { DeckGL } from '@deck.gl/react';
-import { GeoJsonLayer,TextLayer, ScatterplotLayer,IconLayer } from '@deck.gl/layers';
-import Map from 'react-map-gl/mapbox';
 import React from 'react';
-import {PathStyleExtension} from '@deck.gl/extensions';
-import {MVTLayer} from '@deck.gl/geo-layers';
-import { TileLayer } from '@deck.gl/geo-layers';
-import { BitmapLayer } from '@deck.gl/layers';
-import { WebMercatorViewport } from '@deck.gl/core'
+import { useMemo, useState, useRef, useEffect } from 'react';
+import mapboxgl from 'mapbox-gl';
+import Map from 'react-map-gl/mapbox';
 import EditLine from './EditLine';
 import { mapboxAccessToken, mapstyle,initialCheck,vividColors } from "./Globalvariable";
 import {useHoverStore,useLegendStore,useDirectStore,useLayerflagStore,usePopStore,usePopmeshStore,useEditStore,useAreaStore,useViewAccesibilityStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
@@ -21,7 +15,6 @@ const UpdateLayers = (props) => {
   const setArea_list = useColorareaStore((state) => state.setColorarea);
   const viewAccessibility=useViewAccesibilityStore((state) => state.select);
   const setviewAccessibility=useViewAccesibilityStore((state) => state.selectView);
-  const viewport = new WebMercatorViewport(viewAccessibility)
   //const bounds = viewport.getBounds()
   // → [西経, 南緯, 東経, 北緯]  [minLng, minLat, maxLng, maxLat]
   //const [minLng, minLat, maxLng, maxLat] = bounds
@@ -244,59 +237,43 @@ const UpdateLayers = (props) => {
               const dest00=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
               let ratiolist=[];
               let valuelist=[];
-              const layer=new GeoJsonLayer({
+              const layer={
                 id: ly,
-                data: filteredGeoJSON,
-                visible:isActive,
-                stroked: false,
-                filled: (d) => d.properties["ridingtime"] >=60,
-                getFillColor: (d)=>{
-                  const hasValue = d.properties["ridingtime"] >=60
-                  const ratio = d.properties["ridingtime"] >=60?parseInt(d.properties["ridingtime"]) / 10:0;
-                  
-                  // 条件外は完全透明
-                  if (d.properties["ridingtime"] <60) return [0, 0, 0, 0]
-
-                  // 値がない場合も透明
-                  if (dest00==dest&&d.properties["ridingtime"] >=60) return [0, 0, 0, 0]
-                    // 濃い赤 [180,0,0] → 薄い赤 [255,200,200]
-                  const r =81-ratio>4?81-ratio:4  // 180 → 255
-                  const g = 170-ratio>37?170-ratio:37    // 0 → 200
-                  const b =238-ratio>130?238-ratio:130         // 0 → 200
-                  ratiolist.push([[r, g, b, 200],parseInt(parseInt(d.properties["ridingtime"])/ 60)]);
-                  isActive?setLegends(ratiolist):null;
-                  return [r, g, b, 200]
+                type: 'fill',
+                sourceData: filteredGeoJSON,
+                paint: {
+                  'fill-color': [
+                    'case',
+                    ['<', ['get', 'ridingtime'], 60],
+                    'rgba(0, 0, 0, 0)',
+                    ['>=', ['get', 'ridingtime'], 60],
+                    [
+                      'rgb',
+                      ['max', 0, ['min', 255, ['-', 81, ['/', ['to-number', ['get', 'ridingtime']], 10]]]],
+                      ['max', 0, ['min', 255, ['-', 170, ['/', ['to-number', ['get', 'ridingtime']], 10]]]],
+                      ['max', 0, ['min', 255, ['-', 238, ['/', ['to-number', ['get', 'ridingtime']], 10]]]]
+                    ],
+                    'rgba(0, 0, 0, 0)'
+                  ],
+                  'fill-opacity': 1
                 },
-                pickable: hover==="所要時間"?true:false,
-                autoHighlight: hover==="所要時間"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
-                },
-                
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
+                layout: {},
+                visible: isActive,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {
                   try{
-                  console.log('Clicked:',info.object.properties[s0]);
-                  setClicknearestridetime(info.object.properties[s0]);
-                  setClicknearestgetofftime(info.object.properties[s1]);
-                  setClickneareststop(info.object.properties[stop]);
-                  setClicknearestbusline(info.object.properties["route"]);
-                  console.log('Clicked:',info.object.properties[Area]);
-                  setClickpopmeshaddress(info.object.properties[Area]);
-
-
+                    console.log('Clicked:',feature.properties[s0]);
+                    setClicknearestridetime(feature.properties[s0]);
+                    setClicknearestgetofftime(feature.properties[s1]);
+                    setClickneareststop(feature.properties[stop]);
+                    setClicknearestbusline(feature.properties["route"]);
+                    console.log('Clicked:',feature.properties[Area]);
+                    setClickpopmeshaddress(feature.properties[Area]);
                   } catch(e){
                     console.log(e.message);
                   }
-                },
-                updateTriggers: {
-                  filled: [s],
-                  getFillColor: [kind, layercheck, s],
-                },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                }
+              };
               layers_ridingrow.push(layer);
               const point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
               let data1p=[];
@@ -306,46 +283,53 @@ const UpdateLayers = (props) => {
               console.log(data1p);
               const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i+5}`;
               const dest0=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
-              const layerpoint=new IconLayer({
+              const layerpoint={
                 id: ly1,
-                getColor: d => [1, 0, 102],
-                getIcon: d => 'marker',
-                data: data1p,
-                visible:layercheck === "タイムスライダー"&&dest0==dest?true:false,
-                getPosition: d => d.coordinates,
-                getSize: 40,
-                iconAtlas: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
-                iconMapping: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-                pickable: hover==="所要時間"?true:false,
-                autoHighlight: hover==="所要時間"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+                type: 'symbol',
+                sourceData: {
+                  type: 'FeatureCollection',
+                  features: data1p.map((d, idx) => ({
+                    type: 'Feature',
+                    properties: { name: d.name },
+                    geometry: { type: 'Point', coordinates: d.coordinates }
+                  }))
                 },
-
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                layout: {
+                  'icon-image': 'marker',
+                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.7, 24, 0.7]
+                },
+                paint: {},
+                visible: layercheck === "タイムスライダー"&&dest0==dest?true:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {}
+              };
               layers_ridingrow.push(layerpoint);
               const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i*5+100}`;
               const dest01=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
-              const layertextpoint=new TextLayer({
+              const layertextpoint={
                 id: ly2,
-                data: data1p,
-                visible:layercheck === "タイムスライダー"&&dest01==dest?true:false,
-                getPosition: d => d.coordinates,
-                getText: d => d.name,
-                characterSet: [...new Set(data1p.map(d => d.name).join(''))],
-
-                getAlignmentBaseline: 'top',
-                getColor: [1, 0, 102],
-                getSize: 25,
-                getTextAnchor: 'middle',
-                pickable: hover==="所要時間"?true:false,
-                getPixelOffset: [0, -70],  
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                type: 'symbol',
+                sourceData: {
+                  type: 'FeatureCollection',
+                  features: data1p.map((d, idx) => ({
+                    type: 'Feature',
+                    properties: { name: d.name },
+                    geometry: { type: 'Point', coordinates: d.coordinates }
+                  }))
+                },
+                layout: {
+                  'text-field': ['get', 'name'],
+                  'text-size': 25,
+                  'text-anchor': 'center',
+                  'text-offset': [0, -2.2]
+                },
+                paint: {
+                  'text-color': '#010166'
+                },
+                visible: layercheck === "タイムスライダー"&&dest01==dest?true:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {}
+              };
               layers_ridingrow.push(layertextpoint);
 
             } else if (d === "ridingtime_transit") {
@@ -513,60 +497,41 @@ const UpdateLayers = (props) => {
               
               let bratiolist=[];
               let bvaluelist=[];
-              const blayer=new GeoJsonLayer({
+              const blayer={
                 id: lyb,
-                data: origdest==="dest"?beforeGeoJSON:afterGeoJSON,
-                visible:layercheck === "複数レイヤー表示"?bisv:false,
-                filled: true,//(d) => d.properties["ridingtime"] >=60,
-                getFillColor: (d)=>{
-                  const bhasValue = d.properties["ridingtime"] >=60
-                  const bratio = d.properties["ridingtime"] >=60?parseInt(d.properties["ridingtime"]) / 10:0;
-                  
-                  // 複数表示は濃い赤
-                    //if (bisLayer) return [0, 128, 0, 200]
-                  // 条件外は完全透明
-                    //if (d.properties["ridingtime"] <60) return [0, 0, 0, 0]
-
-                  // 値がない場合も透明
-                    //if (!bhasValue) return [0, 0, 0, 0]
-                    // 濃い赤 [180,0,0] → 薄い赤 [255,200,200]
-                  const r = 255-bratio   // 180 → 255
-                  const g = 255      // 0 → 200
-                  const b = bratio        // 0 → 200
-                  bratiolist.push([[r, g, b, 200],parseInt(parseInt(d.properties["ridingtime"])/ 60)]);
-                  bisActive?setLegends(ratiolist):null;
-                  return [r, g, b, 200]
+                type: 'fill',
+                sourceData: origdest==="dest"?beforeGeoJSON:afterGeoJSON,
+                paint: {
+                  'fill-color': [
+                    'case',
+                    ['>=', ['get', 'ridingtime'], 60],
+                    [
+                      'rgb',
+                      ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'ridingtime']], 10]]]],
+                      255,
+                      ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'ridingtime']], 10]]]
+                    ],
+                    'rgba(0, 0, 0, 0)'
+                  ],
+                  'fill-opacity': 1
                 },
-                pickable: hover==="所要時間"?true:false,
-                autoHighlight: hover==="所要時間"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
-                },
-                
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
+                layout: {},
+                visible: layercheck === "複数レイヤー表示"?bisv:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {
                   try{
-                  console.log('Clicked:',info.object.properties[s0]);
-                  setClicknearestridetime(info.object.properties[s0]);
-                  setClicknearestgetofftime(info.object.properties[s1]);
-                  setClickneareststop(info.object.properties[stop]);
-                  setClicknearestbusline(info.object.properties["route"]);
-                  console.log('Clicked:',info.object.properties[Area]);
-                  setClickpopmeshaddress(info.object.properties[Area]);
-
-
+                    console.log('Clicked:',feature.properties[s0]);
+                    setClicknearestridetime(feature.properties[s0]);
+                    setClicknearestgetofftime(feature.properties[s1]);
+                    setClickneareststop(feature.properties[stop]);
+                    setClicknearestbusline(feature.properties["route"]);
+                    console.log('Clicked:',feature.properties[Area]);
+                    setClickpopmeshaddress(feature.properties[Area]);
                   } catch(e){
                     console.log(e.message);
                   }
-                },
-                updateTriggers: {
-                  filled: [s],
-                  getFillColor: [kind, layercheck, s],
-                },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                }
+              };
               layers_row.push(blayer);
             const data1d = result.features
             .map((e) => {
@@ -639,63 +604,39 @@ const UpdateLayers = (props) => {
               
               let ratiolist=[];
               let valuelist=[];
-              const layer=new GeoJsonLayer({
+              const layer={
                 id: lyd,
-                data: directGeoJSON,
-                visible:layercheck === "複数レイヤー表示"?isv:false,
-                filled: true,//(d) => d.properties["ridingtime"] >=60,
-                getFillColor: (d)=>{
-                  const hasValue = d.properties["ridingtime"] >=60
-                  const ratio = d.properties["ridingtime"] >=60?parseInt(d.properties["ridingtime"]) / 10:0;
-                  
-                  // 複数表示は濃い赤
-                  if (isLayer) return [0, 128, 0, 200]
-                  // 条件外は完全透明
-                  if (d.properties["ridingtime"] <60) return [0, 0, 0, 0]
-
-                  // 値がない場合も透明
-                  if (!hasValue) return [0, 0, 0, 0]
-                    // 濃い赤 [180,0,0] → 薄い赤 [255,200,200]
-                  const r = 255-ratio   // 180 → 255
-                  const g = 255      // 0 → 200
-                  const b = ratio        // 0 → 200
-                  ratiolist.push([[r, g, b, 200],parseInt(parseInt(d.properties["ridingtime"])/ 60)]);
-                  isActive?setLegends(ratiolist):null;
-                  return [r, g, b, 200]
+                type: 'fill',
+                sourceData: directGeoJSON,
+                paint: {
+                  'fill-color': [
+                    'case',
+                    ['==', ['get', 'layercheck'], '複数レイヤー表示'],
+                    '#008080',
+                    '#00ff00'
+                  ],
+                  'fill-opacity': 1
                 },
-                pickable: hover==="所要時間"?true:false,
-                autoHighlight: hover==="所要時間"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
-                },
-                
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
+                layout: {},
+                visible: layercheck === "複数レイヤー表示"?isv:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {
                   try{
-                  console.log('Clicked:',info.object.properties[s0]);
-                  setClicknearestridetime(info.object.properties[s0]);
-                  setClicknearestgetofftime(info.object.properties[s1]);
-                  setClickneareststop(info.object.properties[stop]);
-                  setClicknearestbusline(info.object.properties["route"]);
-                  console.log('Clicked:',info.object.properties[Area]);
-                  setClickpopmeshaddress(info.object.properties[Area]);
-
-
+                    console.log('Clicked:',feature.properties[s0]);
+                    setClicknearestridetime(feature.properties[s0]);
+                    setClicknearestgetofftime(feature.properties[s1]);
+                    setClickneareststop(feature.properties[stop]);
+                    setClicknearestbusline(feature.properties["route"]);
+                    console.log('Clicked:',feature.properties[Area]);
+                    setClickpopmeshaddress(feature.properties[Area]);
                   } catch(e){
                     console.log(e.message);
                   }
-                },
-                updateTriggers: {
-                  filled: [s],
-                  getFillColor: [kind, layercheck, s],
-                },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                }
+              };
               layers_row.push(layer);
 
-          
+
               const point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
               let data1p=[];
               for (let k in point){
@@ -703,47 +644,54 @@ const UpdateLayers = (props) => {
               }
               const isv0=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
               const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i+5}`;
-              const layerpoint=new IconLayer({
+              const layerpoint={
                 id: ly1,
-                getColor: d => [1, 0, 102],
-                getIcon: d => 'marker',
-                data: data1p,
-                visible:layercheck === "複数レイヤー表示"?isv0:false,
-                getPosition: d => d.coordinates,
-                getSize: 40,
-                iconAtlas: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
-                iconMapping: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-                pickable: hover==="所要時間"?true:false,
-                autoHighlight: hover==="所要時間"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+                type: 'symbol',
+                sourceData: {
+                  type: 'FeatureCollection',
+                  features: data1p.map((d, idx) => ({
+                    type: 'Feature',
+                    properties: { name: d.name },
+                    geometry: { type: 'Point', coordinates: d.coordinates }
+                  }))
                 },
-
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                layout: {
+                  'icon-image': 'marker',
+                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.7, 24, 0.7]
+                },
+                paint: {},
+                visible: layercheck === "複数レイヤー表示"?isv0:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {}
+              };
               console.log(layerpoint);
               layers_row.push(layerpoint);
               const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i*5+100}`;
               const isv1=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
-              const layertextpoint=new TextLayer({
+              const layertextpoint={
                 id: ly2,
-                data: data1p,
-                visible:layercheck === "複数レイヤー表示"?isv1:false,
-                getPosition: d => d.coordinates,
-                getText: d => d.name,
-                characterSet: [...new Set(data1p.map(d => d.name).join(''))],
-
-                getAlignmentBaseline: 'top',
-                getColor: [1, 0, 102],
-                getSize: 25,
-                getTextAnchor: 'middle',
-                pickable: hover==="所要時間"?true:false,
-                getPixelOffset: [0, -70],  
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                type: 'symbol',
+                sourceData: {
+                  type: 'FeatureCollection',
+                  features: data1p.map((d, idx) => ({
+                    type: 'Feature',
+                    properties: { name: d.name },
+                    geometry: { type: 'Point', coordinates: d.coordinates }
+                  }))
+                },
+                layout: {
+                  'text-field': ['get', 'name'],
+                  'text-size': 25,
+                  'text-anchor': 'center',
+                  'text-offset': [0, -2.2]
+                },
+                paint: {
+                  'text-color': '#010166'
+                },
+                visible: layercheck === "複数レイヤー表示"?isv1:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {}
+              };
               console.log(layertextpoint);
               layers_row.push(layertextpoint);
 
@@ -761,57 +709,34 @@ const UpdateLayers = (props) => {
               const data1r=data1;
               console.log(isActive,data1,datav);
               let ratiolist=[];
-              const layer=new GeoJsonLayer({
+              const layer={
                 id: ly,
-                data: isActive?data1r:data1,
-                visible:isActive?true:datav,
-                stroked: false,
-                autoHighlight: hover==="運賃"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+                type: 'fill',
+                sourceData: isActive?data1r:data1,
+                paint: {
+                  'fill-color': [
+                    'case',
+                    ['!=', ['get', s], null],
+                    [
+                      'rgb',
+                      ['max', 0, ['min', 255, ['floor', ['*', ['/', ['to-number', ['get', s]], 1000], 135]]]],
+                      ['max', 0, ['min', 255, ['floor', ['*', ['/', ['to-number', ['get', s]], 1000], 196]]]],
+                      255
+                    ],
+                    'rgba(0, 0, 0, 0)'
+                  ],
+                  'fill-opacity': 1
                 },
-                getFillColor: (d)=>{
-                  const hasValue = d.properties[s] != null
-
-                  const ratio = Math.min(parseInt(d.properties[s]) / 1000, 1)
-
-                  // 複数表示は濃い青
-                  if (isLayer) return [0, 0, 255, 200]
-                  // 条件外は完全透明
-                  if (!isActive) return [0, 0, 0, 200]
-
-                  // 値がない場合も透明
-                  if (!hasValue) return [0, 0, 0, 0]
-                  const r = Math.floor(ratio * 135)  // 200 → 0
-                  const g = Math.floor(ratio * 196)   // 255 → 180
-                  const b =255  // 200 → 0
-                  ratiolist.push([[r, g, b, 200],parseInt(d.properties[s])]);
-                  isActive?setLegends(ratiolist):null;
-                  return [r, g, b, 200]
-                },
-                getLineWidth:15,
-                pickable: hover==="運賃"?true:false,
-                updateTriggers: {
-                  filled: [s],
-                  getFillColor: [kind, layercheck, s]
-                },
-                
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
+                layout: {},
+                visible: isActive?true:datav,
+                hoverType: "運賃",
+                clickHandler: (feature) => {
                   try{
-                    //console.log('Clicked:',info.object.properties);
-                    //console.log('Clicked:',info.object.s);
-                  setFare(info.object.s);
-
-
+                    setFare(feature.properties[s]);
                   } catch(e){
-                    //console.log(e.message);
                   }
-                },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                }
+              };
               layers_row.push(layer);}
           }}
         }
@@ -838,41 +763,10 @@ const UpdateLayers = (props) => {
   const layers = useMemo(() => {
     console.log(pop);
       if (!data) return [];
-      if (data["railline"]) {
-        console.log("📋 useMemo内 data[railline]:", data["railline"]);
-      }
       const layers_row = [];
-      // ★data が更新されたことをここで検知
       console.log("🔄 useMemo re-running, data updated:", data);
-      const layer = new TileLayer({
-    id: 'gsi-tile-layer',
-    // 先ほどエラーになった {t} を 'std' に、{ext} を 'png' に固定します
-    // deck.gl は {z}, {x}, {y} を自動で解釈してリクエストします
-    data: mapstyle,
-    
-    // 地理院タイルの仕様に合わせて設定します（標準地図は最大ズーム18）
-    maxZoom: 18,
-    minZoom: 0,
-
-    // 取得したタイル画像をBitmapLayerとして描画する
-    renderSubLayers: props => {
-      const { boundingBox } = props.tile;
-
-      return new BitmapLayer(props, {
-        data: null,
-        image: props.data,
-        bounds: [
-          boundingBox[0][0], // left
-          boundingBox[0][1], // bottom
-          boundingBox[1][0], // right
-          boundingBox[1][1]  // top
-        ]
-      });
-    }
-  });
-    layers_row.push(layer);
-    // Contextから現在の状態を引っこ抜く（これが最強の同期方法）
-    let i=0;
+      // Note: Mapbox background layer is handled by mapStyle, no need for TileLayer
+      let i=0;
     //console.log(data);
     for (let d in data){
       // 例: check配列の中にこのレイヤー名が含まれているか確認
@@ -886,146 +780,113 @@ const UpdateLayers = (props) => {
             i+=1;
             if (d === "facility"){
                 const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
-                console.log(d1);
                 const d02=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
                 const d01=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
-                const layer=new GeoJsonLayer({
-                id: ly,
-                data: d02,
-                visible:d01,
-                stroked: false,
-                pointType: "circle", 
-                getPointRadius:5,
-                getFillColor:[255, 0, 0, 200],
-                getPosition: d => d.coordinates,
-                //getText: (d) => d.properties.FIXEDID,
-                onClick: (info, event) => {
-                try{
-                  setClickstop(info.object.properties.name);
-                  //console.log('Clicked:',info.object.properties);
-
-                } catch(e){
-                  //console.log(e.message);
-                }},
-                getLineColor: [0, 0, 0],
-                getLineWidth: 10,
-                getTextColor: [180, 0, 0],
-                textFontWeight: "bold",
-                pickable: hover==="施設"?true:false
-              })
-              layers_row.push(layer);
+                const layer={
+                  id: ly,
+                  type: 'circle',
+                  sourceData: d02,
+                  paint: {
+                    'circle-radius': 5,
+                    'circle-color': '#ff0000',
+                    'circle-opacity': 0.8
+                  },
+                  layout: {},
+                  visible: d01,
+                  hoverType: "施設",
+                  clickHandler: (feature) => {
+                    try{
+                      setClickstop(feature.properties.name);
+                    } catch(e){}
+                  }
+                };
+                layers_row.push(layer);
               
             } else if (d === "road") {
-              //console.log(d1[2]);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
-              console.log(d1);
-              const layer=new GeoJsonLayer({
+              const layer={
                 id: ly,
-                data: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
-                visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-                stroked: false,
-                filled: true,
-                getFillColor: (d)=>[255, 0, 0],
-                getLineColor: [255, 0, 0],
-                getLineWidth:15,
-                getText:(d)=>d.properties.lnno,
-                getTextAlignmentBaseline:"center",
-                pickable: hover==="道路"?true:false,
-                onClick: (info, event) => {
-                try{
-                  setClicknearestbusline(info.object.properties.name.replace(/[^0-9]/g, ''));
-                } catch(e){
+                type: 'line',
+                sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                paint: {
+                  'line-color': '#ff0000',
+                  'line-width': 3
+                },
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                hoverType: "道路",
+                clickHandler: (feature) => {
+                  try{
+                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
+                  } catch(e){}
                 }
-              }
-              })
+              };
               layers_row.push(layer);
             } else if (d === "popmesh") {
               const data1=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
-              //const data1r=data1.features.filter((e)=>{return e.properties[pop]>0&&dimentionset===dimention&&bounds[0]<=e.geometry.coordinates[0][0][0]&&e.geometry.coordinates[0][2][0]<=bounds[2]&&bounds[1]<=e.geometry.coordinates[0][0][1]&&e.geometry.coordinates[0][2][1]<=bounds[3]});
               const data1r=pop!=""?data1.features.filter((e)=>{return e.properties[pop]>0}):data1;
-              
-              //[西経, 南緯, 東経, 北緯]  [minLng, minLat, maxLng, maxLat]
+
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
               const isv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
               const Area =area;
-              const layer=new GeoJsonLayer({
-              id: ly,
-              data: data1r,
-              visible:layercheck==="複数レイヤー表示"?isv:true,
-            getFillColor: (d) => {
-              const colorValue = pop!=""?parseInt(d.properties[pop]):0;
-        
-              return layercheck==="複数レイヤー表示"?[255, 255 - colorValue, 0, 100]:[255,255,255,100];
-            },
-              filled:true,
-              autoHighlight: hover==="居住地"?true:false,
-              parameters: {
-                depthTest: false,
-                blend: false,
-              },
-              
-                updateTriggers: {
-                  visible:d[1]
+              const layer={
+                id: ly,
+                type: 'fill',
+                sourceData: data1r,
+                paint: {
+                  'fill-color': [
+                    'case',
+                    ['!=', ['get', pop], null],
+                    ['rgb', 255, ['*', 255, ['-', 1, ['/', ['to-number', ['get', pop]], 100]]], 0],
+                    '#ffffff'
+                  ],
+                  'fill-opacity': 0.6
                 },
-              stroked: false,
-              pickable: hover==="居住地"?true:false,
-                onClick: (info, event) => {
-                try{
-                  console.log(info.object.properties.PT00_2025);
-                  setClickpopmesh(parseInt(info.object.properties.PT00_2025));
-                  console.log(info.object.properties[Area]);
-                  setClickpopmeshaddress(info.object.properties[Area]);
-
-                } catch(e){
-                  console.log(e.message);
-                }}
-              // Callback when the pointer enters or leaves an object
-              // Callback when the pointer clicks on an object
-              //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                layout: {},
+                visible: layercheck==="複数レイヤー表示"?isv:true,
+                hoverType: "居住地",
+                clickHandler: (feature) => {
+                  try{
+                    setClickpopmesh(parseInt(feature.properties.PT00_2025));
+                    setClickpopmeshaddress(feature.properties[Area]);
+                  } catch(e){
+                    console.log(e.message);
+                  }
+                }
+              };
               layers_row.push(layer);
   
             } else if (d === "spatialbuffer") {
               const Area =area;
               const isLayer = layercheck === "複数レイヤー表示";
-              //console.log(d1[2]);
-              //popmeshkey=[[key,data]]
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
               const data1=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
-              //const data1r=data1.features.filter((e)=>{return bounds[0]<=e.geometry.coordinates[0][0][0]&&e.geometry.coordinates[0][2][0]<=bounds[2]&&bounds[1]<=e.geometry.coordinates[0][0][1]&&e.geometry.coordinates[0][2][1]<=bounds[3]});
               const data1r=data1;
-              //[西経, 南緯, 東経, 北緯]  [minLng, minLat, maxLng, maxLat]
-              console.log(data1r.length);
               let datav=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
-                
-              const layer=new GeoJsonLayer({
-                id: ly,
-                data: data1r,
-                visible:!isLayer?false:datav,
-                getFillColor: [0,0, 255, 100],
-                filled:true,
-                pickable: hover==="最寄バス停"?true:false,
-                autoHighlight: hover==="最寄バス停"?true:false,
-                stroked: false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
-                },
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
-                try{
-                  setClickneareststop(info.object.properties.stop_name);
-                  setClickpopmeshaddress(info.object.properties[Area]);
 
-                } catch(e){
-                  console.log(e.message);
-                }
-                
-                  
+              const layer={
+                id: ly,
+                type: 'fill',
+                sourceData: data1r,
+                paint: {
+                  'fill-color': '#0000ff',
+                  'fill-opacity': 0.4
                 },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                layout: {},
+                visible: !isLayer?false:datav,
+                hoverType: "最寄バス停",
+                clickHandler: (feature) => {
+                  try{
+                    setClickneareststop(feature.properties.stop_name);
+                    setClickpopmeshaddress(feature.properties[Area]);
+                  } catch(e){
+                    console.log(e.message);
+                  }
+                }
+              };
               layers_row.push(layer);
             } else if (d === "ridingtime_direct") {
               
@@ -1104,61 +965,43 @@ const UpdateLayers = (props) => {
           
           let ratiolist=[];
           let valuelist=[];
-          const layer=new GeoJsonLayer({
+          const layer={
             id: ly,
-            data: filteredGeoJSON,
-            visible:layercheck === "複数レイヤー表示"?isv:false,
-            stroked: false,
-            filled: (d) => d.properties["ridingtime"] >=60,
-            getFillColor: (d)=>{
-              const hasValue = d.properties["ridingtime"] >=60
-              const ratio = d.properties["ridingtime"] >=60?parseInt(d.properties["ridingtime"]) / 10:0;
-              
-              // 複数表示は濃い赤
-              if (isLayer) return [0, 128, 0, 200]
-              // 条件外は完全透明
-              if (d.properties["ridingtime"] <60) return [0, 0, 0, 0]
-
-              // 値がない場合も透明
-              if (!hasValue) return [0, 0, 0, 0]
-                // 濃い赤 [180,0,0] → 薄い赤 [255,200,200]
-              const r = 255-ratio   // 180 → 255
-              const g = 255      // 0 → 200
-              const b = ratio        // 0 → 200
-              ratiolist.push([[r, g, b, 200],parseInt(parseInt(d.properties["ridingtime"])/ 60)]);
-              isActive?setLegends(ratiolist):null;
-              return [r, g, b, 200]
+            type: 'fill',
+            sourceData: filteredGeoJSON,
+            paint: {
+              'fill-color': [
+                'case',
+                ['<', ['get', 'ridingtime'], 60],
+                'rgba(0, 0, 0, 0)',
+                ['>=', ['get', 'ridingtime'], 60],
+                [
+                  'rgb',
+                  ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'ridingtime']], 10]]]],
+                  255,
+                  ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'ridingtime']], 10]]]
+                ],
+                'rgba(0, 0, 0, 0)'
+              ],
+              'fill-opacity': ['case', ['<', ['get', 'ridingtime'], 60], 0, 1]
             },
-            pickable: hover==="所要時間"?true:false,
-            autoHighlight: hover==="所要時間"?true:false,
-            parameters: {
-              depthTest: false,
-              blend: false,
-            },
-            
-            // Callback when the pointer enters or leaves an object
-            onClick: (info, event) => {
+            layout: {},
+            visible: layercheck === "複数レイヤー表示"?isv:false,
+            hoverType: "所要時間",
+            clickHandler: (feature) => {
               try{
-              console.log('Clicked:',info.object.properties[s0]);
-              setClicknearestridetime(info.object.properties[s0]);
-              setClicknearestgetofftime(info.object.properties[s1]);
-              setClickneareststop(info.object.properties[stop]);
-              setClicknearestbusline(info.object.properties["route"]);
-              console.log('Clicked:',info.object.properties[Area]);
-              setClickpopmeshaddress(info.object.properties[Area]);
-
-
+                console.log('Clicked:', feature.properties[s0]);
+                setClicknearestridetime(feature.properties[s0]);
+                setClicknearestgetofftime(feature.properties[s1]);
+                setClickneareststop(feature.properties[stop]);
+                setClicknearestbusline(feature.properties["route"]);
+                console.log('Clicked:', feature.properties[Area]);
+                setClickpopmeshaddress(feature.properties[Area]);
               } catch(e){
                 console.log(e.message);
               }
-            },
-            updateTriggers: {
-              filled: [s],
-              getFillColor: [kind, layercheck, s],
-            },
-            // Callback when the pointer clicks on an object
-            //onClick: (info, event) => //console.log('Clicked:', info, event)
-          })
+            }
+          };
           layers_row.push(layer);
           const point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
           let data1p=[];
@@ -1167,47 +1010,54 @@ const UpdateLayers = (props) => {
           }
           const isv0=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
           const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i+5}`;
-          const layerpoint=new IconLayer({
+          const layerpoint={
             id: ly1,
-            getColor: d => [1, 0, 102],
-            getIcon: d => 'marker',
-            data: data1p,
-            visible:layercheck === "複数レイヤー表示"?isv0:false,
-            getPosition: d => d.coordinates,
-            getSize: 40,
-            iconAtlas: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
-            iconMapping: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-            pickable: hover==="所要時間"?true:false,
-            autoHighlight: hover==="所要時間"?true:false,
-            parameters: {
-              depthTest: false,
-              blend: false,
+            type: 'symbol',
+            sourceData: {
+              type: 'FeatureCollection',
+              features: data1p.map((d, idx) => ({
+                type: 'Feature',
+                properties: { name: d.name },
+                geometry: { type: 'Point', coordinates: d.coordinates }
+              }))
             },
-
-            // Callback when the pointer clicks on an object
-            //onClick: (info, event) => //console.log('Clicked:', info, event)
-          })
+            layout: {
+              'icon-image': 'marker',
+              'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.7, 24, 0.7]
+            },
+            paint: {},
+            visible: layercheck === "複数レイヤー表示"?isv0:false,
+            hoverType: "所要時間",
+            clickHandler: (feature) => {}
+          };
           console.log(layerpoint);
           layers_row.push(layerpoint);
           const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i*5+100}`;
           const isv1=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
-          const layertextpoint=new TextLayer({
+          const layertextpoint={
             id: ly2,
-            data: data1p,
-            visible:layercheck === "複数レイヤー表示"?isv1:false,
-            getPosition: d => d.coordinates,
-            getText: d => d.name,
-            characterSet: [...new Set(data1p.map(d => d.name).join(''))],
-
-            getAlignmentBaseline: 'top',
-            getColor: [1, 0, 102],
-            getSize: 25,
-            getTextAnchor: 'middle',
-            pickable: hover==="所要時間"?true:false,
-            getPixelOffset: [0, -70],  
-            // Callback when the pointer clicks on an object
-            //onClick: (info, event) => //console.log('Clicked:', info, event)
-          })
+            type: 'symbol',
+            sourceData: {
+              type: 'FeatureCollection',
+              features: data1p.map((d, idx) => ({
+                type: 'Feature',
+                properties: { name: d.name },
+                geometry: { type: 'Point', coordinates: d.coordinates }
+              }))
+            },
+            layout: {
+              'text-field': ['get', 'name'],
+              'text-size': 25,
+              'text-anchor': 'center',
+              'text-offset': [0, -2.2]
+            },
+            paint: {
+              'text-color': '#010166'
+            },
+            visible: layercheck === "複数レイヤー表示"?isv1:false,
+            hoverType: "所要時間",
+            clickHandler: (feature) => {}
+          };
           console.log(layertextpoint);
           layers_row.push(layertextpoint);
 
@@ -1220,43 +1070,46 @@ const UpdateLayers = (props) => {
               //const data1r=data1.features.filter((e)=>{return bounds[0]<=e.geometry.coordinates[0][0][0]||e.geometry.coordinates[0][2][0]<=bounds[2]||bounds[1]<=e.geometry.coordinates[0][0][1]||e.geometry.coordinates[0][2][1]<=bounds[3]});
               const data1r=data1;
               console.log(data1r.length);
-              const layer=new GeoJsonLayer({
+              const layer={
                 id: ly,
-                data: data1r,
-                visible:kind=="運行本数"&&layercheck=="タイムスライダー"?true:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-                getFillColor: (d)=>[0,kind=="運行本数"&&layercheck=="タイムスライダー"&&d.properties[s]!=null?153-Math.floor(parseInt(d.properties[s])/5*153):0,kind=="運行本数"&&layercheck=="タイムスライダー"&&d.properties[s]!=null?204-Math.floor(parseInt(d.properties[s])/5*204):0, kind=="運行本数"&&layercheck=="タイムスライダー"&&d.properties[s]!=null?255-Math.floor(parseInt(d.properties[s])/10*255):0,100],
-                getLineColor: (d,)=>[0,0,0, 0],
-                getLineWidth:15,
-                stroked: false,
-                pickable: hover==="運行本数"?true:false,
-                autoHighlight: hover==="運行本数"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+                type: 'fill',
+                sourceData: data1r,
+                paint: {
+                  'fill-color': [
+                    'case',
+                    ['all',
+                      ['==', kind, '運行本数'],
+                      ['==', layercheck, 'タイムスライダー'],
+                      ['!=', ['get', s], null]
+                    ],
+                    [
+                      'rgb',
+                      0,
+                      ['max', 0, ['min', 153, ['-', 153, ['floor', ['/', ['*', ['to-number', ['get', s]], 153], 5]]]]],
+                      ['max', 0, ['min', 204, ['-', 204, ['floor', ['/', ['*', ['to-number', ['get', s]], 204], 5]]]]]
+                    ],
+                    [
+                      'rgb',
+                      0,
+                      0,
+                      0
+                    ]
+                  ],
+                  'fill-opacity': 1
                 },
-                filled:true,
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
-                try{
-                  console.log(info.object.properties.stop_name);
-                  setClickneareststop(info.object.properties.stop_name);
-                  setClickpopmeshaddress(info.object.properties[Area]);
-
-                } catch(e){
-                  //console.log(e.message);
+                layout: {},
+                visible: kind=="運行本数"&&layercheck=="タイムスライダー"?true:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                hoverType: "運行本数",
+                clickHandler: (feature) => {
+                  try{
+                    console.log(feature.properties.stop_name);
+                    setClickneareststop(feature.properties.stop_name);
+                    setClickpopmeshaddress(feature.properties[Area]);
+                  } catch(e){
+                    //console.log(e.message);
+                  }
                 }
-                
-                  
-                },
-
-
-                updateTriggers: {
-                filled: [s],        // s（文字列）が変わったら filled を再計算
-                getFillColor: [s]   // s（文字列）が変わったら getFillColor を再計算
-                },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+              };
               layers_row.push(layer);
               console.log(layer.props.pickable);
             } else if (d === "ridingtime_transit") {
@@ -1344,60 +1197,31 @@ const UpdateLayers = (props) => {
               
               let bratiolist=[];
               let bvaluelist=[];
-              const blayer=new GeoJsonLayer({
+              const blayer={
                 id: lyb,
-                data: beforeGeoJSON,
-                visible:layercheck === "複数レイヤー表示"?bisv:false,
-                filled: true,//(d) => d.properties["ridingtime"] >=60,
-                getFillColor: (d)=>{
-                  const bhasValue = d.properties["ridingtime"] >=60
-                  const bratio = d.properties["ridingtime"] >=60?parseInt(d.properties["ridingtime"]) / 10:0;
-                  
-                  // 複数表示は濃い赤
-                   //if (bisLayer) return [0, 128, 0, 200]
-                  // 条件外は完全透明
-                   //if (d.properties["ridingtime"] <60) return [0, 0, 0, 0]
-
-                  // 値がない場合も透明
-                   //if (!bhasValue) return [0, 0, 0, 0]
-                    // 濃い赤 [180,0,0] → 薄い赤 [255,200,200]
-                  const r = 255-bratio   // 180 → 255
-                  const g = 255      // 0 → 200
-                  const b = bratio        // 0 → 200
-                  bratiolist.push([[r, g, b, 200],parseInt(parseInt(d.properties["ridingtime"])/ 60)]);
-                  bisActive?setLegends(ratiolist):null;
-                  return [255,0, 0, 200]
+                type: 'fill',
+                sourceData: beforeGeoJSON,
+                paint: {
+                  'fill-color': '#ff0000',
+                  'fill-opacity': 1
                 },
-                pickable: hover==="所要時間"?true:false,
-                autoHighlight: hover==="所要時間"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
-                },
-                
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
+                layout: {},
+                visible: layercheck === "複数レイヤー表示"?bisv:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {
                   try{
-                  console.log('Clicked:',info.object.properties[s0]);
-                  setClicknearestridetime(info.object.properties[s0]);
-                  setClicknearestgetofftime(info.object.properties[s1]);
-                  setClickneareststop(info.object.properties[stop]);
-                  setClicknearestbusline(info.object.properties["route"]);
-                  console.log('Clicked:',info.object.properties[Area]);
-                  setClickpopmeshaddress(info.object.properties[Area]);
-
-
+                    console.log('Clicked:', feature.properties[s0]);
+                    setClicknearestridetime(feature.properties[s0]);
+                    setClicknearestgetofftime(feature.properties[s1]);
+                    setClickneareststop(feature.properties[stop]);
+                    setClicknearestbusline(feature.properties["route"]);
+                    console.log('Clicked:', feature.properties[Area]);
+                    setClickpopmeshaddress(feature.properties[Area]);
                   } catch(e){
                     console.log(e.message);
                   }
-                },
-                updateTriggers: {
-                  filled: [s],
-                  getFillColor: [kind, layercheck, s],
-                },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                }
+              };
               layers_row.push(blayer);
             const data1d = result.features
             .map((e) => {
@@ -1452,63 +1276,39 @@ const UpdateLayers = (props) => {
               
               let ratiolist=[];
               let valuelist=[];
-              const layer=new GeoJsonLayer({
+              const layer={
                 id: lyd,
-                data: directGeoJSON,
-                visible:layercheck === "複数レイヤー表示"?isv:false,
-                filled: true,//(d) => d.properties["ridingtime"] >=60,
-                getFillColor: (d)=>{
-                  const hasValue = d.properties["ridingtime"] >=60
-                  const ratio = d.properties["ridingtime"] >=60?parseInt(d.properties["ridingtime"]) / 10:0;
-                  
-                  // 複数表示は濃い赤
-                  if (isLayer) return [0, 128, 0, 200]
-                  // 条件外は完全透明
-                  if (d.properties["ridingtime"] <60) return [0, 0, 0, 0]
-
-                  // 値がない場合も透明
-                  if (!hasValue) return [0, 0, 0, 0]
-                    // 濃い赤 [180,0,0] → 薄い赤 [255,200,200]
-                  const r = 255-ratio   // 180 → 255
-                  const g = 255      // 0 → 200
-                  const b = ratio        // 0 → 200
-                  ratiolist.push([[r, g, b, 200],parseInt(parseInt(d.properties["ridingtime"])/ 60)]);
-                  isActive?setLegends(ratiolist):null;
-                  return [0, 128, 0, 200]
+                type: 'fill',
+                sourceData: directGeoJSON,
+                paint: {
+                  'fill-color': [
+                    'case',
+                    ['==', layercheck, '複数レイヤー表示'],
+                    '#008080',
+                    '#00ff00'
+                  ],
+                  'fill-opacity': 1
                 },
-                pickable: hover==="所要時間"?true:false,
-                autoHighlight: hover==="所要時間"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
-                },
-                
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
+                layout: {},
+                visible: layercheck === "複数レイヤー表示"?isv:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {
                   try{
-                  console.log('Clicked:',info.object.properties[s0]);
-                  setClicknearestridetime(info.object.properties[s0]);
-                  setClicknearestgetofftime(info.object.properties[s1]);
-                  setClickneareststop(info.object.properties[stop]);
-                  setClicknearestbusline(info.object.properties["route"]);
-                  console.log('Clicked:',info.object.properties[Area]);
-                  setClickpopmeshaddress(info.object.properties[Area]);
-
-
+                    console.log('Clicked:', feature.properties[s0]);
+                    setClicknearestridetime(feature.properties[s0]);
+                    setClicknearestgetofftime(feature.properties[s1]);
+                    setClickneareststop(feature.properties[stop]);
+                    setClicknearestbusline(feature.properties["route"]);
+                    console.log('Clicked:', feature.properties[Area]);
+                    setClickpopmeshaddress(feature.properties[Area]);
                   } catch(e){
                     console.log(e.message);
                   }
-                },
-                updateTriggers: {
-                  filled: [s],
-                  getFillColor: [kind, layercheck, s],
-                },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                }
+              };
               layers_row.push(layer);
 
-         
+
               const point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
               let data1p=[];
               for (let k in point){
@@ -1516,47 +1316,54 @@ const UpdateLayers = (props) => {
               }
               const isv0=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
               const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i+5}`;
-              const layerpoint=new IconLayer({
+              const layerpoint={
                 id: ly1,
-                getColor: d => [1, 0, 102],
-                getIcon: d => 'marker',
-                data: data1p,
-                visible:layercheck === "複数レイヤー表示"?isv0:false,
-                getPosition: d => d.coordinates,
-                getSize: 40,
-                iconAtlas: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
-                iconMapping: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.json',
-                pickable: hover==="所要時間"?true:false,
-                autoHighlight: hover==="所要時間"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+                type: 'symbol',
+                sourceData: {
+                  type: 'FeatureCollection',
+                  features: data1p.map((d, idx) => ({
+                    type: 'Feature',
+                    properties: { name: d.name },
+                    geometry: { type: 'Point', coordinates: d.coordinates }
+                  }))
                 },
-
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                layout: {
+                  'icon-image': 'marker',
+                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.7, 24, 0.7]
+                },
+                paint: {},
+                visible: layercheck === "複数レイヤー表示"?isv0:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {}
+              };
               console.log(layerpoint);
               layers_row.push(layerpoint);
               const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i*5+100}`;
               const isv1=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
-              const layertextpoint=new TextLayer({
+              const layertextpoint={
                 id: ly2,
-                data: data1p,
-                visible:layercheck === "複数レイヤー表示"?isv1:false,
-                getPosition: d => d.coordinates,
-                getText: d => d.name,
-                characterSet: [...new Set(data1p.map(d => d.name).join(''))],
-
-                getAlignmentBaseline: 'top',
-                getColor: [1, 0, 102],
-                getSize: 25,
-                getTextAnchor: 'middle',
-                pickable: hover==="所要時間"?true:false,
-                getPixelOffset: [0, -70],  
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                type: 'symbol',
+                sourceData: {
+                  type: 'FeatureCollection',
+                  features: data1p.map((d, idx) => ({
+                    type: 'Feature',
+                    properties: { name: d.name },
+                    geometry: { type: 'Point', coordinates: d.coordinates }
+                  }))
+                },
+                layout: {
+                  'text-field': ['get', 'name'],
+                  'text-size': 25,
+                  'text-anchor': 'center',
+                  'text-offset': [0, -2.2]
+                },
+                paint: {
+                  'text-color': '#010166'
+                },
+                visible: layercheck === "複数レイヤー表示"?isv1:false,
+                hoverType: "所要時間",
+                clickHandler: (feature) => {}
+              };
               console.log(layertextpoint);
               layers_row.push(layertextpoint);
 
@@ -1574,79 +1381,52 @@ const UpdateLayers = (props) => {
               const data1r=data1;
               console.log(isActive,data1,datav);
               let ratiolist=[];
-              const layer=new GeoJsonLayer({
+              const layer={
                 id: ly,
-                data: isActive?data1r:data1,
-                visible:isActive?true:datav,
-                stroked: false,
-                autoHighlight: hover==="運賃"?true:false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+                type: 'fill',
+                sourceData: isActive?data1r:data1,
+                paint: {
+                  'fill-color': [
+                    'case',
+                    ['!=', ['get', s], null],
+                    [
+                      'rgb',
+                      ['max', 0, ['min', 255, ['floor', ['*', ['/', ['to-number', ['get', s]], 1000], 135]]]],
+                      ['max', 0, ['min', 255, ['floor', ['*', ['/', ['to-number', ['get', s]], 1000], 196]]]],
+                      255
+                    ],
+                    'rgba(0, 0, 0, 0)'
+                  ],
+                  'fill-opacity': 1
                 },
-                getFillColor: (d)=>{
-                  const hasValue = d.properties[s] != null
-
-                  const ratio = Math.min(parseInt(d.properties[s]) / 1000, 1)
-
-                  // 複数表示は濃い青
-                  if (isLayer) return [0, 0, 255, 200]
-                  // 条件外は完全透明
-                  if (!isActive) return [0, 0, 0, 200]
-
-                  // 値がない場合も透明
-                  if (!hasValue) return [0, 0, 0, 0]
-                  const r = Math.floor(ratio * 135)  // 200 → 0
-                  const g = Math.floor(ratio * 196)   // 255 → 180
-                  const b =255  // 200 → 0
-                  ratiolist.push([[r, g, b, 200],parseInt(d.properties[s])]);
-                  isActive?setLegends(ratiolist):null;
-                  return [r, g, b, 200]
-                },
-                getLineWidth:15,
-                pickable: hover==="運賃"?true:false,
-                updateTriggers: {
-                  filled: [s],
-                  getFillColor: [kind, layercheck, s]
-                },
-                
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
+                layout: {},
+                visible: isActive?true:datav,
+                hoverType: "運賃",
+                clickHandler: (feature) => {
                   try{
-                    //console.log('Clicked:',info.object.properties);
-                    //console.log('Clicked:',info.object.s);
-                  setFare(info.object.s);
-
-
+                    setFare(feature.properties[s]);
                   } catch(e){
-                    //console.log(e.message);
                   }
-                },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                }
+              };
               layers_row.push(layer);
 
             } else if (d === "lipt"){
               console.log(d1);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
               
-              const layer=new GeoJsonLayer({
+              const layer={
                 id: ly,
-                data: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
-                visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-                stroked: false,
-                filled: (d)=>[d.properties.totalAI>0?true:falsee],
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+                type: 'fill',
+                sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                paint: {
+                  'fill-color': '#00ff00',
+                  'fill-opacity': 0.6
                 },
-                getFillColor: (d)=>[0, d.properties.totalAI>0?parseInt(d.properties.totalAI)*35:0,d.properties.totalAI>0?parseInt(d.properties.totalAI)*35:0, d.properties.totalAI>0?100:0],
-                pickable: hover==="lipt"?true:false,
-                // Callback when the pointer enters or leaves an object
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => console.log('Clicked:', info.object.properties)
-              })
+                layout: {},
+                visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                hoverType: "lipt"
+              }
               layers_row.push(layer);
             } else if (d === "editline") {
               let colorl=[];
@@ -1656,28 +1436,29 @@ const UpdateLayers = (props) => {
               d1r2=d1r;
 
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`editlayer-${d}-${i}`;
-              const layer=new GeoJsonLayer({
-              id: ly,
-              data: d1r2,
-              visible:true,
-              stroked: true,
-              filled: true,
-              getLineColor: (d)=>[ 136, 72,152],
-              getLineWidth:35,
-              getText:(d)=>d.properties.lnno,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+              const layer={
+                id: ly,
+                type: 'line',
+                sourceData: d1r2,
+                paint: {
+                  'line-color': '#884898',
+                  'line-width': 3
                 },
-              getTextAlignmentBaseline:"center",
-              pickable: hover==="バス路線"?true:false,
-              onClick: (info, event) => {
-              try{
-                    setClicknearestbusline(info.object.properties.name.replace(/[^0-9]/g, ''));
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                visible: true,
+                hoverType: "バス路線",
+                clickHandler: (feature) => {
+                  try{
+                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
+                  } catch(e){
+                  }
+                }
+              };
+              layers_row.push(layer);
 
-              } catch(e){
-              }}})
-            
             } else if (d === "tram") {
               let colorl=[];
               console.log(d1);
@@ -1702,29 +1483,29 @@ const UpdateLayers = (props) => {
 
               console.log(d1r2);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${i}`;
-              const layer=new GeoJsonLayer({
-              id: ly,
-              data: d1r2,
-              visible:true,
-              stroked: true,
-              filled: true,
-              getFillColor: (d)=>[255, 0, 0,100],
-              getLineColor: (d)=>[Math.floor(Math.random() * 255), 255-Math.floor(Math.random() * 255), 10],
-              getLineWidth:35,
-              getTextAlignmentBaseline:"center",
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+              const layer={
+                id: ly,
+                type: 'line',
+                sourceData: d1r2,
+                paint: {
+                  'line-color': '#ff0000',
+                  'line-width': 3
                 },
-              pickable: hover==="路面電車"?true:false,
-              onClick: (info, event) => {
-              try{
-                    setClicknearestbusline(info.object.properties.name.replace(/[^0-9]/g, ''));
-
-              } catch(e){
-              }}})
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                visible: true,
+                hoverType: "路面電車",
+                clickHandler: (feature) => {
+                  try{
+                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
+                  } catch(e){
+                  }
+                }
+              };
               layers_row.push(layer);
-            } if (d === "railline") {
+            } else if (d === "railline") {
               const isVisible = Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
               console.log("🎯 railline layer:", d1[0], "visible should be:", d1[1]);
               let colorl=[];
@@ -1733,35 +1514,32 @@ const UpdateLayers = (props) => {
               let newcol= [...new Set(colorl)];
 
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${i}`;
-              const layer=new GeoJsonLayer({
-              id: ly,
-              data: d1[2],
-              visible:isVisible,
-              stroked: true,
-              filled: true,
-              getFillColor: (d)=>[255, 0, 0,100],
-              getLineColor: (d)=>[Math.floor(Math.random() * 255), 255-Math.floor(Math.random() * 255), 10],
-              getLineWidth:35,
-              getTextAlignmentBaseline:"center",
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+              const layer={
+                id: ly,
+                type: 'line',
+                sourceData: d1[2],
+                paint: {
+                  'line-color': '#ff0000',
+                  'line-width': 3
                 },
-                updateTriggers: {
-                visible: [d1[1]],  // d1[1] が変わったら再描画
-              },
-              pickable: hover==="路面電車"?true:false,
-              onClick: (info, event) => {
-              try{
-                    setClicknearestbusline(info.object.properties.name.replace(/[^0-9]/g, ''));
-
-              } catch(e){
-              }}})
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                visible: isVisible,
+                hoverType: "路面電車",
+                clickHandler: (feature) => {
+                  try{
+                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
+                  } catch(e){
+                  }
+                }
+              };
               if (isVisible) {
-                  console.log("✅ 追加:", d1[0]);  // ★追加
+                  console.log("✅ 追加:", d1[0]);
                   layers_row.push(layer);
                 } else {
-                  console.log("❌ スキップ:", d1[0]);  // ★追加
+                  console.log("❌ スキップ:", d1[0]);
                 }
             } else if (d === "rosenbus") {
               let colorl=[];
@@ -1774,40 +1552,38 @@ const UpdateLayers = (props) => {
                 for (const d2 of d1r[2].features){
                   colorl.push(d2.properties.name);
                 }
-
               } catch{
                 console.log(d1r[0][2]);
                 d1r2=d1r[0][2];
                 for (const d2 of d1r[0][2].features){
                   colorl.push(d2.properties.name);
                 }
-                
-              } 
+              }
               let newcol= [...new Set(colorl)];
 
               console.log(d1r2);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${i}`;
-              const layer=new GeoJsonLayer({
-              id: ly,
-              data: d1r2,
-              visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-              stroked: true,
-              filled: true,
-              getFillColor: (d)=>[255, 0, 0,100],
-              getLineColor: (d)=>[Math.floor(Math.random() * 255), 255-Math.floor(Math.random() * 255), 10],
-              getLineWidth:35,
-              getTextAlignmentBaseline:"center",
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+              const layer={
+                id: ly,
+                type: 'line',
+                sourceData: d1r2,
+                paint: {
+                  'line-color': '#ff0000',
+                  'line-width': 3
                 },
-              pickable: hover==="路線バス"?true:false,
-              onClick: (info, event) => {
-              try{
-                    setClicknearestbusline(info.object.properties.name.replace(/[^0-9]/g, ''));
-
-              } catch(e){
-              }}})
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                hoverType: "路線バス",
+                clickHandler: (feature) => {
+                  try{
+                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
+                  } catch(e){
+                  }
+                }
+              };
               layers_row.push(layer);
             }else if (d === "highwaybus") {
               let colorl=[];
@@ -1820,40 +1596,38 @@ const UpdateLayers = (props) => {
                 for (const d2 of d1r[2].features){
                   colorl.push(d2.properties.name);
                 }
-
               } catch{
                 console.log(d1r[0][2]);
                 d1r2=d1r[0][2];
                 for (const d2 of d1r[0][2].features){
                   colorl.push(d2.properties.name);
                 }
-                
-              } 
+              }
               let newcol= [...new Set(colorl)];
 
               console.log(d1r2);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${i}`;
-              const layer=new GeoJsonLayer({
-              id: ly,
-              data: d1r2,
-              visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-              stroked: true,
-              filled: true,
-              getFillColor: (d)=>[255, 0, 0,100],
-              getLineColor: (d)=>[Math.floor(Math.random() * 255), 255-Math.floor(Math.random() * 255), 10],
-              getLineWidth:35,
-              getTextAlignmentBaseline:"center",
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+              const layer={
+                id: ly,
+                type: 'line',
+                sourceData: d1r2,
+                paint: {
+                  'line-color': '#ff0000',
+                  'line-width': 3
                 },
-              pickable: hover==="高速バス"?true:false,
-              onClick: (info, event) => {
-              try{
-                    setClicknearestbusline(info.object.properties.name.replace(/[^0-9]/g, ''));
-
-              } catch(e){
-              }}})
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                hoverType: "高速バス",
+                clickHandler: (feature) => {
+                  try{
+                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
+                  } catch(e){
+                  }
+                }
+              };
               layers_row.push(layer);
             } else if (d === "busstop"){
               //console.log(d1[2]);
@@ -1862,37 +1636,29 @@ const UpdateLayers = (props) => {
               const d02=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
               const d01=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
               console.log(d01);
-              const layer=new GeoJsonLayer({
-              id: ly,
-              data: d02,
-              visible:d01,
-              stroked: false,
-              pointType: "circle", 
-              getFillColor: (d)=>[255, 0, 0],
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+              const layer={
+                id: ly,
+                type: 'circle',
+                sourceData: d02,
+                paint: {
+                  'circle-radius': 7,
+                  'circle-color': '#ff0000',
+                  'circle-opacity': 0.8
                 },
-              getPointRadius:15,
-              autoHighlight: hover==="バス停"?true:false,
-              getPosition: d => d.coordinates,
-              //getText: (d) => d.properties.FIXEDID,
-              onClick: (info, event) => {
-              try{
-                console.log(info.object.properties.name);
-                  setClickstop(info.object.properties.name);
-
-              } catch(e){
-                console.log(e.message);
-              }},
-              getLineColor: [0, 0, 0],
-              getLineWidth: 10,
-              getTextColor: [180, 0, 0],
-              textFontWeight: "bold",
-              pickable: hover==="バス停"?true:false
-            })
-            console.log(layer.props.pickable);
-            layers_row.push(layer);
+                layout: {},
+                visible: d01,
+                hoverType: "バス停",
+                clickHandler: (feature) => {
+                  try{
+                    console.log(feature.properties.name);
+                    setClickstop(feature.properties.name);
+                  } catch(e){
+                    console.log(e.message);
+                  }
+                }
+              };
+              console.log(layer);
+              layers_row.push(layer);
             } else if (d === "station"){
               //console.log(d1[2]);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
@@ -1900,37 +1666,29 @@ const UpdateLayers = (props) => {
               const d02=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
               const d01=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
               console.log(d01);
-              const layer=new GeoJsonLayer({
-              id: ly,
-              data: d02,
-              visible:d01,
-              stroked: false,
-              pointType: "circle", 
-              getFillColor: (d)=>[255, 0, 0],
-                parameters: {
-                  depthTest: false,
-                  blend: false,
+              const layer={
+                id: ly,
+                type: 'circle',
+                sourceData: d02,
+                paint: {
+                  'circle-radius': 7,
+                  'circle-color': '#ff0000',
+                  'circle-opacity': 0.8
                 },
-              getPointRadius:15,
-              autoHighlight: hover==="バス停"?true:false,
-              getPosition: d => d.coordinates,
-              //getText: (d) => d.properties.FIXEDID,
-              onClick: (info, event) => {
-              try{
-                console.log(info.object.properties.name);
-                  setClickstop(info.object.properties.name);
-
-              } catch(e){
-                console.log(e.message);
-              }},
-              getLineColor: [0, 0, 0],
-              getLineWidth: 10,
-              getTextColor: [180, 0, 0],
-              textFontWeight: "bold",
-              pickable: hover==="バス停"?true:false
-            })
-            console.log(layer.props.pickable);
-            layers_row.push(layer);
+                layout: {},
+                visible: d01,
+                hoverType: "バス停",
+                clickHandler: (feature) => {
+                  try{
+                    console.log(feature.properties.name);
+                    setClickstop(feature.properties.name);
+                  } catch(e){
+                    console.log(e.message);
+                  }
+                }
+              };
+              console.log(layer);
+              layers_row.push(layer);
             } else if (d === "area") {
               console.log(d1);
               const l1 =d1.hasOwnProperty(d)?d1[d]:d1[0];
@@ -1947,109 +1705,129 @@ const UpdateLayers = (props) => {
 
                 const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
                 console.log(d1);
-                const layer=new GeoJsonLayer({
-                id: ly,
-                data: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
-                visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-                  //getFillColor: (d)=>[255-Math.floor(255*d.properties.index/l), 0,Math.floor(255*d.properties.index/l), 150],
-                  getFillColor: [95, 158, 160, 1],
-                  getLineWidth:70,
-                  getText:(d)=>color_l[d.properties.index][0],
-                  getTextSize: 12,
-                  getLineColor:[0,0,0],
-                  pickable: hover==="地区"?true:false,
-                  highlightColor: [255, 0, 255, 100],
-                  // Callback when the pointer enters or leaves an object
-                  // Callback when the pointer clicks on an object
-                  //onClick: (info, event) => //console.log('Clicked:', info, event)
-                })
+                const layer={
+                  id: ly,
+                  type: 'fill',
+                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  paint: {
+                    'fill-color': '#5fa8a0',
+                    'fill-opacity': 0.3
+                  },
+                  layout: {},
+                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  hoverType: "地区",
+                  clickHandler: (feature) => {
+                    try{
+                      // handle click
+                    } catch(e){
+                    }
+                  }
+                };
                 layers_row.push(layer);
               } else if (l1 === "administrative") {
                 //console.log(d1[1]);
-                
+
                 const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
                 console.log(d1);
-                const layer=new GeoJsonLayer({
-                id: ly,
-                data: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
-                visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-                  getFillColor: (d)=>[95, 158, 160, 1],
-                  getLineWidth:50,
-                  pickable: hover==="行政区域"?true:false,
-                  // Callback when the pointer enters or leaves an object
-                  // Callback when the pointer clicks on an object
-                  //onClick: (info, event) => //console.log('Clicked:', info, event)
-                })
+                const layer={
+                  id: ly,
+                  type: 'fill',
+                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  paint: {
+                    'fill-color': '#5fa8a0',
+                    'fill-opacity': 0.2
+                  },
+                  layout: {},
+                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  hoverType: "行政区域",
+                  clickHandler: (feature) => {
+                    try{
+                      // handle click
+                    } catch(e){
+                    }
+                  }
+                };
                 layers_row.push(layer);
               } else if (l1 === "chochomoku") {
 
                 const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
                 console.log(d1);
-                const layer=new GeoJsonLayer({
-                id: ly,
-                data: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
-                visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-                  getText:(d)=>d.properties.HCODE,
-                  getFillColor: (d)=>[255,0,0, 0],
-                  getLineWidth:5,
-                  autoHighlight: hover==="住所"?true:false,
-                  highlightColor: [255, 0, 255, 100],
-                  pickable: hover==="住所"?true:false,
-                  // Callback when the pointer enters or leaves an object
-                  onClick: (info, event) => {
-                    try{
-                      setClickedareaaddress(info.object.properties.S_NAME);
-                      setClickedareapop(info.object.properties.JINKO+"人");
-                      setClickedareahousehold(info.object.properties.SETAI+"世帯");
-                      setClickedareapopdensity(parseInt(info.object.properties.JINKO/(info.object.properties.AREA/100000))+"人/k㎡");
-                      setAddress(info.object.properties.S_NAME);
-                    } catch(e){
-                      console.log(info.object.properties.JINKO);
-                      
-                    }
-                    
+                const layer={
+                  id: ly,
+                  type: 'line',
+                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  paint: {
+                    'line-color': '#000000',
+                    'line-width': 1
                   },
-                  // Callback when the pointer clicks on an object
-                  //onClick: (info, event) => //console.log('Clicked:', info, event)
-                })
+                  layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                  },
+                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  hoverType: "住所",
+                  clickHandler: (feature) => {
+                    try{
+                      setClickedareaaddress(feature.properties.S_NAME);
+                      setClickedareapop(feature.properties.JINKO+"人");
+                      setClickedareahousehold(feature.properties.SETAI+"世帯");
+                      setClickedareapopdensity(parseInt(feature.properties.JINKO/(feature.properties.AREA/100000))+"人/k㎡");
+                      setAddress(feature.properties.S_NAME);
+                    } catch(e){
+                      console.log(feature.properties.JINKO);
+                    }
+                  }
+                };
                 layers_row.push(layer);
               } else if (d1 === "shochiiki") {
                 const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
                 console.log(d1);
-                const layer=new GeoJsonLayer({
-                id: ly,
-                data: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
-                visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-                  stroked: true,
-                  filled: false,
-                  getLineWidth:70,
-                  getTextSize: 12,
-                  getLineColor:[0,0,0],
-                  pickable: hover===d1?true:false,
-                  highlightColor: [255, 0, 255, 100],
-                  // Callback when the pointer enters or leaves an object
-                  // Callback when the pointer clicks on an object
-                  //onClick: (info, event) => //console.log('Clicked:', info, event)
-                })
+                const layer={
+                  id: ly,
+                  type: 'line',
+                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  paint: {
+                    'line-color': '#000000',
+                    'line-width': 2
+                  },
+                  layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                  },
+                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  hoverType: d1,
+                  clickHandler: (feature) => {
+                    try{
+                      // handle click
+                    } catch(e){
+                    }
+                  }
+                };
                 layers_row.push(layer);
               } else {
                 const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
                 console.log(d1);
-                const layer=new GeoJsonLayer({
-                id: ly,
-                data: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
-                visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-                  stroked: true,
-                  filled: false,
-                  getLineWidth:10,
-                  getTextSize: 12,
-                  getLineColor:[0,0,0],
-                  pickable: hover===d1?true:false,
-                  highlightColor: [255, 0, 255, 100],
-                  // Callback when the pointer enters or leaves an object
-                  // Callback when the pointer clicks on an object
-                  //onClick: (info, event) => //console.log('Clicked:', info, event)
-                })
+                const layer={
+                  id: ly,
+                  type: 'line',
+                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  paint: {
+                    'line-color': '#000000',
+                    'line-width': 1
+                  },
+                  layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                  },
+                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  hoverType: d1,
+                  clickHandler: (feature) => {
+                    try{
+                      // handle click
+                    } catch(e){
+                    }
+                  }
+                };
                 layers_row.push(layer);
               }
             }
@@ -2064,41 +1842,108 @@ const UpdateLayers = (props) => {
   useEffect(() => {
     console.log("🎬 layers_row count: ? railline layers: ?");
   }, [layers]);
-  const handleViewStateChange = ({ viewState }) => {
-    // 地図が移動した時の処理（ログ出力や状態更新）
-    setViewState(viewState);
-  };
-  let latlon=[];
-  let layers0=[...layers,ridingtimerow]
+  // Map reference for Mapbox GL JS
+  const mapRef = useRef(null);
+  const loadedSourcesRef = useRef(new Set());
+  const clickHandlersRef = useRef({});
+
+  // Setup layers in Mapbox GL JS
+  useEffect(() => {
+    const map = mapRef.current?.getMap?.();
+    if (!map || !map.isStyleLoaded()) return;
+
+    // Separate layers: mesh first, then points on top
+    const meshLayers = layers.filter(l => l.type === 'fill' || l.type === 'line');
+    const pointLayers = layers.filter(l => l.type === 'symbol' || l.type === 'circle');
+    const allLayers = [...meshLayers, ...ridingtimerow, ...pointLayers];
+
+    allLayers.forEach((layerConfig, index) => {
+      if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
+
+      const sourceId = layerConfig.source || layerConfig.id;
+
+      // Add/update source
+      if (!loadedSourcesRef.current.has(sourceId)) {
+        try {
+          map.addSource(sourceId, {
+            type: 'geojson',
+            data: layerConfig.sourceData
+          });
+          loadedSourcesRef.current.add(sourceId);
+        } catch (e) {
+          // Source already exists, update instead
+          const source = map.getSource(sourceId);
+          if (source && source.setData) {
+            source.setData(layerConfig.sourceData);
+          }
+        }
+      } else {
+        const source = map.getSource(sourceId);
+        if (source && source.setData) {
+          source.setData(layerConfig.sourceData);
+        }
+      }
+
+      // Add layer if not exists
+      if (!map.getLayer(layerConfig.id)) {
+        // Point layers (symbol) should be on top
+        const beforeId = (layerConfig.type === 'symbol' || layerConfig.type === 'circle')
+          ? undefined
+          : null;
+        map.addLayer({
+          id: layerConfig.id,
+          type: layerConfig.type,
+          source: sourceId,
+          paint: layerConfig.paint,
+          layout: layerConfig.layout
+        }, beforeId);
+      } else if (layerConfig.type === 'symbol' || layerConfig.type === 'circle') {
+        // Move symbol/circle layers to top
+        try {
+          map.moveLayer(layerConfig.id);
+        } catch (e) {
+          // ignore if layer doesn't exist
+        }
+      }
+
+      // Update visibility
+      map.setLayoutProperty(layerConfig.id, 'visibility', layerConfig.visible ? 'visible' : 'none');
+
+      // Register click handler (safely)
+      if (layerConfig.clickHandler && hover === layerConfig.hoverType) {
+        try {
+          if (clickHandlersRef.current[layerConfig.id]) {
+            map.off('click', layerConfig.id, clickHandlersRef.current[layerConfig.id]);
+          }
+          const handler = (e) => {
+            if (e.features && e.features.length > 0) {
+              layerConfig.clickHandler(e.features[0]);
+            }
+          };
+          // Only register if layer exists
+          if (map.getLayer(layerConfig.id)) {
+            map.on('click', layerConfig.id, handler);
+            clickHandlersRef.current[layerConfig.id] = handler;
+          }
+        } catch (err) {
+          console.warn(`Failed to register click handler for layer ${layerConfig.id}:`, err);
+        }
+      }
+    });
+  }, [layers, ridingtimerow, hover]);
+
   return (
-    <div>
-      <div>
-        
+    <div style={{ width: '100%', height: '100%' }}>
+      <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10 }}>
         <p>{address}</p>
       </div>
-      <div>
-        <DeckGL
-          initialViewState={viewAccessibility}
-          controller={true}
-          pickable={edit}
-          onClick={(info)=>{
-            console.log(edit);
-            setSelected(prev => {
-              const next = true;
-            latlon.push([info.coordinate[0],info.coordinate[1]]);
-            console.log(latlon.length);
-            if(latlon.length>1){EditLine(latlon)}
-            return next
-            })
-          }}
-          layers={layers0}
-            onViewStateChange={({ viewState }) => {
-            setviewAccessibility(viewState);
-          }}
-        >
-          <Map reuseMaps mapboxAccessToken={mapboxAccessToken} mapStyle={mapstyle}/>
-        </DeckGL>
-      </div>
+      <Map
+        ref={mapRef}
+        initialViewState={viewAccessibility}
+        mapboxAccessToken={mapboxAccessToken}
+        mapStyle={mapstyle}
+        onMove={({ viewState }) => setviewAccessibility(viewState)}
+      />
     </div>
   );
 };

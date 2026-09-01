@@ -6,7 +6,7 @@ import Ledends from "./Legends";
 // If using with mapbox-gl v1:
 // import Map from 'react-map-gl/mapbox-legacy';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import UpdateLayers from './AccessibilityRenderLayers';
+import UpdateLayers from './AccessibilityRenderLayers'; // TODO: Migrate to Mapbox
 
 import { Slider, Box, Typography } from '@mui/material';
 import Discuss from './Discuss';
@@ -446,30 +446,6 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                   <div>に到着できる地区別</div>
                                   <div>{showBarChart ? '人口を閉じる' : '人口を表示'}</div>
                                 </button>
-                                <button
-                                  onClick={() => setShowAddressChart(!showAddressChart)}
-                                  style={{
-                                    padding: '6px 10px',
-                                    background: showBarChart ? '#4CAF50' : '#ff00c8',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 4,
-                                    cursor: 'pointer',
-                                    fontSize: 12,
-                                    fontWeight: 'bold',
-                                    minHeight: '40px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 2
-                                  }}
-                                >
-                                  <div>📊任意の住所から</div>
-                                  <div>{destcurrent}</div>
-                                  <div>に到着できる時間帯</div>
-                                  <div>{showAddressChart ? '時間帯を閉じる' : '時間帯を表示'}</div>
-                                </button>
                               </div>
                             )}
                           </div>
@@ -688,7 +664,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
 
                     </div>}
                     {/* 📌 ドラッグ・リサイズ可能なデータ表示パネル */}
-                    {(showBarChart || showAccessibleList|| showAddressChart) && (
+                    {(showBarChart || showAccessibleList) && (
                     <div
                       ref={panelRef}
                       onMouseDown={handlePanelMouseDown}
@@ -756,13 +732,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             </div>
                           )}
 
-                          {showAddressChart && (
-                            <div style={{ flex: 1, minHeight: '300px', border: '1px solid #e0e0e0', borderRadius: 6, padding: 8 }}>
-                              <AddressChart layercheckcurrent={layercheckcurrent} selectdirect={directcurrent} selectorigdest={origdestcurrent} selectorig={origcurrent} selectkind={kindcurrent} selectarea={areacurrent} selectweekday={weekdaycurrent} selectdest={destcurrent} selecthour ={parseInt(11+time*100000000)} style={{ width: '100%' }}/>
-                            </div>
-                          )}
 
-                          {!showAccessibleList && !showBarChart && !showAddressChart&&(
+                          {!showAccessibleList && !showBarChart&&(
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
                               <p>テーブルまたはグラフボタンをクリック</p>
                             </div>

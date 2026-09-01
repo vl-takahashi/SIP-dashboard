@@ -1,16 +1,10 @@
-import { useContext, useMemo,useState,useRef,useEffect,ClickareaCount,useCallback} from 'react';
-import { Map as MapboxMap } from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { useMemo, useState, useRef, useEffect } from 'react';
+import mapboxgl from 'mapbox-gl';
 import Map from 'react-map-gl/mapbox';
-import React from 'react';
 import EditLine from './EditLine';
 import { mapboxAccessToken, mapstyle,initialCheck,vividColors } from "./Globalvariable";
 import {useHoverStore,useLegendStore,useDirectStore,useLayerflagStore,usePopStore,usePopmeshStore,useEditStore,useAreaStore,useViewAccesibilityStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
-const AreaLayers = (props) => {
-  const mapRef = useRef(null);
-  const [mapInstance, setMapInstance] = useState(null);
-  const [viewState, setViewState] = useState(null);
-
+const UpdateLayers = (props) => {
   const setLegends = useLegendStore((state) => state.setLegends);
   const origdest=useDirectStore((state)=> state.sorig)
   const [selected, setSelected] = useState(false)
@@ -836,41 +830,10 @@ const AreaLayers = (props) => {
   const layers = useMemo(() => {
     console.log(pop);
       if (!data) return [];
-      if (data["railline"]) {
-        console.log("📋 useMemo内 data[railline]:", data["railline"]);
-      }
       const layers_row = [];
-      // ★data が更新されたことをここで検知
       console.log("🔄 useMemo re-running, data updated:", data);
-      const layer = new TileLayer({
-    id: 'gsi-tile-layer',
-    // 先ほどエラーになった {t} を 'std' に、{ext} を 'png' に固定します
-    // deck.gl は {z}, {x}, {y} を自動で解釈してリクエストします
-    data: mapstyle,
-    
-    // 地理院タイルの仕様に合わせて設定します（標準地図は最大ズーム18）
-    maxZoom: 18,
-    minZoom: 0,
-
-    // 取得したタイル画像をBitmapLayerとして描画する
-    renderSubLayers: props => {
-      const { boundingBox } = props.tile;
-
-      return new BitmapLayer(props, {
-        data: null,
-        image: props.data,
-        bounds: [
-          boundingBox[0][0], // left
-          boundingBox[0][1], // bottom
-          boundingBox[1][0], // right
-          boundingBox[1][1]  // top
-        ]
-      });
-    }
-  });
-    layers_row.push(layer);
-    // Contextから現在の状態を引っこ抜く（これが最強の同期方法）
-    let i=0;
+      // Note: Mapbox background layer is handled by mapStyle, no need for TileLayer
+      let i=0;
     //console.log(data);
     for (let d in data){
       // 例: check配列の中にこのレイヤー名が含まれているか確認
@@ -884,146 +847,112 @@ const AreaLayers = (props) => {
             i+=1;
             if (d === "facility"){
                 const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
-                console.log(d1);
                 const d02=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
                 const d01=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
-                const layer=new GeoJsonLayer({
+                const layer={
                 id: ly,
-                data: d02,
+                type: 'circle',
+                sourceData: d02,
+                paint: {
+                  'circle-radius': 5,
+                  'circle-color': '#ff0000',
+                  'circle-opacity': 0.8
+                },
+                layout: {},
                 visible:d01,
-                stroked: false,
-                pointType: "circle", 
-                getPointRadius:5,
-                getFillColor:[255, 0, 0, 200],
-                getPosition: d => d.coordinates,
-                //getText: (d) => d.properties.FIXEDID,
-                onClick: (info, event) => {
-                try{
-                  setClickstop(info.object.properties.name);
-                  //console.log('Clicked:',info.object.properties);
-
-                } catch(e){
-                  //console.log(e.message);
-                }},
-                getLineColor: [0, 0, 0],
-                getLineWidth: 10,
-                getTextColor: [180, 0, 0],
-                textFontWeight: "bold",
-                pickable: hover==="施設"?true:false
-              })
+                hoverType: "施設",
+                clickHandler: (feature) => {
+                  try{
+                    setClickstop(feature.properties.name);
+                  } catch(e){
+                  }}
+              }
               layers_row.push(layer);
               
             } else if (d === "road") {
-              //console.log(d1[2]);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
-              console.log(d1);
-              const layer=new GeoJsonLayer({
+              const layer={
                 id: ly,
-                data: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                type: 'line',
+                sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                paint: {
+                  'line-color': '#ff0000',
+                  'line-width': 3
+                },
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
                 visible:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
-                stroked: false,
-                filled: true,
-                getFillColor: (d)=>[255, 0, 0],
-                getLineColor: [255, 0, 0],
-                getLineWidth:15,
-                getText:(d)=>d.properties.lnno,
-                getTextAlignmentBaseline:"center",
-                pickable: hover==="道路"?true:false,
-                onClick: (info, event) => {
-                try{
-                  setClicknearestbusline(info.object.properties.name.replace(/[^0-9]/g, ''));
-                } catch(e){
+                hoverType: "道路",
+                clickHandler: (feature) => {
+                  try{
+                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
+                  } catch(e){}
                 }
               }
-              })
               layers_row.push(layer);
             } else if (d === "popmesh") {
               const data1=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
-              //const data1r=data1.features.filter((e)=>{return e.properties[pop]>0&&dimentionset===dimention&&bounds[0]<=e.geometry.coordinates[0][0][0]&&e.geometry.coordinates[0][2][0]<=bounds[2]&&bounds[1]<=e.geometry.coordinates[0][0][1]&&e.geometry.coordinates[0][2][1]<=bounds[3]});
               const data1r=pop!=""?data1.features.filter((e)=>{return e.properties[pop]>0}):data1;
-              
-              //[西経, 南緯, 東経, 北緯]  [minLng, minLat, maxLng, maxLat]
+
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
               const isv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
               const Area =area;
-              const layer=new GeoJsonLayer({
+              const layer={
               id: ly,
-              data: data1r,
-              visible:layercheck==="複数レイヤー表示"?isv:true,
-            getFillColor: (d) => {
-              const colorValue = pop!=""?parseInt(d.properties[pop]):0;
-        
-              return layercheck==="複数レイヤー表示"?[255, 255 - colorValue, 0, 100]:[255,255,255,100];
-            },
-              filled:true,
-              autoHighlight: hover==="居住地"?true:false,
-              parameters: {
-                depthTest: false,
-                blend: false,
+              type: 'fill',
+              sourceData: data1r,
+              paint: {
+                'fill-color': [
+                  'case',
+                  ['!=', ['get', pop], null],
+                  ['rgb', 255, ['*', 255, ['-', 1, ['/', ['to-number', ['get', pop]], 100]]], 0],
+                  '#ffffff'
+                ],
+                'fill-opacity': 0.6
               },
-              
-                updateTriggers: {
-                  visible:d[1]
-                },
-              stroked: false,
-              pickable: hover==="居住地"?true:false,
-                onClick: (info, event) => {
+              layout: {},
+              visible:layercheck==="複数レイヤー表示"?isv:true,
+              hoverType: "居住地",
+              clickHandler: (feature) => {
                 try{
-                  console.log(info.object.properties.PT00_2025);
-                  setClickpopmesh(parseInt(info.object.properties.PT00_2025));
-                  console.log(info.object.properties[Area]);
-                  setClickpopmeshaddress(info.object.properties[Area]);
-
+                  setClickpopmesh(parseInt(feature.properties.PT00_2025));
+                  setClickpopmeshaddress(feature.properties[Area]);
                 } catch(e){
                   console.log(e.message);
                 }}
-              // Callback when the pointer enters or leaves an object
-              // Callback when the pointer clicks on an object
-              //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+              }
               layers_row.push(layer);
   
             } else if (d === "spatialbuffer") {
               const Area =area;
               const isLayer = layercheck === "複数レイヤー表示";
-              //console.log(d1[2]);
-              //popmeshkey=[[key,data]]
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
               const data1=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
-              //const data1r=data1.features.filter((e)=>{return bounds[0]<=e.geometry.coordinates[0][0][0]&&e.geometry.coordinates[0][2][0]<=bounds[2]&&bounds[1]<=e.geometry.coordinates[0][0][1]&&e.geometry.coordinates[0][2][1]<=bounds[3]});
               const data1r=data1;
-              //[西経, 南緯, 東経, 北緯]  [minLng, minLat, maxLng, maxLat]
-              console.log(data1r.length);
               let datav=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
-                
-              const layer=new GeoJsonLayer({
-                id: ly,
-                data: data1r,
-                visible:!isLayer?false:datav,
-                getFillColor: [0,0, 255, 100],
-                filled:true,
-                pickable: hover==="最寄バス停"?true:false,
-                autoHighlight: hover==="最寄バス停"?true:false,
-                stroked: false,
-                parameters: {
-                  depthTest: false,
-                  blend: false,
-                },
-                // Callback when the pointer enters or leaves an object
-                onClick: (info, event) => {
-                try{
-                  setClickneareststop(info.object.properties.stop_name);
-                  setClickpopmeshaddress(info.object.properties[Area]);
 
-                } catch(e){
-                  console.log(e.message);
-                }
-                
-                  
+              const layer={
+                id: ly,
+                type: 'fill',
+                sourceData: data1r,
+                paint: {
+                  'fill-color': '#0000ff',
+                  'fill-opacity': 0.4
                 },
-                // Callback when the pointer clicks on an object
-                //onClick: (info, event) => //console.log('Clicked:', info, event)
-              })
+                layout: {},
+                visible:!isLayer?false:datav,
+                hoverType: "最寄バス停",
+                clickHandler: (feature) => {
+                  try{
+                    setClickneareststop(feature.properties.stop_name);
+                    setClickpopmeshaddress(feature.properties[Area]);
+                  } catch(e){
+                    console.log(e.message);
+                  }
+                }
+              }
               layers_row.push(layer);
             } else if (d === "ridingtime_direct") {
               
@@ -2058,231 +1987,92 @@ const AreaLayers = (props) => {
     console.log("🎬 layers_row count:", layers_row.length, "railline layers:", layers_row.filter(l => l.id && l.id.includes('railline')).length);
     return layers_row;
   }, [data,kind,hover,address,area,layercheck,pop,dimention]);
+  // 追加：layers_row が更新されたことを確認
+  useEffect(() => {
+    console.log("🎬 layers_row count: ? railline layers: ?");
+  }, [layers]);
+  // Map reference for Mapbox GL JS
+  const mapRef = useRef(null);
+  const loadedSourcesRef = useRef(new Set());
+  const clickHandlersRef = useRef({});
 
-  // Mapboxレイヤー設定を生成
-  const mapboxLayerConfigs = useMemo(() => {
-    return convertDeckglLayersToMapboxLayers(layers, ridingtimerow);
-  }, [layers, ridingtimerow]);
+  // Setup layers in Mapbox GL JS
+  useEffect(() => {
+    const map = mapRef.current?.getMap?.();
+    if (!map || !map.isStyleLoaded()) return;
 
-  // Deck.glレイヤーをMapboxレイヤー設定に変換する関数
-  const convertDeckglLayersToMapboxLayers = (deckglLayers, additionalLayers) => {
-    const configs = [];
-    const allLayers = [...deckglLayers, ...(Array.isArray(additionalLayers) ? additionalLayers : [])];
+    const allLayers = [...layers, ...ridingtimerow];
 
-    allLayers.forEach((layer, idx) => {
-      try {
-        if (layer.props?.data) {
-          const sourceId = `source-${layer.id}`;
-          const config = {
-            sourceId,
-            layerId: layer.id,
-            source: prepareGeoJsonSource(layer),
-            layers: prepareMapboxLayerStyle(layer),
-          };
-          configs.push(config);
+    allLayers.forEach((layerConfig) => {
+      if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
+
+      const sourceId = layerConfig.source || layerConfig.id;
+
+      // Add/update source
+      if (!loadedSourcesRef.current.has(sourceId)) {
+        try {
+          map.addSource(sourceId, {
+            type: 'geojson',
+            data: layerConfig.sourceData
+          });
+          loadedSourcesRef.current.add(sourceId);
+        } catch (e) {
+          // Source already exists, update instead
+          const source = map.getSource(sourceId);
+          if (source && source.setData) {
+            source.setData(layerConfig.sourceData);
+          }
         }
-      } catch (e) {
-        console.warn('レイヤー変換エラー:', layer.id, e);
+      } else {
+        const source = map.getSource(sourceId);
+        if (source && source.setData) {
+          source.setData(layerConfig.sourceData);
+        }
+      }
+
+      // Add layer if not exists
+      if (!map.getLayer(layerConfig.id)) {
+        map.addLayer({
+          id: layerConfig.id,
+          type: layerConfig.type,
+          source: sourceId,
+          paint: layerConfig.paint,
+          layout: layerConfig.layout
+        });
+      }
+
+      // Update visibility
+      map.setLayoutProperty(layerConfig.id, 'visibility', layerConfig.visible ? 'visible' : 'none');
+
+      // Register click handler
+      if (layerConfig.clickHandler && hover === layerConfig.hoverType) {
+        if (clickHandlersRef.current[layerConfig.id]) {
+          map.off('click', layerConfig.id, clickHandlersRef.current[layerConfig.id]);
+        }
+        const handler = (e) => {
+          if (e.features && e.features.length > 0) {
+            layerConfig.clickHandler(e.features[0]);
+          }
+        };
+        map.on('click', layerConfig.id, handler);
+        clickHandlersRef.current[layerConfig.id] = handler;
       }
     });
-
-    return configs;
-  };
-
-  // GeoJsonSourceの準備
-  const prepareGeoJsonSource = (deckglLayer) => {
-    const data = deckglLayer.props.data;
-    return {
-      type: 'geojson',
-      data: data || { type: 'FeatureCollection', features: [] },
-    };
-  };
-
-  // Mapboxレイヤースタイルの準備
-  const prepareMapboxLayerStyle = (deckglLayer) => {
-    const layer = deckglLayer.props;
-    const baseLayer = {
-      id: deckglLayer.id,
-      source: `source-${deckglLayer.id}`,
-      paint: {},
-      layout: {},
-      visibility: layer.visible ? 'visible' : 'none',
-    };
-
-    // レイヤータイプを判定
-    if (layer.getText) {
-      // TextLayer -> Symbol Layer
-      baseLayer.type = 'symbol';
-      baseLayer.layout = {
-        'text-field': ['get', 'name'],
-        'text-font': ['Open Sans Semibold'],
-        'text-offset': [0, -1],
-        'text-anchor': 'bottom',
-        'text-size': layer.getSize || 12,
-      };
-      baseLayer.paint = {
-        'text-color': 'rgb(1, 0, 102)',
-      };
-    } else if (layer.getIcon) {
-      // IconLayer -> Symbol Layer
-      baseLayer.type = 'symbol';
-      baseLayer.layout = {
-        'icon-image': 'marker-15',
-        'icon-size': (layer.getSize || 40) / 24,
-      };
-    } else {
-      // GeoJsonLayer -> Fill/Line Layer
-      baseLayer.type = 'fill';
-      baseLayer.paint = {
-        'fill-color': layer.getFillColor ? 'rgba(255, 0, 0, 0.5)' : 'rgba(200, 200, 200, 0.5)',
-        'fill-opacity': 0.7,
-      };
-    }
-
-    return [baseLayer];
-  };
-  // mapオブジェクト取得時
-  const handleMapLoad = useCallback((map) => {
-    setMapInstance(map);
-  }, []);
-
-  // Mapboxレイヤーを更新
-  useEffect(() => {
-    if (!mapInstance) return;
-
-    try {
-      // 既存のカスタムレイヤーを削除
-      const style = mapInstance.getStyle();
-      if (style?.layers) {
-        const layersToRemove = style.layers.filter(
-          l => l.id.includes('layer-') || l.id.includes('source-')
-        );
-        layersToRemove.forEach(layer => {
-          mapInstance.removeLayer(layer.id);
-        });
-      }
-
-      // 既存のソースを削除
-      if (style?.sources) {
-        Object.keys(style.sources).forEach(sourceId => {
-          if (sourceId.includes('source-')) {
-            try {
-              mapInstance.removeSource(sourceId);
-            } catch (e) {
-              // ソースが使用中の場合スキップ
-            }
-          }
-        });
-      }
-
-      // 新しいレイヤーを追加
-      mapboxLayerConfigs.forEach(config => {
-        try {
-          // Sourceを追加
-          if (!mapInstance.getSource(config.sourceId)) {
-            mapInstance.addSource(config.sourceId, config.source);
-          }
-
-          // Layerを追加
-          config.layers.forEach(layerStyle => {
-            if (!mapInstance.getLayer(layerStyle.id)) {
-              mapInstance.addLayer(layerStyle);
-            }
-          });
-
-          // クリックイベント登録
-          mapInstance.on('click', config.layerId, (e) => {
-            handleMapLayerClick(e, config.layerId);
-          });
-
-          // ホバーイベント登録
-          mapInstance.on('mouseenter', config.layerId, () => {
-            mapInstance.getCanvas().style.cursor = 'pointer';
-          });
-
-          mapInstance.on('mouseleave', config.layerId, () => {
-            mapInstance.getCanvas().style.cursor = '';
-          });
-        } catch (e) {
-          console.warn('レイヤー追加エラー:', config.layerId, e);
-        }
-      });
-    } catch (e) {
-      console.error('Mapbox更新エラー:', e);
-    }
-  }, [mapInstance, mapboxLayerConfigs, hover]);
-
-  // Mapboxレイヤークリック処理
-  const handleMapLayerClick = (e, layerId) => {
-    const feature = e.features?.[0];
-    if (!feature?.properties) return;
-
-    const props = feature.properties;
-    console.log('Map layer clicked:', layerId, props);
-
-    // レイヤータイプに基づいた処理
-    try {
-      if (layerId.includes('popmesh')) {
-        // 居住地メッシュクリック
-        setClickpopmesh(parseInt(props.PT00_2025) || 0);
-        setClickpopmeshaddress(props[area] || '');
-      } else if (layerId.includes('facility')) {
-        // 施設クリック
-        setClickstop(props.name || '');
-      } else if (layerId.includes('road')) {
-        // 道路クリック
-        setClicknearestbusline(props.name?.replace(/[^0-9]/g, '') || '');
-      } else if (layerId.includes('stop')) {
-        // バス停クリック
-        setClickstop(props.name || props.stop_name || '');
-      } else if (layerId.includes('ridingtime')) {
-        // 所要時間レイヤークリック
-        setClicknearestridetime(props[weekday] || '');
-        setClicknearestgetofftime(props[parseInt(Math.round(time*100000000)+10)] || '');
-        setClickneareststop(props.stop_name || '');
-        setClicknearestbusline(props.route || '');
-        setClickpopmeshaddress(props[area] || '');
-      } else if (layerId.includes('chochomoku') || layerId.includes('address')) {
-        // 住所/地区クリック
-        setClickedareaaddress(props.HCODE || props.name || '');
-        setClickedareapop(parseInt(props.PT00_2025) || 0);
-        setClickedareahousehold(parseInt(props.PT01_2025) || 0);
-        setClickedareapopdensity(parseFloat(props.density) || 0);
-      }
-    } catch (error) {
-      console.warn('クリック処理エラー:', error);
-    }
-  };
-
-  let latlon=[];
+  }, [layers, ridingtimerow, hover]);
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <div>
+    <div style={{ width: '100%', height: '100vh' }}>
+      <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10 }}>
         <p>{address}</p>
       </div>
-      <div style={{ width: '100%', height: '100%' }}>
-        <Map
-          ref={mapRef}
-          mapboxAccessToken={mapboxAccessToken}
-          mapStyle={mapstyle}
-          initialViewState={viewAccessibility}
-          reuseMaps
-          onClick={(e) => {
-            if (edit) {
-              const coords = e.lngLat;
-              latlon.push([coords.lng, coords.lat]);
-              console.log('Edit line point:', latlon.length);
-              if(latlon.length>1){EditLine(latlon)}
-            }
-          }}
-          onLoad={(e) => handleMapLoad(e.target)}
-          onMove={(e) => {
-            setviewAccessibility(e.viewState);
-          }}
-        />
-      </div>
+      <Map
+        ref={mapRef}
+        initialViewState={viewAccessibility}
+        mapboxAccessToken={mapboxAccessToken}
+        mapStyle={mapstyle}
+        onMove={({ viewState }) => setviewAccessibility(viewState)}
+      />
     </div>
   );
 };
-export default AreaLayers;
+export default UpdateLayers;
