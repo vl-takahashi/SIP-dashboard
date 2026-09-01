@@ -1,0 +1,115 @@
+{% extends "base_index.html" %}
+
+{% block content %}
+    <h3>ファイルアップロードでOD描画とメッシュ、グラフ表示</h3>
+    <div class="field">
+        <div class="card">
+            <form action="/od_research" method="POST" enctype="multipart/form-data">
+                <br>
+                2行目から地点が入ったcsv,excel：<input type="file" id="latlonfile" name="latlonfile" required>
+                <br>
+                <p>以下のテキストボックスには、該当する列名を入力してください。</p>
+                <label for="orig_lat">乗車地の緯度：<input type="text" id="orig_lat" name="orig_lat"required></label>
+                <br>
+                <label for="orig_lon">乗車地の経度：<input type="text" id="orig_lon" name="orig_lon" required></label>
+                <br>
+                <label for="dest_lat">降車地の緯度：<input type="text" id="dest_lat" name="dest_lat"required></label>
+                <br>
+                <label for="dest_lon">：<input type="text" id="dest_lon" name="dest_lon" required></label>
+                <br>
+                <label for="origname">(ポップアップの表題)：<input type="text" id="origname" name="origname"></label>
+                <br>
+                <label for="origdesc">乗車地の詳細(ポップアップの内容)：<input type="text" id="origdesc" name="origdesc"></label>
+                <br>
+                <label for="destname">降車地の名前(ポップアップの表題)：<input type="text" id="destname" name="destname"></label>
+                <br>
+                <label for="destdesc">降車地の詳細(ポップアップの内容)：<input type="text" id="destdesc" name="destdesc"></label>
+                <br>
+                <label for="destdesc">交通手段(任意)：<input type="text" id="travelmode" name="travelmode"></label>
+                <br>
+                <input type="submit" name="dest_submit" value="目的地で色分け">
+                <br>
+                <input type="submit" name="dest_largest_submit" value="目的地top5で色分け">
+                <br>
+                <details>
+                    <summary>線で表示したい場合</summary>
+                    <label style="color:blue;">乗車時刻：</label><input type="text" id="orig_time" name="orig_time">
+                    <br>
+                    <input type="submit" name="origtime_submit" value="出発時間帯別で色分け" style="color:blue;">
+                    <br>
+                    <label for="orighour">時間帯:<input type="text" id="orighour" name="orighour"></label>
+                    <br>
+                    <input type="submit" name="orighour_submit" value="時間帯指定" style="color:blue;">
+                    <br>
+                    <label style="color:green;">降車時刻：</label><input type="text" id="dest_time" name="dest_time">
+                    <br>
+                    <input type="submit" name="desttime_submit" value="到着時間帯別で色分け" style="color:green;">
+                    <br>
+                    <p>目的地別のトリップ数で色分けした算出例</p>
+                    <a href="{{ url_for('od_research.static', filename='sample2.png') }}"><img src="{{ url_for('od_research.static', filename='sample2.png') }}" width="500" height="400" alt="" border="0"></a>
+            
+                    
+            
+                </details>
+                <details>
+                    <summary>棒グラフで表示したい場合</summary>
+                    
+                    <label for="userage"><input type="checkbox" name="userage" value="age" {{ 'checked' if option_is_checked }}>乗降者の年齢：<input type="text" id="age" name="age"></label>
+                    <br>
+                    <label for="userid"><input type="checkbox" name="userid" value="uniqueuser" {{ 'checked' if option_is_checked }}>乗降者のID：<input type="text" id="uniqueuser" name="uniqueuser"></label>
+                    <br>
+                    <label for="userday"><input type="checkbox" name="userday" value="userday" {{ 'checked' if option_is_checked }}>乗降日：<input type="text" id="day" name="day"></label>
+                    <br>
+                    <label for="destfacility"><input type="checkbox" value="destfacility" {{ 'checked' if option_is_checked }}>目的施設：<input type="text" id="facility" name="facility"></label>
+                    <br>
+                    <input type="submit" name="cross_submit" value="上記チェック項目のクロス集計">
+                    <br>
+                    <a href="{{ url_for('od_research.static', filename='facility_sample.png') }}"><img src="{{ url_for('od_research.static', filename='facility_sample.png') }}" width="800" height="500" alt="" border="0"></a>
+                    <p>↑算出例</p>
+                    
+                </details>
+                <details>
+                    <summary>メッシュ表示したい場合(<font color="red">準備中</font>)</summary>
+                        <label >メッシュshp：</label><input type="file" id="mesh_shpfile" name="mesh_shpfile">
+                        <br>
+                        <label>該当メッシュコードの入ったcsv：</label><input type="file" id="meshcode_csv" name="meshcode_csv">
+                        <br>
+                        <input type="submit" name="mesh_submit" value="目的施設・年齢・ID別">
+                        <br>
+                        <label>乗車時刻：</label><input type="text" id="mesh_orig_time" name="mesh_orig_time">
+                        <label>降車時刻：</label><input type="text" id="mesh_dest_time" name="mesh_dest_time">
+                        <br>
+                        <input type="submit" name="mesh_orig_submit" value="mesh出発時間帯別で色分け">
+                        <br>
+                        <input type="submit" name="mesh_dest_submit" value="mesh到着時間帯別で色分け" >
+                        <br>
+                        <p style="text-align: center;">メッシュ表示の例(「mesh出発時間帯別で色分け」の場合)</p></li>
+                        <ul>
+                            <li><a href="{{ url_for('od_research.static', filename='orig_8_sample.png') }}" data-lightbox="group"><img src="{{ url_for('od_research.static', filename='orig_8_sample.png') }}" width="300" height="300" alt="" border="0"></a>⇒
+                            <p style="text-align: center;">8時台に出発</p></li>
+                            <br>
+                            
+                            <li><a href="{{ url_for('od_research.static', filename='orig_9_sample.png') }}" data-lightbox="group"><img src="{{ url_for('od_research.static', filename='orig_9_sample.png') }}" width="300" height="300" alt="" border="0"></a>⇒
+                            <p style="text-align: center;">9時台に出発</p></li>
+                            <br>
+                            
+                            <li><a href="{{ url_for('od_research.static', filename='orig_10_sample.png') }}" data-lightbox="group"><img src="{{ url_for('od_research.static', filename='orig_10_sample.png') }}" width="300" height="300" alt="" border="0"></a>
+                            <p style="text-align: center;">10時台に出発</p></li>
+                        </ul>
+                        
+                        <style>
+                            li {
+                                list-style: none;
+                            }
+                            ul {
+                            display: flex;
+                            }
+                        </style>
+                </details>
+            </form>
+            
+        </div>
+        <br>
+        
+    </div>
+{% endblock %}

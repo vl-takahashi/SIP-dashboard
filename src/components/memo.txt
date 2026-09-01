@@ -1,0 +1,401 @@
+
+                        
+                    <div className="tab-item">
+                    <button label="LIPT" 
+                      className={`tab ${activeTab === "lipt" ? "active" : ""}`} style={{
+                      textAlign: 'left',
+                      backgroundColor: liptToggled!= "lipt" ? 'transparent' : 'orange',
+                      color: 'black', // Ensure text is visible
+                      padding: '10px 20px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      width:"120px"
+                    }}
+                      onClick={() => lipttab(activeTab)}>LIPT</button>
+                      </div>
+                  <div className="card6"style={{ width: '600px', height:"200px",zIndex: 10 }}>
+                    <Discuss style={{ width: '100%' }}/>
+                  </div>
+            ))}
+            
+    // 2. JavaScriptオブジェクトをJSON文字列に変換
+    const geojsonString = JSON.stringify(geojson, null, 2);
+
+    // 3. ファイルとしてダウンロードさせる場合（ブラウザ環境）
+    const blob = new Blob([geojsonString], { type: "application/json" });
+    {
+      backgroundColor: 'rgba(255,75,75, 0.6)',
+      
+    },
+    {
+      label: '西条発',
+      data: [5, 3, 5, 5, 4, 2],
+      backgroundColor: 'rgba(255, 255,255, 0.6)',
+      borderWidth: 2
+    },
+    {
+      label: '八本松発',
+      data: [3, 4, 3, 1, 2, 3],
+      backgroundColor: 'rgba(255,225,225, 0.6)',
+      borderWidth: 2
+    },
+    {
+      label: '河内発',
+      data: [3, 2, 5, 1, 3, 2],
+      backgroundColor: 'rgba(255,100,100, 0.6)',
+      borderWidth: 2
+    },
+    {
+      label: '福富発',
+      data: [3, 4, 3, 2, 2, 3],
+      backgroundColor: 'rgba(255,50,50, 0.6)',
+      borderWidth: 2
+    },
+    {
+      label: '安芸津発',
+      data: [3, 5, 3, 1, 2, 3],
+      backgroundColor: 'rgba(255,125,125, 0.6)',
+      borderWidth: 2
+    },
+    {
+      label: '志和発',
+      data: [1, 4, 3, 5, 2, 3],
+      backgroundColor: 'rgba(255,150,150, 0.6)',
+      borderWidth: 2
+    },
+    {
+      label: '黒瀬発',
+      data: [3, 5, 4, 2, 2, 3],
+      backgroundColor: 'rgba(255,25,25, 0.6)',
+      borderWidth: 2
+    },
+    {
+      label: '高屋発',
+      data: [2, 3, 3, 1, 2, 3],
+      backgroundColor: 'rgba(255,225,225, 0.6)',
+      borderWidth: 2
+    },
+
+  const [currentToggled, setcurrentToggled] = useState("fundamental");
+  const [accessibilityToggled, setAccessibilityToggled] = useState(true);
+  const [fareToggled, setFareToggled] = useState(true);
+  const [frequencyToggled, setFrequencyToggled] = useState(true);
+    
+  function currenttab(){
+    setActiveTab("fundamental");
+    setcurrentToggled("fundamental");
+    setAccessibilityToggled(true);
+  }
+  function accessibilitytab(){
+    setActiveTab("accessibility");
+    setcurrentToggled(true);
+    setAccessibilityToggled("accessibility");
+    setFareToggled(false);
+    setFrequencyToggled(false);
+  }
+  function faretab(){
+    setActiveTab("fare");
+    setcurrentToggled(true);
+    setFareToggled("fare");
+    setAccessibilityToggled(false);
+    setFrequencyToggled(false);
+  }
+  function frequencytab(){
+    setActiveTab("frequency");
+    setcurrentToggled(true);
+    setFrequencyToggled("frequency");
+    setFareToggled(false);
+    setAccessibilityToggled(false);
+  }
+
+              {/*<p>※基礎データ・・・交通施設(駅、バス停、マイクロモビリティステーション、タクシー営業所)<br></br>路線網(道路網、鉄道、バス路線)<br></br>行政区域・地区<br></br>目的地
+            </p>*/}  
+            function Setcolor(data){
+    let data_r=data[0];
+    //console.log(color_l)
+    setArea_list(color_l);
+    }
+
+    new TileLayer({
+    id: 'gsi-tile-layer',
+    // 先ほどエラーになった {t} を 'std' に、{ext} を 'png' に固定します
+    // deck.gl は {z}, {x}, {y} を自動で解釈してリクエストします
+    data: 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
+    
+    // 地理院タイルの仕様に合わせて設定します（標準地図は最大ズーム18）
+    maxZoom: 18,
+    minZoom: 0,
+
+    // 取得したタイル画像をBitmapLayerとして描画する
+    renderSubLayers: props => {
+      const { boundingBox } = props.tile;
+
+      return new BitmapLayer(props, {
+        data: null,
+        image: props.data,
+        bounds: [
+          boundingBox[0][0], // left
+          boundingBox[0][1], // bottom
+          boundingBox[1][0], // right
+          boundingBox[1][1]  // top
+        ]
+      });
+    }
+  });
+
+  
+let base00=[];
+function part_addline(num_latlon0,select_orig_num,select_dest_num){
+    console.log("part")
+    console.log(num_latlon0);
+    let new_leg=[];
+    let json_polyline_part;
+    let json_point_part;
+    let new_leg_part=[];
+    let line_string_part={};
+    line_string_part["type"]="Feature";
+    line_string_part["geometry"]={};
+    line_string_part["geometry"]["type"]="LineString";
+
+    line_string_part["geometry"]["coordinates"]=[];
+    line_string_part["properties"]={};
+    line_string_part["properties"]["distance"]=[];
+    line_string_part["properties"]["traveltime"]=[];
+    line_string_part["properties"]["number"]=[];
+    let point_part={};
+    point_part["type"]="Feature";
+    point_part["geometry"]={};
+    point_part["geometry"]["type"]="MultiPoint";
+    point_part["geometry"]["coordinates"]=[];
+    point_part["properties"]={};
+    point_part["properties"]["number"]=[];
+    console.log(`https://api.mapbox.com/directions/v5/mapbox/driving/${num_latlon0[select_orig_num][2]},${num_latlon0[select_orig_num][1]};${num_latlon0[select_dest_num][2]},${num_latlon0[select_dest_num][1]}`);
+    let leg=await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${num_latlon0[select_orig_num][2]},${num_latlon0[select_orig_num][1]};${num_latlon0[select_dest_num][2]},${num_latlon0[select_dest_num][1]}?geometries=geojson&access_token=pk.eyJ1IjoidGFrLXkiLCJhIjoiY2tnbjFpN3RiMDMwczM3bXNkem9sbm5zZCJ9.TK7AsKUUkR0kicGCyFWBsQ`,{mode:'cors',headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Authorization': 'Bearer test-token',
+                            'Custom-Header': 'test-value'
+                        }}).then(response=>{
+                            if (!response.ok){
+                                throw new Error(`HTTPエラー: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+    console.log(leg);
+    let legs=leg.routes[0].geometry.coordinates;
+    let duration=leg.routes[0].duration;
+    let distance=leg.routes[0].distance;
+    console.log(legs);
+    for (let step=0;step<legs.length;step++){
+        let leg_lat=legs[step][1];
+        let leg_lng=legs[step][0];
+        new_leg.push([leg_lng,leg_lat]);
+        new_leg_part.push([leg_lng,leg_lat]);
+        new_Leg.push([leg_lng,leg_lat]);
+    };
+    let new_polyline=[];
+    for (let step=0;step<legs.length;step++){
+        try {
+            let l=getDistance(new_leg[step][1],new_leg[step][0],new_leg[step+1][1],new_leg[step+1][0]);
+            console.log(l);
+            line_string["properties"]["traveltime"].push(parseInt(duration*l/distance));
+            line_string["properties"]["distance"].push(parseInt(l));   
+            line_string_part["geometry"]["coordinates"]=new_leg_part;
+            line_string_part["properties"]["traveltime"].push(parseInt(duration*l/distance));
+            line_string_part["properties"]["distance"].push(parseInt(l)); 
+            line_string_part["properties"]["number"].push(String(number-1));
+            line_string["properties"]["number"].push(String(number-1));
+            let leg_lat=legs[step][1];
+            let leg_lng=legs[step][0];
+            console.log([leg_lat,leg_lng]);
+            new_polyline.push([leg_lat,leg_lng])
+            let line0_l=[leg_lng,leg_lat];
+            console.log(new_polyline);
+        } catch {
+            line_string["properties"]["traveltime"].push(0);
+            line_string["properties"]["distance"].push(0);  
+            line_string["properties"]["number"].push(String(number-1));
+            line_string_part["geometry"]["coordinates"]=new_leg_part;
+            line_string_part["properties"]["traveltime"].push(0);
+            line_string_part["properties"]["distance"].push(0);  
+            line_string_part["properties"]["number"].push(String(number-1));
+            let leg_lat=legs[step][1];
+            let leg_lng=legs[step][0];
+            console.log([leg_lat,leg_lng]);
+            new_polyline.push([leg_lat,leg_lng]);
+            console.log(new_polyline);
+        };
+        
+    };
+    console.log(line_l);
+    line_string["properties"]["all_traveltime"].push(parseInt(duration));
+    line_string["properties"]["all_distance"].push(parseInt(distance)); 
+    let pl_part=[];
+    let arr_part=[];
+    let pl=[];
+    let arr=[];
+    for (let s=0;s<number-1;s++){
+        arr.push([latlon[s][1],latlon[s][0]]);
+        pl.push(String(s+1));
+        arr_part.push([latlon[s][1],latlon[s][0]]);
+        pl_part.push(String(s+1));
+    };
+    let result_part = [...new Set(arr_part.map(JSON.stringify))].map(JSON.parse);
+    let result = [...new Set(arr.map(JSON.stringify))].map(JSON.parse);
+    const arrayB = Array.from(new Set(pl));
+    console.log(line_string_part);
+    point["geometry"]["coordinates"]=result;
+    point["properties"]["number"]=arrayB;
+    const arrayB_part = Array.from(new Set(pl_part));
+    console.log(num_latlon0[select_orig_num]);
+    point_part["geometry"]["coordinates"].push([num_latlon0[select_orig_num][2],num_latlon0[select_orig_num][1]]);
+    point_part["geometry"]["coordinates"].push([num_latlon0[select_dest_num][2],num_latlon0[select_dest_num][1]]);
+    point_part["properties"]["number"]=arrayB_part;
+    
+    let base0=[select_orig_num,select_dest_num,line,marker_l[select_orig_num],marker_l[select_dest_num]];
+    console.log(base0);
+    base00.push(base0);
+    line_string["geometry"]["coordinates"]=new_Leg; 
+    let json_polyline=JSON.stringify(line_string,null,2);
+    const blob_polyline = new Blob([json_polyline],{type:'application/json'});
+    let point_createFile_polyline=document.getElementById("point_createFile_polyline");
+    point_createFile_polyline.href= window.URL.createObjectURL(blob_polyline);
+    json_polyline_part=JSON.stringify(line_string_part,null,2);
+    let json_point=JSON.stringify(point_part,null,2);
+    const blob_point = new Blob([json_point],{type:'application/json'});
+    let point_createFile_point=document.getElementById("point_createFile_point");
+    point_createFile_point.href= window.URL.createObjectURL(blob_point);
+    json_polyline_part=JSON.stringify(line_string_part,null,2);
+    const blob_polyline_part = new Blob([json_polyline_part],{type:'application/json'});
+    json_point_part=JSON.stringify(point_part,null,2);
+    const blob_point_part = new Blob([json_point_part],{type:'application/json'});
+    let link_dl=document.createElement("href");
+    link_dl.setAttribute("id","link_dl");
+    link_dl.href = window.URL.createObjectURL(blob_polyline_part);
+    let point_dl=document.createElement("href");
+    point_dl.setAttribute("id","point_dl");
+    point_dl.href = window.URL.createObjectURL(blob_point_part);
+
+    let json=JSON.stringify(point,null,2);
+    const blob = new Blob([json],{type:'application/json'});
+
+    
+    var table = document.getElementById("myTable0");
+    var row = table.insertRow(-1);
+    row.style="border: 1px solid black;";
+    var cell1 = row.insertCell(0);
+    var cell2 = row.insertCell(1);
+    var cell3 = row.insertCell(2);
+    
+    var cell4 = row.insertCell(3);
+    var cell5 = row.insertCell(4);
+    var cell6 = row.insertCell(5);
+    var cell7 = row.insertCell(6);
+    
+    cell1.innerHTML = `No.${select_orig_num+1}-No.${select_dest_num+1}`;
+    let l0=line_string["properties"]["all_distance"].length;
+    cell2.innerHTML = `${parseInt(line_string["properties"]["all_traveltime"][l0-1]/60)}分${line_string["properties"]["all_traveltime"][l0-1]%60}秒`;
+    cell3.innerHTML = `${line_string["properties"]["all_distance"][l0-1]/1000}km`;
+    all_t+=line_string["properties"]["all_traveltime"][l0-1];
+    all_d+=line_string["properties"]["all_distance"][l0-1];
+    let add_part=document.createElement("button");
+    add_part.textContent=`リンクNo.${select_orig_num+1}-No.${select_dest_num+1}表示`;
+    add_part.setAttribute("id","add_part0");
+    add_part.setAttribute("value",`${select_dest_num+1}`);
+    console.log(String(number-1));
+    num=number-1;
+    let del_part=document.createElement("button");
+    del_part.textContent=`リンクNo.${select_orig_num+1}-No.${select_dest_num+1}非表示`;
+    del_part.setAttribute("id","del_part0");
+    del_part.setAttribute("value",`${select_dest_num+1}`);
+    del_part.style.color="red";
+    add_part.style.color="blue";
+
+    var line;
+    add_part.addEventListener("click",function(event){
+
+        console.log("___add_part___");
+        const num = event.target.value;
+        console.log(num);
+        console.log(line_l);
+        console.log(base0);
+        let Line_l=base0[2];
+        let point_start=base0[3];
+        let point_end=base0[4];
+        console.log(Line_l);
+        Line_l.addTo(map0);
+        point_start.addTo(map0);
+        point_end.addTo(map0);
+        del_part.style.color="red";
+        add_part.style.color="blue";
+    });
+    del_part.addEventListener("click",function(event){
+        const num = event.target.value;
+        console.log(base0);
+        console.log(num);
+        console.log(line_l);
+        console.log(base0);
+        let Line_l=base0[2];
+        let point_start=base0[3];
+        let point_end=base0[4];
+        map0.removeLayer(Line_l);
+        if (num>1){
+            map0.removeLayer(point_start);
+            map0.removeLayer(point_end);
+        } else {
+            let point_start0=base00[0][3];
+            let point_end0=base00[0][4];
+            let point_start1=base00[1][3];
+            let point_end1=base00[1][4];
+            map0.removeLayer(point_start0);
+            map0.removeLayer(point_end0);
+            map0.removeLayer(point_start1);
+            map0.removeLayer(point_end1);
+        }
+        console.log("removed");
+        del_part.style.color="red";
+        add_part.style.color="blue";
+    })
+    cell4.appendChild(add_part);
+    cell5.appendChild(del_part);
+    console.log("link_dl");
+    console.log(line_string_part);
+    cell6.innerHTML = `<a href="${link_dl.href}" download="リンクNo.${select_orig_num+1}-No.${select_dest_num+1}.geojson">リンクNo.${select_orig_num+1}-No.${select_dest_num+1}ダウンロード</a>`;
+    cell7.innerHTML = `<a href="${point_dl.href}" download="ポイントNo.${select_orig_num+1}-No.${select_dest_num+1}.geojson">ポイントNo.${select_orig_num+1}-No.${select_dest_num+1}ダウンロード</a>`;
+
+    const div1 = document.getElementById("div01");
+    const p4 = document.getElementById("all_t1");
+    const p5 = document.getElementById("all_d1")
+    p4.textContent=`総所要時間:${parseInt(all_t/60)}分${all_t%60}秒`;
+    p5.textContent=`総距離:${all_d/1000}km`;
+    p4.style.color="red";
+    p5.style.color="red";
+};
+let new_Leg=[];
+var line_l=[];
+let line_base=[];
+var line_base0=[];
+let base = [];
+let part_add=document.getElementById("add_part");
+part_add.addEventListener("click",function (){
+    let select_orig=document.getElementById("select_orig");
+    let select_orig_num=select_orig.selectedIndex-1;
+    let select_dest=document.getElementById("select_dest");
+    let select_dest_num=select_dest.selectedIndex-1;
+    console.log(num_latlon0,select_orig_num,select_dest_num);
+    part_addline(num_latlon0,select_orig_num,select_dest_num);
+});
+export default function del_all(){
+    location.reload();
+}
+
+          onClick={(info)=>{
+            console.log(edit);
+            setSelected(prev => {
+              const next = true;
+            latlon.push([info.coordinate[0],info.coordinate[1]]);
+            console.log(latlon.length);
+            if(latlon.length>1){addline(latlon)}
+            return next
+            })
+          }}
