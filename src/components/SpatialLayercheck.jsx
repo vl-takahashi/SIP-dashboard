@@ -273,7 +273,7 @@ const spatiallayerchecked = () => {
                   const kind = e.target.dataset.kind;
                   const detail = JSON.parse(e.target.dataset.detail);
                   console.log("🔍 子チェックボックス:", kind, detail, "checked:", e.target.checked);
-                  setCheck(kind, detail);  // 第3引数なし → 反転動作
+                  setCheck(kind, detail, e.target.checked)
                 }
               }
             };

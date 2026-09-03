@@ -122,12 +122,12 @@ const UpdateLayers = (props) => {
     }, [kind, setLegends]);
   const result = mergeGeoJSON(allFeatures);
   const ridingtimerow = useMemo(()=>{
-    console.log(time,dest,weekday);
     let layers_ridingrow=[]
   let i=0
   let s = dest;
   let s0 = weekday;
   let s1 = parseInt(Math.round(time*100000000)+10);
+    console.log(s1,dest,weekday);
   let s2="direct";
   let s02=parseInt(weekdayflag)-1;
   let directtransit=["direct","transit"];
@@ -176,15 +176,15 @@ const UpdateLayers = (props) => {
                 e.properties["weekday"] = null;
                 e.properties["hour"] = null;
                 e.properties["direct"] = null;
-                e.properties["rideonstop"] = [];
-                e.properties["getoffstop"] = [];
-                e.properties["ridingtime"] = [];
-                e.properties["rideontime"] = [];
-                e.properties["getofftime"] =[];
-                e.properties["exceptionserviceday"] = [];
-                e.properties["route"] = [];
-                e.properties["agency"] = [];
-                e.properties["dimention"] = [];
+                e.properties["directrideonstop"] = [];
+                e.properties["directgetoffstop"] = [];
+                e.properties["directridingtime"] = [];
+                e.properties["directrideontime"] = [];
+                e.properties["directgetofftime"] =[];
+                e.properties["directexceptionserviceday"] = [];
+                e.properties["directroute"] = [];
+                e.properties["directagency"] = [];
+                e.properties["directdimention"] = [];
                 // データをマッチさせて更新
                 
                 for (const i of flag) {
@@ -206,14 +206,14 @@ const UpdateLayers = (props) => {
                     let agency=i["data"].map(u=>u.directagency);
                     let index=flagr0.findIndex(row => row.includes(e.properties["MESH_ID"]));
                     if (index!=-1){
-                      e.properties["rideonstop"]=rideonstop[index];
-                      e.properties["getoffstop"]=getoffstop[index];
-                      e.properties["ridingtime"]=ridingtime[index];
-                      e.properties["rideontime"]=rideontime[index];
-                      e.properties["getofftime"]=getofftime[index];
-                      e.properties["exceptionserviceday"]=exceptionserviceday[index]; // = に修正
-                      e.properties["route"]=route[index]; // = に修正
-                      e.properties["agency"]=agency[index]; // = に修正
+                      e.properties["directrideonstop"]=rideonstop[index];
+                      e.properties["directgetoffstop"]=getoffstop[index];
+                      e.properties["directridingtime"]=ridingtime[index];
+                      e.properties["directrideontime"]=rideontime[index];
+                      e.properties["directgetofftime"]=getofftime[index];
+                      e.properties["directexceptionserviceday"]=exceptionserviceday[index]; // = に修正
+                      e.properties["directroute"]=route[index]; // = に修正
+                      e.properties["directagency"]=agency[index]; // = に修正
                       break; // マッチしたら終了
                     }
                     }
