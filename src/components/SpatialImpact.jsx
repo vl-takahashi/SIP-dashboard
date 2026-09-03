@@ -16,6 +16,25 @@ const SpatialImpact = () => {
     const stopfilesRef = useRef();
     const popmeshfilesRef = useRef();
     const shicodeRef = useRef(null);
+    const [columnNames, setColumnNames] = useState([]);
+    const [selectedShicode, setSelectedShicode] = useState('SHICODE');
+    let data_existed=[];
+    let kindset=[];
+
+    // ファイルの列名を抽出
+    const extractColumnNames = async (file) => {
+      try {
+        const geojson = JSON.parse(await file.text());
+        if (geojson.features && geojson.features.length > 0) {
+          const firstFeature = geojson.features[0];
+          const cols = Object.keys(firstFeature.properties || {});
+          setColumnNames(cols);
+          console.log('Extracted columns:', cols);
+        }
+      } catch (error) {
+        console.error('Error extracting columns:', error);
+      }
+    };
     const agencyRef=useRef(null);
     const dataStore = useDataStore((state) => state);  // ★ ここで dataStore を取得
     const setData =useDataStore((state) => state.setData);
@@ -169,7 +188,7 @@ const SpatialImpact = () => {
 
                   console.log(bus_stop2file);
                   
-                  if (bus_stop2file.length === 0&&popmeshfile.length === 0) {
+                  if (bus_stop2file.length === 0) {
                       
                       console.log('Please select a file first!');
                       return;
@@ -180,7 +199,6 @@ const SpatialImpact = () => {
                     formData.append('stopfl', f); 
               
                   }
-                  let city = cityRef.current.value;
                   let meter = meterRef.current.value;
                   let agency=agencyRef.current.value;
                   formData.append('meter', meter);
@@ -240,6 +258,7 @@ const SpatialImpact = () => {
                 ) : (
                   <TextField label="事業者" inputRef={agencyRef} placeholder="GTFS(zip)選択後に自動候補が出ます。出ない場合は入力してください" inline />
                 )}
+                
                 <TextField label="圏域(m)" inputRef={meterRef} defaultValue="300" size="20" type="number" inline />
                 <PrimaryButton name="submit" id="submit_spatial">空間的圏域算出</PrimaryButton>
             </form>

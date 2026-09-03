@@ -149,7 +149,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
 
       console.log("API レスポンス:", data);
 
-      data_existed = [`${dest_name}着_${routingvalue}`, true, data, agencyRef.current.value];
+      data_existed = [`${dest_name}着_${routingvalue}`, true, data, ""];
       if (transit==="direct"){
         originRef.current.value=="dest"?setDirectDest(dest_name):setDirectOrig(dest_name);
       } else {
@@ -188,6 +188,11 @@ const [agencyOptions, setAgencyOptions] = useState([]);
       metadataLink1.click();
       console.log("JSON ファイルをダウンロード:", metadataLink1.download);
 
+      const d002 = JSON.stringify(data.file, null, 2);
+      const metadataBlob2 = new Blob([d002], { type: 'application/json' });
+      metadataLink2.href = URL.createObjectURL(metadataBlob2);
+      metadataLink2.download = `chronogical_${routingvalue}_${transit}_${data.orig}_${dest_name}.geojson`;
+      metadataLink2.click();
 
       // メモリリーク防止
       setTimeout(() => {
@@ -355,9 +360,11 @@ const [agencyOptions, setAgencyOptions] = useState([]);
                         hint="バス停・時刻表データ(GTFS zip)をドロップまたは選択してください。"
                         onChange={handleGtfsZipChange}
                         inputRef={fileRef}
+                        multiple
                         accept=".zip"
                       />
-                    {agencyOptions.length > 0 ? (
+                    
+                    {/*{agencyOptions.length > 0 ? (
                         <SelectField
                           label="事業者"
                           selectRef={agencyRef}
@@ -370,8 +377,9 @@ const [agencyOptions, setAgencyOptions] = useState([]);
                         </SelectField>
                       ) : (
                         <TextField label="事業者" inputRef={agencyRef} placeholder="GTFS(zip)選択後に自動候補が出ます。出ない場合は入力してください" inline />
-                      )}
+                      )}*/}
                     </div>
+                    
                     <div style={stepBoxStyle}>
                       <FieldLabel>Step3. 便の存在間隔</FieldLabel>
                       <TextField label="〇分刻み" inputRef={interval_hmRef} defaultValue="30" inline/>

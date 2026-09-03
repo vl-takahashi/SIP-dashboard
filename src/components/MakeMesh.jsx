@@ -135,13 +135,13 @@ const MakeMesh = (props) => {
                   <FileField
                     label="人口メッシュ統計データ(GeoJSON)"
                     required
-                    hint="国土数値情報の人口メッシュ統計GeoJSONファイルを選択してください。"
+                    hint="国土数値情報/国勢調査の人口メッシュ統計GeoJSONファイルを選択してください。"
                     inputRef={popmeshfilesRef}
                     accept=".geojson"
                     onChange={handleFileChange}
                   />
                   <SelectField
-                    label="市町村コード列名"
+                    label="市町村コード列名(国土数値情報の場合)"
                     value={selectedShicode}
                     onChange={(e) => setSelectedShicode(e.target.value)}
                     inline

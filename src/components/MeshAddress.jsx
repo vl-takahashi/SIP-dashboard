@@ -35,7 +35,7 @@ const MeshAddress = (props) => {
   let kindset=[];
   const extractColumnNames = async (file) => {
     try {
-      const geojson = JSON.parse(await file.text()).data;
+      const geojson = JSON.parse(await file.text());
       console.log(geojson);
       if (geojson.features && geojson.features.length > 0) {
         const firstFeature = geojson.features[0];
@@ -79,10 +79,9 @@ const MeshAddress = (props) => {
         type: "FeatureCollection",
         features: allFeatures
       };
-      console.log(meshGeoJSON.features);
       const firstFeature = meshGeoJSON.features[0];
       const cols = Object.keys(firstFeature.properties || {});
-      //setColumnNames(cols);
+      setColumnNames(cols);
       console.log('Extracted columns:', cols);
       setPopMeshColumns(cols);
     }

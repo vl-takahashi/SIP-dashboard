@@ -6,7 +6,7 @@ import { ChevronsUp } from "lucide-react";
 import { yakuba } from "./Globalvariable";
 
 // レイヤー種別のキー一覧（読み込み対象の器）
-const REGISTRY_KEYS=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","popmesh","spatialbuffer","lipt","ridingtime_transit","ridingtime_direct_dest","fare","frequency_on_routes","addressed","rosenbus","editline","facility","elevation","road","railline","tram","highwaybus","railstop","busstop"];
+const REGISTRY_KEYS=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","popmesh","spatialbuffer","lipt","ridingtime_transit_dest","ridingtime_direct_dest","fare","frequency_on_routes","addressed","rosenbus","editline","facility","elevation","road","railline","tram","highwaybus","railstop","busstop"];
 export const useLayerflagStore=create((set)=>({
   layerflag:["","",""],
   setLayerflag: (time,dest,weekday) =>
@@ -128,7 +128,7 @@ export const useStore = create((set) => ({
 }));
 
 const REGISTRY_ITEMIDS={"od_visual":[],"odtime_dest_mesh":[],"odtime_orig_mesh":[],"area":[],"area_addressed":[],
-  "popmesh":[],"spatialbuffer":[],"lipt":[],"ridingtime_transit":[],"ridingtime_direct_dest":[],"fare":[],
+  "popmesh":[],"spatialbuffer":[],"lipt":[],"ridingtime_transit_dest":[],"ridingtime_direct_dest":[],"fare":[],
   "frequency_on_routes":[],"rosenbus":[],"editline":[],"facility":[],"elevation":[],
   "road":[],"railline":[],"tram":[],"highwaybus":[],"railstop":[],"busstop":[]};
 
@@ -202,6 +202,16 @@ export const useViewDemandStore=create((set)=>({
 
       return {
         select: newItem,
+        }
+    }),
+}))
+export const useFlagStore=create((set)=>({
+  flag:false,
+  setflag: () =>
+    set((state) => {
+
+      return {
+        flag: !state.flag,
         }
     }),
 }))
@@ -442,7 +452,7 @@ export async function nextJsonData(path) {
   // sa: 「区域名(area)を別途useAreaStoreにも登録する」対象のレイヤー種別
   const sa=["area_addressed"];
   // folderlist: ファイル内のproperty値として受け付けるレイヤー種別の一覧
-  const folderlist=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","addressed","popmesh","rosenbus","busstop","facility","fare_direct","fare_transit","railline","railstop","spatialbuffer","ridingtime_transit","ridingtime_direct_dest","addressed","lipt","frequency_on_routes"];
+  const folderlist=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","addressed","popmesh","rosenbus","busstop","facility","fare_direct","fare_transit","railline","railstop","spatialbuffer","ridingtime_transit_dest","ridingtime_direct_dest","addressed","lipt","frequency_on_routes"];
   const sp=["popmesh"]
   // ★重要：ここで毎回「新しいregistry」を作る。
   // 以前はモジュール変数を直接pushし続けていたため、再読み込みするたびに
@@ -526,6 +536,8 @@ export async function nextJsonData(path) {
 
     // ここで初めてstoreへ反映する（＝新しく作ったfreshRegistryをそのまま渡す）
     useDataStore.getState().setDatafirst(freshRegistry);
+
+    useFlagStore.getState().setflag();
     useBarchartStore.getState().setBar(true);
         
   } catch (error) {
@@ -537,11 +549,11 @@ export async function nextJsonData(path) {
 // path: ディレクトリハンドル（Tauriのファイル選択などから渡される）
 export async function refreshJsonData(path) {
   // sl: 「時刻・曜日情報を別途useDestStore/useWeekdayStoreにも登録する」対象のレイヤー種別
-  const sl=["ridingtime_direct_dest","ridingtime_transit","fare","frequency"];
+  const sl=["ridingtime_direct_dest","ridingtime_transit_dest","fare","frequency"];
   // sa: 「区域名(area)を別途useAreaStoreにも登録する」対象のレイヤー種別
   const sa=["addressed"];
   // folderlist: ファイル内のproperty値として受け付けるレイヤー種別の一覧
-  const folderlist=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","addressed","popmesh","rosenbus","busstop","facility","fare_direct","fare_transit","railline","railstop","spatialbuffer","ridingtime_direct_dest","ridingtime_transit","addressed","lipt","frequency_on_routes"];
+  const folderlist=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","addressed","popmesh","rosenbus","busstop","facility","fare_direct","fare_transit","railline","railstop","spatialbuffer","ridingtime_direct_dest","ridingtime_transit_dest","addressed","lipt","frequency_on_routes"];
   const sp=["popmesh"]
   // ★重要：ここで毎回「新しいregistry」を作る。
   // 以前はモジュール変数を直接pushし続けていたため、再読み込みするたびに
@@ -594,6 +606,7 @@ export async function refreshJsonData(path) {
           // ★4要素目に agency を追加してグルーピング機能を有効化
           freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention]);
         }
+        useFlagStore.getState().setflag();
       }
     } catch (fileError) {
       // 1ファイル分の失敗はここで握って、次のファイルの処理を継続する

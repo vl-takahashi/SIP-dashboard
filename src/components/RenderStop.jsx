@@ -112,20 +112,20 @@ const RenderStop = () => {
 
                               let data_existed = [filename, true, value, agencyValue];
                               setData(data_existed, kindValue);
-
+                              console.log(kindValue)
                               // ZIP に追加
                               let geojsonData = JSON.stringify(value, null, 2);
                               zip.file(`route_${cityRef.current.value}.geojson`, geojsonData);
 
                               let metadata = {
-                                "property": kindOptions0[kindValue],
+                                "property": kindValue,
                                 "data": value,
                                 "detail": filename,
                                 "agency": agencyValue
                               };
                               let jsonData = JSON.stringify(metadata, null, 2);
                               // ★JSON を ZIP に追加
-                              zip.file(`stop_${filename}_metadata.json`, jsonData);
+                              zip.file(`stop_${filename}_${kindOptions0[kindValue]}.json`, jsonData);
 
                               fileCount++;
                             }

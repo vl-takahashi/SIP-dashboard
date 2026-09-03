@@ -108,7 +108,7 @@ const RenderRoute = () => {
                             // ★API レスポンスを ZIP に格納
                             for (const [key, value] of Object.entries(responseData)) {
                               // ★GeoJSON に property フィールドを追加
-                              value.property = kindOptions0[kindValue];
+                              value.property = kindValue;
 
                               let data_existed = [key.split("_")[0], true, value,agencyRef.current.value];
                               setData(data_existed, kindValue);
@@ -118,7 +118,7 @@ const RenderRoute = () => {
                               zip.file(`route_${key}.geojson`, geojsonData);
 
                               let metadata = {
-                                "property": kindOptions0[kindValue],
+                                "property": kindValue,
                                 "data": value,
                                 "detail": key.split("_")[0],
                                 "agency": agencyValue

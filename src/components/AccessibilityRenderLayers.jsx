@@ -4,7 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import Map from 'react-map-gl/mapbox';
 import EditLine from './EditLine';
 import { mapboxAccessToken, mapstyle,initialCheck,vividColors } from "./Globalvariable";
-import {useHoverStore,useLegendStore,useDirectStore,useLayerflagStore,usePopStore,usePopmeshStore,useEditStore,useAreaStore,useViewAccesibilityStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
+import {useHoverStore,useLegendStore,useFlagStore,useDirectStore,useLayerflagStore,usePopStore,usePopmeshStore,useEditStore,useAreaStore,useViewAccesibilityStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
 const UpdateLayers = (props) => {
   const setLegends = useLegendStore((state) => state.setLegends);
   const origdest=useDirectStore((state)=> state.sorig)
@@ -28,7 +28,7 @@ const UpdateLayers = (props) => {
   const area = useAreaStore((state)=>state.area);
   const kind = useKindStore((state)=>state.select);
   const data = useDataStore.getState().data;
-  const flag = useDataStore((state) => state.flag);
+  const flag = useFlagStore((state) => state.flag);
 
   let nw=[132.590317,34.618206];
   let ne=[132.94325324146035,34.61707537902578];
@@ -70,6 +70,56 @@ const UpdateLayers = (props) => {
 
     }
   }
+      // AccessibilityRenderLayers.jsxの最初の方に追加
+
+    const generateLegendData = (kind) => {
+      const legendData = [];
+
+      if (kind === "所要時間") {
+        // 0-60分は10分刻み
+        [0, 10, 20, 30, 40, 50, 60].forEach(minutes => {
+          const seconds = minutes * 60;
+          const r = Math.max(0, Math.min(255, 255 - (seconds / 10)));
+          const g = 255;
+          const b = Math.max(0, Math.min(255, seconds / 10));
+          legendData.push([[Math.round(r), Math.round(g), Math.round(b)], minutes]);
+        });
+        // 60分以上は30分刻み
+        [90, 120].forEach(minutes => {
+          const seconds = minutes * 60;
+          const r = Math.max(0, Math.min(255, 255 - (seconds / 10)));
+          const g = 255;
+          const b = Math.max(0, Math.min(255, seconds / 10));
+          legendData.push([[Math.round(r), Math.round(g), Math.round(b)], minutes]);
+        });
+      } else if (kind === "運賃") {
+        // 運賃：0～1200円を200円刻み
+        [0, 200, 400, 600, 800, 1000, 1200].forEach(fare => {
+          const r = Math.max(0, Math.min(255, Math.floor((fare / 1000) * 135)));
+          const g = Math.max(0, Math.min(255, Math.floor((fare / 1000) * 196)));
+          const b = 255;
+          legendData.push([[r, g, b], fare]);
+        });
+      } else if (kind === "運行本数") {
+        // 運行本数：0～20本を5本刻み
+        [0, 5, 10, 15, 20].forEach(freq => {
+          const r = 0;
+          const g = Math.max(0, Math.min(153, 153 - Math.floor((freq * 153) / 5)));
+          const b = Math.max(0, Math.min(204, 204 - Math.floor((freq * 204) / 5)));
+          legendData.push([[r, g, b], freq]);
+        });
+      }
+
+      return legendData;
+    };
+
+    // kindが変わったときに呼ぶ
+    useEffect(() => {
+      if (kind) {
+        const legendData = generateLegendData(kind);
+        setLegends(legendData);
+      }
+    }, [kind, setLegends]);
   const result = mergeGeoJSON(allFeatures);
   const ridingtimerow = useMemo(()=>{
     console.log(time,dest,weekday);
@@ -93,6 +143,7 @@ const UpdateLayers = (props) => {
         for (const d2 of directtransit){
           for(const d3 of origdest0){
                 if (d === `ridingtime_${d2}_${d3}`) {
+                  console.log(d)
                   i+=1
               const Area =area;
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
@@ -100,8 +151,9 @@ const UpdateLayers = (props) => {
               if(layercheck!="複数レイヤー表示"){
               d1.hasOwnProperty(d)?flagall.push(d1[d][2]):flagall.push(d1[2]);
 
-              
+            
               for (const k of flagall){
+                console.log(dest)
                 if (k.length>=1)
                 {
                   if (k[0]["condition"]["to"]==dest){
@@ -136,22 +188,22 @@ const UpdateLayers = (props) => {
                 // データをマッチさせて更新
                 
                 for (const i of flag) {
-                    
+                  
                   if (i["condition"]["weekday"][s02]==="1"&&i["condition"]["hour"]===parseInt(s1)&&i["condition"]["direct"]==="direct"){
-                    const flagr0 = i["data"].map(item => item.meshid);
+                    const flagr0 = i["data"].map(item => item.directmeshid);
                     e.properties["dimention"] = i["condition"]["dimention"];
                     e.properties["to"] = i["condition"]["to"];
                     e.properties["weekday"] = i["condition"]["weekday"];
                     e.properties["hour"] = i["condition"]["hour"];
                     e.properties["direct"] = i["condition"]["direct"];
-                    let rideonstop=i["data"].map(u=>u.rideonstop);
-                    let getoffstop=i["data"].map(u=>u.getoffstop);
-                    let ridingtime=i["data"].map(u=>u.ridingtime);
-                    let rideontime=i["data"].map(u=>u.rideontime);
-                    let getofftime=i["data"].map(u=>u.getofftime);
-                    let exceptionserviceday=i["data"].map(u=>u.exceptionserviceday);
-                    let route=i["data"].map(u=>u.route);
-                    let agency=i["data"].map(u=>u.agency);
+                    let rideonstop=i["data"].map(u=>u.directrideonstop);
+                    let getoffstop=i["data"].map(u=>u.directgetoffstop);
+                    let ridingtime=i["data"].map(u=>u.directridingtime);
+                    let rideontime=i["data"].map(u=>u.directrideontime);
+                    let getofftime=i["data"].map(u=>u.directgetofftime);
+                    let exceptionserviceday=i["data"].map(u=>u.directexceptionserviceday);
+                    let route=i["data"].map(u=>u.directroute);
+                    let agency=i["data"].map(u=>u.directagency);
                     let index=flagr0.findIndex(row => row.includes(e.properties["MESH_ID"]));
                     if (index!=-1){
                       e.properties["rideonstop"]=rideonstop[index];
@@ -168,8 +220,10 @@ const UpdateLayers = (props) => {
                   }
                 return e;
               })
-              .filter((e)=>{return e.properties["hour"]==s1&&e.properties["ridingtime"] >=60})
-            const data2r = result.features
+              .filter((e)=>{return e.properties["hour"]==s1&&e.properties["directridingtime"] >=60})
+            
+            console.log(data1r);
+              const data2r = result.features
               .map((e) => {
                 // プロパティ初期化
                 e.properties["to"] = null;
@@ -178,21 +232,21 @@ const UpdateLayers = (props) => {
                 e.properties["direct"] = null;
                 e.properties["dest"] = null;
                 e.properties["origdest"] = null;
-                e.properties["rideonstop"] = [];
-                e.properties["getoffstop"] = [];
-                e.properties["ridingtime"] = [];
-                e.properties["rideontime"] = [];
-                e.properties["getofftime"] =[];
-                e.properties["exceptionserviceday"] = [];
-                e.properties["route"] = [];
-                e.properties["agency"] = [];
-                e.properties["dimention"] = [];
+                e.properties["directrideonstop"] = [];
+                e.properties["directgetoffstop"] = [];
+                e.properties["directridingtime"] = [];
+                e.properties["directrideontime"] = [];
+                e.properties["directgetofftime"] =[];
+                e.properties["directexceptionserviceday"] = [];
+                e.properties["directroute"] = [];
+                e.properties["directagency"] = [];
+                e.properties["directdimention"] = [];
                 // データをマッチさせて更新
                 
                 for (const i of flag) {
                     
                   if (i["condition"]["weekday"][s02]==="1"&&i["condition"]["direct"]==="direct"){
-                    const flagr0 = i["data"].map(item => item.meshid);
+                    const flagr0 = i["data"].map(item => item.directmeshid);
                     e.properties["dimention"] = i["condition"]["dimention"];
                     e.properties["to"] = i["condition"]["to"];
                     e.properties["dest"] = i["condition"]["to"];
@@ -200,24 +254,24 @@ const UpdateLayers = (props) => {
                     e.properties["hour"] = i["condition"]["hour"];
                     e.properties["direct"] = d2;
                     e.properties["dest"] = d3;
-                    let rideonstop=i["data"].map(u=>u.rideonstop);
-                    let getoffstop=i["data"].map(u=>u.getoffstop);
-                    let ridingtime=i["data"].map(u=>u.ridingtime);
-                    let rideontime=i["data"].map(u=>u.rideontime);
-                    let getofftime=i["data"].map(u=>u.getofftime);
-                    let exceptionserviceday=i["data"].map(u=>u.exceptionserviceday);
+                    let rideonstop=i["data"].map(u=>u.directrideonstop);
+                    let getoffstop=i["data"].map(u=>u.directgetoffstop);
+                    let ridingtime=i["data"].map(u=>u.directridingtime);
+                    let rideontime=i["data"].map(u=>u.directrideontime);
+                    let getofftime=i["data"].map(u=>u.directgetofftime);
+                    let exceptionserviceday=i["data"].map(u=>u.directexceptionserviceday);
                     let route=i["data"].map(u=>u.route);
                     let agency=i["data"].map(u=>u.agency);
                     let index=flagr0.findIndex(row => row.includes(e.properties["MESH_ID"]));
                     if (index!=-1){
-                      e.properties["rideonstop"]=rideonstop[index];
-                      e.properties["getoffstop"]=getoffstop[index];
-                      e.properties["ridingtime"]=ridingtime[index];
-                      e.properties["rideontime"]=rideontime[index];
-                      e.properties["getofftime"]=getofftime[index];
-                      e.properties["exceptionserviceday"]=exceptionserviceday[index]; // = に修正
-                      e.properties["route"]=route[index]; // = に修正
-                      e.properties["agency"]=agency[index]; // = に修正
+                      e.properties["directrideonstop"]=rideonstop[index];
+                      e.properties["directgetoffstop"]=getoffstop[index];
+                      e.properties["directridingtime"]=ridingtime[index];
+                      e.properties["directrideontime"]=rideontime[index];
+                      e.properties["directgetofftime"]=getofftime[index];
+                      e.properties["directexceptionserviceday"]=exceptionserviceday[index]; // = に修正
+                      e.properties["directroute"]=route[index]; // = に修正
+                      e.properties["directagency"]=agency[index]; // = に修正
                       break; // マッチしたら終了
                     }
                     }
@@ -229,7 +283,6 @@ const UpdateLayers = (props) => {
               type: "FeatureCollection",
               features: data1r
             };
-            
             setRidingtime(data1r);
             setRidingtimeall(data2r);
               let datav=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
@@ -242,19 +295,12 @@ const UpdateLayers = (props) => {
                 type: 'fill',
                 sourceData: filteredGeoJSON,
                 paint: {
-                  'fill-color': [
-                    'case',
-                    ['<', ['get', 'ridingtime'], 60],
-                    'rgba(0, 0, 0, 0)',
-                    ['>=', ['get', 'ridingtime'], 60],
-                    [
-                      'rgb',
-                      ['max', 0, ['min', 255, ['-', 81, ['/', ['to-number', ['get', 'ridingtime']], 10]]]],
-                      ['max', 0, ['min', 255, ['-', 170, ['/', ['to-number', ['get', 'ridingtime']], 10]]]],
-                      ['max', 0, ['min', 255, ['-', 238, ['/', ['to-number', ['get', 'ridingtime']], 10]]]]
-                    ],
-                    'rgba(0, 0, 0, 0)'
-                  ],
+                'fill-color': [
+                  'rgb',
+                  ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]],
+                  255,
+                  ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]
+                ],
                   'fill-opacity': 1
                 },
                 layout: {},
@@ -296,7 +342,7 @@ const UpdateLayers = (props) => {
                 },
                 layout: {
                   'icon-image': 'marker',
-                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.7, 24, 0.7]
+                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.1, 24, 0.1]
                 },
                 paint: {},
                 visible: layercheck === "タイムスライダー"&&dest0==dest?true:false,
@@ -332,7 +378,7 @@ const UpdateLayers = (props) => {
               };
               layers_ridingrow.push(layertextpoint);
 
-            } else if (d === "ridingtime_transit") {
+            } else if (d === "ridingtime_transit_dest") {
               const Area =area;
               let s = dest;
               let s0 = weekday;
@@ -361,7 +407,6 @@ const UpdateLayers = (props) => {
             } else{
               flag=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
             }
-            console.log(flag);
               const data1b = result.features
             .map((e) => {
               // プロパティ初期化
@@ -379,27 +424,27 @@ const UpdateLayers = (props) => {
               e.properties["beforeagency"] = [];
               e.properties["beforedimention"] = [];
               for (const i1 of flag) {
+                let obj=i1["data"];
                 
-                for(let l in i1["data"]){
+                for(let l in obj){
                   let flagb=[];
-                  for (let l1 in i1["data"][l]){
-                    for (let k in i1["data"][l][l1].beforemeshid){
-                      flagb.push(i1["data"][l][l1].beforemeshid[k])
+                  for (let l1 in Object.values(obj)[l]){
+                    for (let k in Object.values(obj)[l][l1].beforemeshid){
+                      flagb.push(Object.values(obj)[l][l1].beforemeshid[k])
                       }
                   }
-                  let rideonstop=i1["data"].map(u=>u.beforerideonstop);
-                  let getoffstop=i1["data"].map(u=>u.beforegetoffstop);
-                  let ridingtime=i1["data"].map(u=>u.beforeridingtime);
-                  let rideontime=i1["data"].map(u=>u.beforerideontime);
-                  let getofftime=i1["data"].map(u=>u.beforegetofftime);
-                  let exceptionserviceday=i1["data"].map(u=>u.beforeexceptionserviceday);
-                  let route=i1["data"].map(u=>u.route);
-                  let agency=i1["data"].map(u=>u.agency);
-                  let flag0b=flagb
+                  let rideonstop=Object.values(obj)[0].map(u=>u.beforerideonstop);
+                  let getoffstop=Object.values(obj)[0].map(u=>u.beforegetoffstop);
+                  let ridingtime=Object.values(obj)[0].map(u=>u.beforeridingtime);
+                  let rideontime=Object.values(obj)[0].map(u=>u.beforerideontime);
+                  let getofftime=Object.values(obj)[0].map(u=>u.beforegetofftime);
+                  let exceptionserviceday=Object.values(obj)[0].map(u=>u.beforeexceptionserviceday);
+                  let route=Object.values(obj)[0].map(u=>u.route);
+                  let agency=Object.values(obj)[0].map(u=>u.agency);
+                  let flag0b=flagb;
                   let index=flag0b.findIndex(row => row.includes(e.properties["MESH_ID"]));
                     
                   if (index!=-1){
-                    if (flag0b.has(e.properties["MESH_ID"])) {
                       e.properties["to"] = i1["condition"]["to"];
                       e.properties["weekday"] = i1["condition"]["weekday"];
                       e.properties["hour"] = i1["condition"]["hour"];
@@ -412,7 +457,6 @@ const UpdateLayers = (props) => {
                       e.properties["beforeexceptionserviceday"]=exceptionserviceday[index]; // = に修正
                       e.properties["beforeroute"]=route[index]; // = に修正
                       e.properties["beforeagency"]=agency[index]; // = に修正
-                    }
                   }  
                 }    
                 
@@ -442,27 +486,26 @@ const UpdateLayers = (props) => {
               e.properties["afteragency"] = [];
               e.properties["afterdimention"] = [];
               for (const i1 of flag) {
-                
-                for(let l in i1["data"]){
+                let obj=i1["data"];
+                for(let l in Object.values(obj)){
                   let flagb=[];
-                  for (let l1 in i1["data"][l]){
-                    for (let k in i1["data"][l][l1].aftermeshid){
-                      flagb.push(i1["data"][l][l1].aftermeshid[k])
+                  for (let l1 in Object.values(obj)[l]){
+                    for (let k in Object.values(obj)[l][l1].aftermeshid){
+                      flagb.push(Object.values(obj)[l][l1].aftermeshid[k])
                       }
                   }
-                  let rideonstop=i1["data"].map(u=>u.afterrideonstop);
-                  let getoffstop=i1["data"].map(u=>u.aftergetoffstop);
-                  let ridingtime=i1["data"].map(u=>u.afterridingtime);
-                  let rideontime=i1["data"].map(u=>u.afterrideontime);
-                  let getofftime=i1["data"].map(u=>u.aftergetofftime);
-                  let exceptionserviceday=i1["data"].map(u=>u.afterexceptionserviceday);
-                  let route=i1["data"].map(u=>u.route);
-                  let agency=i1["data"].map(u=>u.agency);
+                  let rideonstop=Object.values(obj).map(u=>u.afterrideonstop);
+                  let getoffstop=Object.values(obj).map(u=>u.aftergetoffstop);
+                  let ridingtime=Object.values(obj).map(u=>u.afterridingtime);
+                  let rideontime=Object.values(obj).map(u=>u.afterrideontime);
+                  let getofftime=Object.values(obj).map(u=>u.aftergetofftime);
+                  let exceptionserviceday=Object.values(obj).map(u=>u.afterexceptionserviceday);
+                  let route=Object.values(obj).map(u=>u.route);
+                  let agency=Object.values(obj).map(u=>u.agency);
                   let flag0b=flagb
                   let index=flag0b.findIndex(row => row.includes(e.properties["MESH_ID"]));
                     
                   if (index!=-1){
-                    if (flag0b.has(e.properties["MESH_ID"])) {
                       e.properties["to"] = i1["condition"]["to"];
                       e.properties["weekday"] = i1["condition"]["weekday"];
                       e.properties["hour"] = i1["condition"]["hour"];
@@ -475,7 +518,6 @@ const UpdateLayers = (props) => {
                       e.properties["afterexceptionserviceday"]=exceptionserviceday[index]; // = に修正
                       e.properties["afterroute"]=route[index]; // = に修正
                       e.properties["afteragency"]=agency[index]; // = に修正
-                    }
                   }  
                 }    
                 
@@ -489,7 +531,6 @@ const UpdateLayers = (props) => {
               type: "FeatureCollection",
               features: data1a
             };
-            console.log(beforeGeoJSON);
             //setRidingtime(directGeoJSON);
               const bisv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
               const bisLayer = layercheck === "複数レイヤー表示"?true:false;
@@ -504,12 +545,12 @@ const UpdateLayers = (props) => {
                 paint: {
                   'fill-color': [
                     'case',
-                    ['>=', ['get', 'ridingtime'], 60],
+                    ['>=', ['get', 'beforeridingtime'], 60],
                     [
                       'rgb',
-                      ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'ridingtime']], 10]]]],
+                      ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'beforeridingtime']], 10]]]],
                       255,
-                      ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'ridingtime']], 10]]]
+                      ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'beforeridingtime']], 10]]]
                     ],
                     'rgba(0, 0, 0, 0)'
                   ],
@@ -532,7 +573,7 @@ const UpdateLayers = (props) => {
                   }
                 }
               };
-              layers_row.push(blayer);
+              //layers_ridingrow.push(blayer);
             const data1d = result.features
             .map((e) => {
               // プロパティ初期化
@@ -550,27 +591,26 @@ const UpdateLayers = (props) => {
               e.properties["directagency"] = [];
               e.properties["directdimention"] = [];
               for (const i1 of flag) {
-                
-                for(let l in i1["data"]){
+                let obj=i1["data"];
+                for(let l in Object.values(obj)){
                   let flagb=[];
-                  for (let l1 in i1["data"][l]){
-                    for (let k in i1["data"][l][l1].directmeshid){
-                      flagb.push(i1["data"][l][l1].directmeshid[k])
+                  for (let l1 in Object.values(obj)[l]){
+                    for (let k in Object.values(obj)[l][l1].directmeshid){
+                      flagb.push(Object.values(obj)[l][l1].directmeshid[k])
                       }
                   }
-                  let rideonstop=i1["data"].map(u=>u.rideonstop);
-                  let getoffstop=i1["data"].map(u=>u.getoffstop);
-                  let ridingtime=i1["data"].map(u=>u.ridingtime);
-                  let rideontime=i1["data"].map(u=>u.rideontime);
-                  let getofftime=i1["data"].map(u=>u.getofftime);
-                  let exceptionserviceday=i1["data"].map(u=>u.exceptionserviceday);
-                  let route=i1["data"].map(u=>u.route);
-                  let agency=i1["data"].map(u=>u.agency);
+                  let rideonstop=Object.values(obj).map(u=>u.rideonstop);
+                  let getoffstop=Object.values(obj).map(u=>u.getoffstop);
+                  let ridingtime=Object.values(obj).map(u=>u.ridingtime);
+                  let rideontime=Object.values(obj).map(u=>u.rideontime);
+                  let getofftime=Object.values(obj).map(u=>u.getofftime);
+                  let exceptionserviceday=Object.values(obj).map(u=>u.exceptionserviceday);
+                  let route=Object.values(obj).map(u=>u.route);
+                  let agency=Object.values(obj).map(u=>u.agency);
                   let flag0b=flagb
                   let index=flag0b.findIndex(row => row.includes(e.properties["MESH_ID"]));
                     
                   if (index!=-1){
-                    if (flag0b.has(e.properties["MESH_ID"])) {
                       e.properties["to"] = i1["condition"]["to"];
                       e.properties["weekday"] = i1["condition"]["weekday"];
                       e.properties["hour"] = i1["condition"]["hour"];
@@ -583,7 +623,7 @@ const UpdateLayers = (props) => {
                       e.properties["directexceptionserviceday"]=exceptionserviceday[index]; // = に修正
                       e.properties["directroute"]=route[index]; // = に修正
                       e.properties["directagency"]=agency[index]; // = に修正
-                    }
+  
                   }  
                 }    
                 
@@ -597,7 +637,11 @@ const UpdateLayers = (props) => {
               type: "FeatureCollection",
               features: data1d
             };
-            setRidingtime(directGeoJSON);
+            const mergedGeoJSON = {
+              type: "FeatureCollection",
+              features: [...directGeoJSON.features, ...beforeGeoJSON.features]
+            };
+            setRidingtime(mergedGeoJSON);
               const isv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
               const isLayer = layercheck === "複数レイヤー表示"?true:false;
               const isActive = kind === "所要時間"?true:false;
@@ -634,7 +678,7 @@ const UpdateLayers = (props) => {
                   }
                 }
               };
-              layers_row.push(layer);
+              //layers_ridingrow.push(layer);
 
 
               const point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
@@ -657,7 +701,7 @@ const UpdateLayers = (props) => {
                 },
                 layout: {
                   'icon-image': 'marker',
-                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.7, 24, 0.7]
+                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.1, 24, 0.1]
                 },
                 paint: {},
                 visible: layercheck === "複数レイヤー表示"?isv0:false,
@@ -665,7 +709,7 @@ const UpdateLayers = (props) => {
                 clickHandler: (feature) => {}
               };
               console.log(layerpoint);
-              layers_row.push(layerpoint);
+              layers_ridingrow.push(layerpoint);
               const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i*5+100}`;
               const isv1=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
               const layertextpoint={
@@ -693,7 +737,7 @@ const UpdateLayers = (props) => {
                 clickHandler: (feature) => {}
               };
               console.log(layertextpoint);
-              layers_row.push(layertextpoint);
+              //layers_ridingrow.push(layertextpoint);
 
             } else if (d === "fare") {
               let e=parseInt(Math.round(time*100000000)+11);
@@ -737,7 +781,7 @@ const UpdateLayers = (props) => {
                   }
                 }
               };
-              layers_row.push(layer);}
+              layers_ridingrow.push(layer);}
           }}
         }
       }
@@ -937,7 +981,7 @@ const UpdateLayers = (props) => {
             // データをマッチさせて更新
             
             for (const i of flag) {
-              let flagr=i["data"].flatMap(u=>u.meshid);
+              let flagr=i["data"].flatMap(u=>u.directmeshid);
               let flag0=new Set(flagr);
                 if(layercheck==="複数レイヤー表示"){
                   if (flag0.has(e.properties["MESH_ID"])) {
@@ -972,18 +1016,18 @@ const UpdateLayers = (props) => {
             paint: {
               'fill-color': [
                 'case',
-                ['<', ['get', 'ridingtime'], 60],
+                ['<', ['get', 'directridingtime'], 60],
                 'rgba(0, 0, 0, 0)',
-                ['>=', ['get', 'ridingtime'], 60],
+                ['>=', ['get', 'directridingtime'], 60],
                 [
                   'rgb',
-                  ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'ridingtime']], 10]]]],
+                  ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]],
                   255,
-                  ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'ridingtime']], 10]]]
+                  ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]
                 ],
                 'rgba(0, 0, 0, 0)'
               ],
-              'fill-opacity': ['case', ['<', ['get', 'ridingtime'], 60], 0, 1]
+              'fill-opacity': ['case', ['<', ['get', 'directridingtime'], 60], 0, 1]
             },
             layout: {},
             visible: layercheck === "複数レイヤー表示"?isv:false,
@@ -1023,7 +1067,7 @@ const UpdateLayers = (props) => {
             },
             layout: {
               'icon-image': 'marker',
-              'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.7, 24, 0.7]
+              'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.1, 24, 0.1]
             },
             paint: {},
             visible: layercheck === "複数レイヤー表示"?isv0:false,
@@ -1161,11 +1205,11 @@ const UpdateLayers = (props) => {
               e.properties["dimention"] = [];
               for (const i1 of flag) {
                 
-                for(let l in i1["data"]){
+                for(let l in Object.values(obj)){
                   let flagb=[];
-                  for (let l1 in i1["data"][l]){
-                    for (let k in i1["data"][l][l1].beforemeshid){
-                      flagb.push(i1["data"][l][l1].beforemeshid[k])
+                  for (let l1 in Object.values(obj)[l]){
+                    for (let k in Object.values(obj)[l][l1].beforemeshid){
+                      flagb.push(Object.values(obj)[l][l1].beforemeshid[k])
                       }
                   } 
                   let flag0b=new Set(flagb)  
@@ -1241,11 +1285,11 @@ const UpdateLayers = (props) => {
               e.properties["dimention"] = [];
               for (const i1 of flag) {
                 
-                for(let l in i1["data"]){
+                for(let l in Object.values(obj)){
                   let flagb=[];
-                  for (let l1 in i1["data"][l]){
-                    for (let k in i1["data"][l][l1].directmeshid){
-                      flagb.push(i1["data"][l][l1].directmeshid[k])
+                  for (let l1 in Object.values(obj)[l]){
+                    for (let k in Object.values(obj)[l][l1].directmeshid){
+                      flagb.push(Object.values(obj)[l][l1].directmeshid[k])
                       }
                   } 
                   let flag0b=new Set(flagb)  
@@ -1329,7 +1373,7 @@ const UpdateLayers = (props) => {
                 },
                 layout: {
                   'icon-image': 'marker',
-                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.7, 24, 0.7]
+                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.1, 24, 0.1]
                 },
                 paint: {},
                 visible: layercheck === "複数レイヤー表示"?isv0:false,
@@ -1837,7 +1881,7 @@ const UpdateLayers = (props) => {
     }
     console.log("🎬 layers_row count:", layers_row.length, "railline layers:", layers_row.filter(l => l.id && l.id.includes('railline')).length);
     return layers_row;
-  }, [data,kind,hover,address,area,layercheck,pop,dimention]);
+  }, [data,kind,hover,address,area,layercheck,pop,dimention,flag]);
   // 追加：layers_row が更新されたことを確認
   useEffect(() => {
     console.log("🎬 layers_row count: ? railline layers: ?");
@@ -1894,6 +1938,7 @@ const UpdateLayers = (props) => {
           id: layerConfig.id,
           type: layerConfig.type,
           source: sourceId,
+          glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",  // ← これ追加
           paint: layerConfig.paint,
           layout: layerConfig.layout
         }, beforeId);
@@ -1930,7 +1975,7 @@ const UpdateLayers = (props) => {
         }
       }
     });
-  }, [layers, ridingtimerow, hover]);
+  }, [layers, ridingtimerow, hover,data,pop]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>

@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import {createContext, useContext,useState,useEffect,useRef,useMemo,useCallback} from 'react'
 import Map from 'react-map-gl/mapbox';
 import ExistedData from "./ExistedData";
-import Ledends from "./Legends";
+import Legends from "./Legends";
 // If using with mapbox-gl v1:
 // import Map from 'react-map-gl/mapbox-legacy';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -109,7 +109,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const [directcurrent,setdirectcurrent]=useState("直通");
   const [weekdaycurrent,setweekdaycurrent]=useState("未選択");
   const [layercheckcurrent,setlayercheckcurrent]=useState("複数レイヤー表示");
-  const [kindcurrent,setkindcurrent]=useState("未選択");
+  const [kindcurrent,setkindcurrent]=useState("所要時間");
   const [areacurrent,setareacurrent]=useState("未選択");
   const [selectedCity,setSelectedCity]=useState("東京都新宿区");
   const [searchText,setSearchText]=useState("");
@@ -453,7 +453,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
 
 
                         {/* 左上：レイヤー切替パネル。タブレットでは幅を絞り、セレクトの高さをタップしやすいサイズに保つ。
-                            maxWidthは常に指定し、凡例（Ledends）がタイムスライダー操作で文字幅・行数を変えても
+                            maxWidthは常に指定し、凡例（Legends）がタイムスライダー操作で文字幅・行数を変えても
                             白背景パネルの外に飛び出さないようにする。 */}
                         <div style={floatingStyle({ top: isTablet ? 8 : 100, left: isTablet ? 8 : 16, minWidth: isTablet ? 150 : 180, maxWidth: isTablet ? '45vw' : 260 })}>
                           <select
@@ -479,8 +479,10 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             <h3 style={{margin:'0 0 4px'}}>レイヤー</h3>
                             <SpatialLayercheck checked={check}/>
                           </div>}
-                          {layercheckcurrent==="タイムスライダー"&&
-                          <div style={{ marginTop: 8, maxWidth: '100%', overflow: 'hidden' }}><Ledends selectkind={kindcurrent}/></div>}
+                            {layercheckcurrent==="タイムスライダー"&&
+                            <div style={{ marginTop: 8, maxHeight: isTablet ? '50vh' : undefined, overflowY: isTablet ? 'auto' : undefined }}>
+                            <Legends selectkind={kindcurrent}/>
+                            </div>}
                         </div>
                       </div>
                       {layercheckcurrent==="タイムスライダー"&&
