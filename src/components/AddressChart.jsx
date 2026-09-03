@@ -23,7 +23,7 @@ ChartJS.register(
 
 export default function AddressChart(props) {
    const [submit,submitbutton]=useState(null);
-  const hintTextStyle = { margin: '4px 0 8px', fontSize: 12, color: COLORS.subtext,color:"red" };
+  const hintTextStyle = { margin: '4px 0 8px', fontSize: 12, color: "red" };
   const origref=useRef();
   const sixref=useRef();
   const sevenref=useRef();
