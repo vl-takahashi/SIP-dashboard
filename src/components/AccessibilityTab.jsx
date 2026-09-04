@@ -62,7 +62,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const directorig=useOrigStore((state)=> state.directorig);
   const transitorig=useOrigStore((state)=> state.transitorig);
   const weekday=useWeekdayStore((state)=> state.weekday);
-  const direct=["直通","乗継"];
+  const direct={"直通":"direct","乗継":"transit"};
   const selectDirect=useDirectStore((state)=> state.selectDirect);
   const layercheck=useLayercheckStore((state)=> state.layercheck);
   const setlayercheck=useLayercheckStore((state)=> state.selectLayercheck);
@@ -516,8 +516,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               >
                                 <option>直通/乗り継ぎ</option>
 
-                                {direct.map((item, index) => (
-                                  <option key={index} value={item}>
+                                {Object.keys(direct).map((item) => (
+                                  <option key={item} value={direct[item]}>
                                     {item}
                                   </option>
                                 ))}
@@ -531,7 +531,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                 <input type="radio" value="orig" ref={destselectref}
                                 onChange={(e) => {selectorigdestcurrent(e.target.value),setorigdestcurrent(e.target.value),destselectref.current.checked?!destselectref.current.checked:!destselectref.current.checked,destselectref.current.checked?origselectref.current.checked=false:origselectref.current.checked=true}}/>
                                 <label>出発地</label>
-                              {origdestcurrent==="dest"&&directcurrent=="直通"&&<div><select
+                              {origdestcurrent==="dest"&&directcurrent=="direct"&&<div><select
                                 value={destcurrent}
                                 onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
                                 ref={selectdestref}
@@ -547,7 +547,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                 ))}
                               </select>
                               <br /></div>}
-                              {origdestcurrent==="dest"&&directcurrent=="乗継"&&<div><select
+                              {origdestcurrent==="dest"&&directcurrent=="transit"&&<div><select
                                 value={destcurrent}
                                 onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
                                 ref={selectdestref}
@@ -563,7 +563,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                 ))}
                               </select>
                               <br /></div>}
-                              {origdestcurrent==="orig"&&directcurrent=="直通"&&<div>
+                              {origdestcurrent==="orig"&&directcurrent=="direct"&&<div>
                               <select
                                 value={origcurrent}
                                 onChange={(e) => {selectOrig(e.target.value);setorigcurrent(e.target.value)}}
@@ -581,7 +581,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               </select>
                               <br />
                                 </div>}
-                              {origdestcurrent==="orig"&&directcurrent=="乗継"&&<div><select
+                              {origdestcurrent==="orig"&&directcurrent=="transit"&&<div><select
                                 value={destcurrent}
                                 onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
                                 ref={selectdestref}

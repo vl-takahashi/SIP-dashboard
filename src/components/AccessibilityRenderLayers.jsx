@@ -65,10 +65,8 @@ const UpdateLayers = (props) => {
   });
   let allFeatures =[];
   for (let j in popmesh){
-    if (popmesh[j][4]===dimention){
     allFeatures.push(popmesh[j][2])
 
-    }
   }
       // AccessibilityRenderLayers.jsxの最初の方に追加
 
@@ -142,7 +140,7 @@ const UpdateLayers = (props) => {
       for (const [key, d1] of Object.entries(data[d])){
         for (const d2 of directtransit){
           for(const d3 of origdest0){
-                if (d === `ridingtime_${d2}_${d3}`) {
+                if (d === `ridingtime_direct_${d3}`) {
                   console.log(d)
                   i+=1
               const Area =area;
@@ -169,122 +167,99 @@ const UpdateLayers = (props) => {
             } else{
               d1.hasOwnProperty(d)?flag=d1[d][2]:flag=d1[2];
             }
-              const data1r = result.features
-              .map((e) => {
-                // プロパティ初期化
-                e.properties["to"] = null;
-                e.properties["weekday"] = null;
-                e.properties["hour"] = null;
-                e.properties["direct"] = null;
-                e.properties["directrideonstop"] = [];
-                e.properties["directgetoffstop"] = [];
-                e.properties["directridingtime"] = [];
-                e.properties["directrideontime"] = [];
-                e.properties["directgetofftime"] =[];
-                e.properties["directexceptionserviceday"] = [];
-                e.properties["directroute"] = [];
-                e.properties["directagency"] = [];
-                e.properties["directdimention"] = [];
-                // データをマッチさせて更新
+            console.log(direct)
+            const data1r = (() => {
+            // ステップ1: flagデータをオブジェクトで事前処理
+            let flagMap = {};
+            let key="";
+            for (const i of flag) {
+              if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
+                  i["condition"]["direct"] === "direct") {
                 
-                for (const i of flag) {
-                  
-                  if (i["condition"]["weekday"][s02]==="1"&&i["condition"]["hour"]===parseInt(s1)&&i["condition"]["direct"]==="direct"){
-                    const flagr0 = i["data"].map(item => item.directmeshid);
-                    e.properties["dimention"] = i["condition"]["dimention"];
-                    e.properties["to"] = i["condition"]["to"];
-                    e.properties["weekday"] = i["condition"]["weekday"];
-                    e.properties["hour"] = i["condition"]["hour"];
-                    e.properties["direct"] = i["condition"]["direct"];
-                    let rideonstop=i["data"].map(u=>u.directrideonstop);
-                    let getoffstop=i["data"].map(u=>u.directgetoffstop);
-                    let ridingtime=i["data"].map(u=>u.directridingtime);
-                    let rideontime=i["data"].map(u=>u.directrideontime);
-                    let getofftime=i["data"].map(u=>u.directgetofftime);
-                    let exceptionserviceday=i["data"].map(u=>u.directexceptionserviceday);
-                    let route=i["data"].map(u=>u.directroute);
-                    let agency=i["data"].map(u=>u.directagency);
-                    let index=flagr0.findIndex(row => row.includes(e.properties["MESH_ID"]));
-                    if (index!=-1){
-                      e.properties["directrideonstop"]=rideonstop[index];
-                      e.properties["directgetoffstop"]=getoffstop[index];
-                      e.properties["directridingtime"]=ridingtime[index];
-                      e.properties["directrideontime"]=rideontime[index];
-                      e.properties["directgetofftime"]=getofftime[index];
-                      e.properties["directexceptionserviceday"]=exceptionserviceday[index]; // = に修正
-                      e.properties["directroute"]=route[index]; // = に修正
-                      e.properties["directagency"]=agency[index]; // = に修正
-                      break; // マッチしたら終了
-                    }
-                    }
+                key = `${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`;
+                
+                // meshIdMap を作成
+                const meshIdMap = {};
+                i["data"].forEach((item, idx) => {
+                  if (item.directmeshid && Array.isArray(item.directmeshid)) {
+                    item.directmeshid.forEach(meshId => {
+                      meshIdMap[meshId] = idx;
+                    });
                   }
-                return e;
-              })
-              .filter((e)=>{return e.properties["hour"]==s1&&e.properties["directridingtime"] >=60})
-            
-            console.log(data1r);
-              const data2r = result.features
-              .map((e) => {
+                });
+                // 複数データに対応：配列にする
+                if (!flagMap[key]) {
+                  flagMap[key] = [];
+                }
+                flagMap[key].push({
+                  condition: i["condition"],
+                  data: i["data"],
+                  meshIdMap: meshIdMap
+                });
+              }
+            }
+            // ステップ2: result.features を処理
+            // 使用時：配列から全データを取得
+            return result.features
+              .map((e) => {;
+                let key0=key;
+                const flagDataArray = flagMap[key0];  // 配列
                 // プロパティ初期化
                 e.properties["to"] = null;
                 e.properties["weekday"] = null;
                 e.properties["hour"] = null;
                 e.properties["direct"] = null;
-                e.properties["dest"] = null;
-                e.properties["origdest"] = null;
-                e.properties["directrideonstop"] = [];
-                e.properties["directgetoffstop"] = [];
-                e.properties["directridingtime"] = [];
-                e.properties["directrideontime"] = [];
+                e.properties["directrideonstop"] = null;
+                e.properties["directgetoffstop"] = null;
+                e.properties["directridingtime"] = null;
+                e.properties["directrideontime"] = null;
                 e.properties["directgetofftime"] =[];
-                e.properties["directexceptionserviceday"] = [];
-                e.properties["directroute"] = [];
-                e.properties["directagency"] = [];
-                e.properties["directdimention"] = [];
-                // データをマッチさせて更新
-                
-                for (const i of flag) {
+                e.properties["directexceptionserviceday"] = null;
+                e.properties["directroute"] = null;
+                e.properties["directagency"] = null;
+                e.properties["directdimention"] = null;
+                if (flagDataArray) {
+                  // 配列の全データを検索
+                  for (const flagData of flagDataArray) {
+                    const idx = flagData.meshIdMap[e.properties["KEY_CODE"]];
                     
-                  if (i["condition"]["weekday"][s02]==="1"&&i["condition"]["direct"]==="direct"){
-                    const flagr0 = i["data"].map(item => item.directmeshid);
-                    e.properties["dimention"] = i["condition"]["dimention"];
-                    e.properties["to"] = i["condition"]["to"];
-                    e.properties["dest"] = i["condition"]["to"];
-                    e.properties["weekday"] = i["condition"]["weekday"];
-                    e.properties["hour"] = i["condition"]["hour"];
-                    e.properties["direct"] = d2;
-                    e.properties["dest"] = d3;
-                    let rideonstop=i["data"].map(u=>u.directrideonstop);
-                    let getoffstop=i["data"].map(u=>u.directgetoffstop);
-                    let ridingtime=i["data"].map(u=>u.directridingtime);
-                    let rideontime=i["data"].map(u=>u.directrideontime);
-                    let getofftime=i["data"].map(u=>u.directgetofftime);
-                    let exceptionserviceday=i["data"].map(u=>u.directexceptionserviceday);
-                    let route=i["data"].map(u=>u.route);
-                    let agency=i["data"].map(u=>u.agency);
-                    let index=flagr0.findIndex(row => row.includes(e.properties["MESH_ID"]));
-                    if (index!=-1){
-                      e.properties["directrideonstop"]=rideonstop[index];
-                      e.properties["directgetoffstop"]=getoffstop[index];
-                      e.properties["directridingtime"]=ridingtime[index];
-                      e.properties["directrideontime"]=rideontime[index];
-                      e.properties["directgetofftime"]=getofftime[index];
-                      e.properties["directexceptionserviceday"]=exceptionserviceday[index]; // = に修正
-                      e.properties["directroute"]=route[index]; // = に修正
-                      e.properties["directagency"]=agency[index]; // = に修正
-                      break; // マッチしたら終了
-                    }
+                    if (idx !== undefined) {
+                    const item = flagData.data[idx];
+                    e.properties["to"] = flagData.condition["to"];
+                    e.properties["weekday"] = flagData.condition["weekday"];
+                    e.properties["hour"] = flagData.condition["hour"];
+                    e.properties["direct"] = flagData.condition["direct"];
+                    e.properties["dimention"] = flagData.condition["dimention"];
+                    e.properties["directrideonstop"] = item.directrideonstop;
+                    e.properties["directgetoffstop"] = item.directgetoffstop;
+                    e.properties["directridingtime"] = item.directridingtime;
+                    e.properties["directrideontime"] = item.directrideontime;
+                    e.properties["directgetofftime"] = item.directgetofftime;
+                    e.properties["directexceptionserviceday"] = item.directexceptionserviceday;
+                    e.properties["directroute"] = item.directroute;
+                    e.properties["directagency"] = item.directagency;
+                      // ... その他のプロパティ
+                      break;  // 最初にマッチしたら終了
                     }
                   }
+                }
+
                 return e;
               })
+              .filter((e) => {
+                return e.properties["hour"] == parseInt(s1) && 
+                      e.properties["directridingtime"] >= 60;
+              });
+          })();
+            console.log(data1r);
+              
               //&&bounds[0] <= x1 && x2 <= bounds[2] && bounds[1] <= y1 && y2 <= bounds[3]
             const filteredGeoJSON = {
               type: "FeatureCollection",
               features: data1r
             };
             setRidingtime(data1r);
-            setRidingtimeall(data2r);
+            //setRidingtimeall(data2r);
               let datav=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
               const isActive =layercheck === "タイムスライダー"?true:datav;
               const dest00=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
@@ -378,7 +353,7 @@ const UpdateLayers = (props) => {
               };
               layers_ridingrow.push(layertextpoint);
 
-            } else if (d === "ridingtime_transit_dest") {
+            } else if (d === `ridingtime_transit_${d3}`) {
               const Area =area;
               let s = dest;
               let s0 = weekday;
@@ -407,125 +382,176 @@ const UpdateLayers = (props) => {
             } else{
               flag=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
             }
-              const data1b = result.features
-            .map((e) => {
-              // プロパティ初期化
-              e.properties["to"] = null;
-              e.properties["weekday"] = null;
-              e.properties["hour"] = null;
-              e.properties["direct"] = null;
-              e.properties["beforerideonstop"] = [];
-              e.properties["beforegetoffstop"] = [];
-              e.properties["beforeridingtime"] = [];
-              e.properties["beforerideontime"] = [];
-              e.properties["beforegetofftime"] =[];
-              e.properties["beforeexceptionserviceday"] = [];
-              e.properties["beforeroute"] = [];
-              e.properties["beforeagency"] = [];
-              e.properties["beforedimention"] = [];
-              for (const i1 of flag) {
-                let obj=i1["data"];
-                
-                for(let l in obj){
-                  let flagb=[];
-                  for (let l1 in Object.values(obj)[l]){
-                    for (let k in Object.values(obj)[l][l1].beforemeshid){
-                      flagb.push(Object.values(obj)[l][l1].beforemeshid[k])
-                      }
+            const data1b= (() => {
+              // ステップ1: flagデータをオブジェクトで事前処理
+              let flagMap = {};
+              let key="";
+              for (const i of flag) {
+                if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
+                    i["condition"]["direct"] === "before") {
+                  
+                  key = `${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`;
+                  
+                  // meshIdMap を作成
+                  const meshIdMap = {};
+                  i["data"].forEach((item, idx) => {
+                    if (item.beforemeshid && Array.isArray(item.beforemeshid)) {
+                      item.beforemeshid.forEach(meshId => {
+                        meshIdMap[meshId] = idx;
+                      });
+                    }
+                  });
+                  // 複数データに対応：配列にする
+                  if (!flagMap[key]) {
+                    flagMap[key] = [];
                   }
-                  let rideonstop=Object.values(obj)[0].map(u=>u.beforerideonstop);
-                  let getoffstop=Object.values(obj)[0].map(u=>u.beforegetoffstop);
-                  let ridingtime=Object.values(obj)[0].map(u=>u.beforeridingtime);
-                  let rideontime=Object.values(obj)[0].map(u=>u.beforerideontime);
-                  let getofftime=Object.values(obj)[0].map(u=>u.beforegetofftime);
-                  let exceptionserviceday=Object.values(obj)[0].map(u=>u.beforeexceptionserviceday);
-                  let route=Object.values(obj)[0].map(u=>u.route);
-                  let agency=Object.values(obj)[0].map(u=>u.agency);
-                  let flag0b=flagb;
-                  let index=flag0b.findIndex(row => row.includes(e.properties["MESH_ID"]));
-                    
-                  if (index!=-1){
-                      e.properties["to"] = i1["condition"]["to"];
-                      e.properties["weekday"] = i1["condition"]["weekday"];
-                      e.properties["hour"] = i1["condition"]["hour"];
-                      e.properties["direct"] = i1["condition"]["direct"];
-                      e.properties["beforerideonstop"]=rideonstop[index];
-                      e.properties["beforegetoffstop"]=getoffstop[index];
-                      e.properties["beforeridingtime"]=ridingtime[index];
-                      e.properties["beforerideontime"]=rideontime[index];
-                      e.properties["beforegetofftime"]=getofftime[index];
-                      e.properties["beforeexceptionserviceday"]=exceptionserviceday[index]; // = に修正
-                      e.properties["beforeroute"]=route[index]; // = に修正
-                      e.properties["beforeagency"]=agency[index]; // = に修正
-                  }  
-                }    
-                
+                  flagMap[key].push({
+                    condition: i["condition"],
+                    data: i["data"],
+                    meshIdMap: meshIdMap
+                  });
+                }
               }
+              // ステップ2: result.features を処理
+              // 使用時：配列から全データを取得
+              return result.features
+                .map((e) => {;
+                  let key0=key;
+                  const flagDataArray = flagMap[key0];  // 配列
+                  // プロパティ初期化
+                  e.properties["to"] = null;
+                  e.properties["weekday"] = null;
+                  e.properties["hour"] = null;
+                  e.properties["before"] = null;
+                  e.properties["beforerideonstop"] = null;
+                  e.properties["beforegetoffstop"] = null;
+                  e.properties["beforeridingtime"] = null;
+                  e.properties["beforerideontime"] = null;
+                  e.properties["beforegetofftime"] =[];
+                  e.properties["beforeexceptionserviceday"] = null;
+                  e.properties["beforeroute"] = null;
+                  e.properties["beforeagency"] = null;
+                  e.properties["beforedimention"] = null;
+                  if (flagDataArray) {
+                    // 配列の全データを検索
+                    for (const flagData of flagDataArray) {
+                      const idx = flagData.meshIdMap[e.properties["KEY_CODE"]];
+                      
+                      if (idx !== undefined) {
+                      const item = flagData.data[idx];
+                      e.properties["to"] = flagData.condition["to"];
+                      e.properties["weekday"] = flagData.condition["weekday"];
+                      e.properties["hour"] = flagData.condition["hour"];
+                      e.properties["before"] = flagData.condition["before"];
+                      e.properties["dimention"] = flagData.condition["dimention"];
+                      e.properties["beforerideonstop"] = item.beforerideonstop;
+                      e.properties["beforegetoffstop"] = item.beforegetoffstop;
+                      e.properties["beforeridingtime"] = item.beforeridingtime;
+                      e.properties["beforerideontime"] = item.beforerideontime;
+                      e.properties["beforegetofftime"] = item.beforegetofftime;
+                      e.properties["beforeexceptionserviceday"] = item.beforeexceptionserviceday;
+                      e.properties["beforeroute"] = item.beforeroute;
+                      e.properties["beforeagency"] = item.beforeagency;
+                        // ... その他のプロパティ
+                        break;  // 最初にマッチしたら終了
+                      }
+                    }
+                  }
 
-            
-              return e;
-            }).filter((e)=>{return e.properties["to"]!=null})
+                  return e;
+                })
+                .filter((e) => {
+                  return e.properties["hour"] == parseInt(s1) && 
+                        e.properties["beforeridingtime"] >= 60;
+                });
+            })();
             const beforeGeoJSON = {
               type: "FeatureCollection",
               features: data1b
             };
-            const data1a = result.features
-            .map((e) => {
-              // プロパティ初期化
-              e.properties["to"] = null;
-              e.properties["weekday"] = null;
-              e.properties["hour"] = null;
-              e.properties["direct"] = null;
-              e.properties["afterrideonstop"] = [];
-              e.properties["aftergetoffstop"] = [];
-              e.properties["afterridingtime"] = [];
-              e.properties["afterrideontime"] = [];
-              e.properties["aftergetofftime"] =[];
-              e.properties["afterexceptionserviceday"] = [];
-              e.properties["afterroute"] = [];
-              e.properties["afteragency"] = [];
-              e.properties["afterdimention"] = [];
-              for (const i1 of flag) {
-                let obj=i1["data"];
-                for(let l in Object.values(obj)){
-                  let flagb=[];
-                  for (let l1 in Object.values(obj)[l]){
-                    for (let k in Object.values(obj)[l][l1].aftermeshid){
-                      flagb.push(Object.values(obj)[l][l1].aftermeshid[k])
-                      }
+            const data1a= (() => {
+              // ステップ1: flagデータをオブジェクトで事前処理
+              let flagMap = {};
+              let key="";
+              for (const i of flag) {
+                if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
+                    i["condition"]["direct"] === "after") {
+                  
+                  key = `${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`;
+                  
+                  // meshIdMap を作成
+                  const meshIdMap = {};
+                  i["data"].forEach((item, idx) => {
+                    if (item.aftermeshid && Array.isArray(item.aftermeshid)) {
+                      item.aftermeshid.forEach(meshId => {
+                        meshIdMap[meshId] = idx;
+                      });
+                    }
+                  });
+                  // 複数データに対応：配列にする
+                  if (!flagMap[key]) {
+                    flagMap[key] = [];
                   }
-                  let rideonstop=Object.values(obj).map(u=>u.afterrideonstop);
-                  let getoffstop=Object.values(obj).map(u=>u.aftergetoffstop);
-                  let ridingtime=Object.values(obj).map(u=>u.afterridingtime);
-                  let rideontime=Object.values(obj).map(u=>u.afterrideontime);
-                  let getofftime=Object.values(obj).map(u=>u.aftergetofftime);
-                  let exceptionserviceday=Object.values(obj).map(u=>u.afterexceptionserviceday);
-                  let route=Object.values(obj).map(u=>u.route);
-                  let agency=Object.values(obj).map(u=>u.agency);
-                  let flag0b=flagb
-                  let index=flag0b.findIndex(row => row.includes(e.properties["MESH_ID"]));
-                    
-                  if (index!=-1){
-                      e.properties["to"] = i1["condition"]["to"];
-                      e.properties["weekday"] = i1["condition"]["weekday"];
-                      e.properties["hour"] = i1["condition"]["hour"];
-                      e.properties["direct"] = i1["condition"]["direct"];
-                      e.properties["afterrideonstop"]=rideonstop[index];
-                      e.properties["aftergetoffstop"]=getoffstop[index];
-                      e.properties["afterridingtime"]=ridingtime[index];
-                      e.properties["afterrideontime"]=rideontime[index];
-                      e.properties["aftergetofftime"]=getofftime[index];
-                      e.properties["afterexceptionserviceday"]=exceptionserviceday[index]; // = に修正
-                      e.properties["afterroute"]=route[index]; // = に修正
-                      e.properties["afteragency"]=agency[index]; // = に修正
-                  }  
-                }    
-                
+                  flagMap[key].push({
+                    condition: i["condition"],
+                    data: i["data"],
+                    meshIdMap: meshIdMap
+                  });
+                }
               }
+              // ステップ2: result.features を処理
+              // 使用時：配列から全データを取得
+              return result.features
+                .map((e) => {;
+                  let key0=key;
+                  const flagDataArray = flagMap[key0];  // 配列
+                  // プロパティ初期化
+                  e.properties["to"] = null;
+                  e.properties["weekday"] = null;
+                  e.properties["hour"] = null;
+                  e.properties["after"] = null;
+                  e.properties["afterrideonstop"] = null;
+                  e.properties["aftergetoffstop"] = null;
+                  e.properties["afterridingtime"] = null;
+                  e.properties["afterrideontime"] = null;
+                  e.properties["aftergetofftime"] =[];
+                  e.properties["afterexceptionserviceday"] = null;
+                  e.properties["afterroute"] = null;
+                  e.properties["afteragency"] = null;
+                  e.properties["afterdimention"] = null;
+                  if (flagDataArray) {
+                    // 配列の全データを検索
+                    for (const flagData of flagDataArray) {
+                      const idx = flagData.meshIdMap[e.properties["KEY_CODE"]];
+                      
+                      if (idx !== undefined) {
+                      const item = flagData.data[idx];
+                      e.properties["to"] = flagData.condition["to"];
+                      e.properties["weekday"] = flagData.condition["weekday"];
+                      e.properties["hour"] = flagData.condition["hour"];
+                      e.properties["after"] = flagData.condition["after"];
+                      e.properties["dimention"] = flagData.condition["dimention"];
+                      e.properties["afterrideonstop"] = item.afterrideonstop;
+                      e.properties["aftergetoffstop"] = item.aftergetoffstop;
+                      e.properties["afterridingtime"] = item.afterridingtime;
+                      e.properties["afterrideontime"] = item.afterrideontime;
+                      e.properties["aftergetofftime"] = item.aftergetofftime;
+                      e.properties["afterexceptionserviceday"] = item.afterexceptionserviceday;
+                      e.properties["afterroute"] = item.afterroute;
+                      e.properties["afteragency"] = item.afteragency;
+                        // ... その他のプロパティ
+                        break;  // 最初にマッチしたら終了
+                      }
+                    }
+                  }
 
-            
-              return e;
-            }).filter((e)=>{return e.properties["to"]!=null})
+                  return e;
+                })
+                .filter((e) => {
+                  return e.properties["hour"] == parseInt(s1) && 
+                        e.properties["afterridingtime"] >= 60;
+                });
+            })();
             //&&bounds[0] <= x1 && x2 <= bounds[2] && bounds[1] <= y1 && y2 <= bounds[3]
             const afterGeoJSON = {
               type: "FeatureCollection",
@@ -786,7 +812,7 @@ const UpdateLayers = (props) => {
         }
       }
     }
-    return layers_ridingrow},[layercheck,time,dest,weekday,weekdayflag])
+    return layers_ridingrow},[layercheck,time,dest,weekday,direct,weekdayflag])
   
   const getMinMax = (values) => {
     if (values.length === 0) return { max: null, min: null };
@@ -1155,7 +1181,7 @@ const UpdateLayers = (props) => {
                 }
               };
               layers_row.push(layer);
-              console.log(layer.props.pickable);
+              console.log(layer.props,pickable);
             } else if (d === "ridingtime_transit") {
               const Area =area;
               let s = dest;

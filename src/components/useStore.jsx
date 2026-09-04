@@ -667,7 +667,7 @@ export const usePopStore = create((set)=>({
 }))
 export const useDirectStore = create((set)=>({
   orig:"",
-  selectOrig: (newText) => set({ direct: newText }),
+  selectOrig: (newText) => set({ orig: newText }),
   direct:"",
   selectDirect: (newText) => set({ direct: newText }),
 }))
