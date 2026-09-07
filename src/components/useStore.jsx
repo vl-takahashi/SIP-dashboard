@@ -486,17 +486,6 @@ let filteredTransitData = null; // sessionId指定時のフィルタリング結
         // propertyがfolderlistのどれにも該当しない場合は、警告だけ出してスキップする
         // （以前は何もログを出さずに黙って無視していたため、原因調査がしづらかった）
         const ls = folderlist.find((key) => key === props);
-        if (!ls) {
-          console.warn(`refreshJsonData: 未知のproperty="${props}" のファイルをスキップしました（${entry.name}）`);
-          continue;
-        }
-
-        // 📌 propertyFilter 指定時：該当するproperty のみ処理
-        if (propertyFilter && props !== propertyFilter) {
-          console.log(`📋 propertyFilter="${propertyFilter}" のため、property="${props}" のファイルをスキップ（${entry.name}）`);
-          continue;
-        }
-
         const json = JSON.parse(text);
 
         // 📌 sessionId指定時：transit-data を一度だけ Vercel KV に送信
@@ -595,16 +584,7 @@ export async function refreshJsonData(path, sessionId = null, propertyFilter = n
         // propertyがfolderlistのどれにも該当しない場合は、警告だけ出してスキップする
         // （以前は何もログを出さずに黙って無視していたため、原因調査がしづらかった）
         const ls = folderlist.find((key) => key === props);
-        if (!ls) {
-          console.warn(`refreshJsonData: 未知のproperty="${props}" のファイルをスキップしました（${entry.name}）`);
-          continue;
-        }
-
-        // 📌 propertyFilter 指定時：該当するproperty のみ処理
-        if (propertyFilter && props !== propertyFilter) {
-          console.log(`📋 propertyFilter="${propertyFilter}" のため、property="${props}" のファイルをスキップ（${entry.name}）`);
-          continue;
-        }
+        
 
         const json = JSON.parse(text);
 
