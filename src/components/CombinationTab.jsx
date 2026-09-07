@@ -18,7 +18,7 @@ import RenderArea from './RenderArea';
 import RenderLine from './RenderLine';
 import MouseOver1 from './MouseOver1';
 import FileValidated from './FileValidated';
-import { useClickareaStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore} from "./useStore";
+import { useClickareaStore,useLayercheckStore,useOrigStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore} from "./useStore";
 import { useQuestionsStore } from './useQuestionsStore';
 import FetchTest from './FetchTest';
 import SpatialLayercheck from './SpatialLayercheck';
@@ -93,7 +93,10 @@ const CombinationTab = () => {
   const isFinishedStep1=useBarchartStore((state)=>state.bar);
   const time=useTimesliderStore((state)=> state.time);
   const area=useAreaStore((state)=> state.area);
-  const dest=useDestStore((state)=> state.dest);
+  const directdest=useDestStore((state)=> state.directdest);
+  const transitdest=useDestStore((state)=> state.transitdest);
+  const directorig=useOrigStore((state)=> state.directorig);
+  const transitorig=useOrigStore((state)=> state.transitorig);
   const weekday=useWeekdayStore((state)=> state.weekday);
   const layercheck=useLayercheckStore((state)=> state.layercheck);
   const setlayercheck=useLayercheckStore((state)=> state.selectLayercheck);
@@ -130,9 +133,6 @@ const CombinationTab = () => {
     const h = 11 + parseInt(time * 100000000)
     setSliderLabel(`選択範囲: ${h}:00-${h + 1}:00`)
   }, [time])
-  useEffect(() => {
-    console.log(dest);
-  },[dest]);
   useEffect(() => {
     console.log(weekday);
   },[weekday]);
@@ -250,22 +250,99 @@ const CombinationTab = () => {
                         >
                           <br />
                           <div>
-                            <select
-                              value={destcurrent}
-                              onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
-                              ref={selectdestref}
-                              style={{width:'80px'}}
-                              
-                            >
-                              <option>目的地</option>
-                              
-                              {dest.map((item, index) => (
-                                <option key={index} value={item}>
-                                  {item}
-                                </option>
-                              ))}
-                            </select>
-                            <br />
+                            <div className="select">
+
+                              <select
+                                value={directcurrent}
+                                onChange={(e) => {selectDirect(e.target.value);setdirectcurrent(e.target.value)}}
+                                ref={selectdirectref}
+                                style={{width:'100px',height:'40px'}}
+                              >
+                                <option>直通/乗り継ぎ</option>
+
+                                {Object.keys(direct).map((item) => (
+                                  <option key={item} value={direct[item]}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </select>
+                              <br />
+                              <fieldset>
+                                <input type="radio" value="dest" ref={origselectref}
+                                onChange={(e) => {selectorigdestcurrent(e.target.value),setorigdestcurrent(e.target.value),origselectref.current.checked?!origselectref.current.checked:!origselectref.current.checked,origselectref.current.checked?destselectref.current.checked=false:destselectref.current.checked=true}}/>
+                                <label>目的地</label>
+                                <br></br>
+                                <input type="radio" value="orig" ref={destselectref}
+                                onChange={(e) => {selectorigdestcurrent(e.target.value),setorigdestcurrent(e.target.value),destselectref.current.checked?!destselectref.current.checked:!destselectref.current.checked,destselectref.current.checked?origselectref.current.checked=false:origselectref.current.checked=true}}/>
+                                <label>出発地</label>
+                              {origdestcurrent==="dest"&&directcurrent=="direct"&&<div><select
+                                value={destcurrent}
+                                onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
+                                ref={selectdestref}
+                                style={{width:'100px',height:'40px'}}
+
+                              >
+                                <option>目的地</option>
+
+                                {directdest.map((item, index) => (
+                                  <option key={index} value={item}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </select>
+                              <br /></div>}
+                              {origdestcurrent==="dest"&&directcurrent=="transit"&&<div><select
+                                value={destcurrent}
+                                onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
+                                ref={selectdestref}
+                                style={{width:'100px',height:'40px'}}
+
+                              >
+                                <option>目的地</option>
+
+                                {transitdest.map((item, index) => (
+                                  <option key={index} value={item}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </select>
+                              <br /></div>}
+                              {origdestcurrent==="orig"&&directcurrent=="direct"&&<div>
+                              <select
+                                value={origcurrent}
+                                onChange={(e) => {selectOrig(e.target.value);setorigcurrent(e.target.value)}}
+                                ref={selectorigref}
+                                style={{width:'100px',height:'40px'}}
+
+                              >
+                                <option>出発地</option>
+
+                                {directorig.map((item, index) => (
+                                  <option key={index} value={item}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </select>
+                              <br />
+                                </div>}
+                              {origdestcurrent==="orig"&&directcurrent=="transit"&&<div><select
+                                value={destcurrent}
+                                onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
+                                ref={selectdestref}
+                                style={{width:'100px',height:'40px'}}
+
+                              >
+                                <option>目的地</option>
+
+                                {transitorig.map((item, index) => (
+                                  <option key={index} value={item}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </select>
+                              <br /></div>}
+                              </fieldset>
+                            </div>
                               
                             <select
                               value={weekdaycurrent}
