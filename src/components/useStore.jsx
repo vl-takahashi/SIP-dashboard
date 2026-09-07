@@ -487,7 +487,7 @@ let filteredTransitData = null; // sessionId指定時のフィルタリング結
         // （以前は何もログを出さずに黙って無視していたため、原因調査がしづらかった）
         const ls = folderlist.find((key) => key === props);
         const json = JSON.parse(text);
-
+        console.log("a")
         // 📌 sessionId指定時：transit-data を一度だけ Vercel KV に送信
         if (sessionId && props === propertyFilter) {
           filteredTransitData = json;
