@@ -55,7 +55,7 @@ const ChronogicalImpact = () => {
   const destRef = useRef();
   const interval_hmRef = useRef();
   const cityRef = useRef();
-  const dimentionRef = useRef();
+  const innerRef = useRef();
   const transitRef = useRef();
   const transit_timeRef = useRef();
   const transit_distanceRef = useRef();
@@ -75,7 +75,7 @@ const ChronogicalImpact = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const setData =useDataStore((state) => state.setData);
   const setAgency = useDataStore((state) => state.setAgency);
-  const setDimention = useDataStore((state) => state.setDimention);
+  const setinner = useDataStore((state) => state.setinner);
   // submit〜レスポンス受信までFundamentalVisualize側にローディング表示を出すための共有state
   const setLoading = useLoadingStore((state) => state.setLoading);
 const [agencyOptions, setAgencyOptions] = useState([]);
@@ -168,7 +168,8 @@ const [agencyOptions, setAgencyOptions] = useState([]);
         "interval":data.interval,
         "dest":data.dest,
         "weekday":data.weekday,
-        "destpoint":data.point
+        "destpoint":data.point,
+        "inner":innerRef.current.value
       }
       const o01={
         "property": dp0,
@@ -177,7 +178,8 @@ const [agencyOptions, setAgencyOptions] = useState([]);
         "interval":data.interval,
         "orig":data.orig,
         "weekday":data.weekday,
-        "destpoint":data.point
+        "destpoint":data.point,
+        "inner":innerRef.current.value
       }
       // Blob1: JSON メタデータ
       const d001 = JSON.stringify(originRef.current.value=="dest"?d01:o01, null, 2);
@@ -223,6 +225,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
       const transit = transitRef.current?.value;
       const orig1 = originRef.current?.value;
       const nearestmeter = nearestmeterRef.current?.value;
+      const inner = innerRef.current?.value;
 
       // ★ 入力値検証
       if (!file || file.length === 0) {
@@ -273,6 +276,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
       formData.append('interval_hm', interval_hm);
       formData.append('origin', orig1);
       formData.append('kind', submit);
+      formData.append('inner', inner);
 
       // ★ 表示メッシュをGeoJSONで統合して送信
       const popmesh = dataStore.data["popmesh"] || [];
@@ -385,6 +389,12 @@ const [agencyOptions, setAgencyOptions] = useState([]);
                       <TextField label="〇分刻み" inputRef={interval_hmRef} defaultValue="30" inline/>
 
                     </div>
+                    <div style={stepBoxStyle}>
+                      <FieldLabel>Step4. 最寄り乗車バス停からの距離</FieldLabel>
+                      <TextField label="(m)" inputRef={innerRef} defaultValue="300" size="20" inline />
+
+                    </div>
+                                    
                     <div style={stepBoxStyle}>
                     {origincurrent=="dest"&&
                     <SelectField label="Step4. 入力地点到着便←乗り継ぎ便も考慮しますか？" selectRef={transitRef} inline onChange={(e) =>setdirectcurrent(e.target.value)}>
