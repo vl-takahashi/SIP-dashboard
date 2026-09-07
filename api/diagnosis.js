@@ -1,17 +1,10 @@
 /**
- * 🚨 テナント隔離対応版 + Vercel KV 対応
  * POST /api/diagnosis
- *
- * 診断結果を Vercel KV に保存
- * チャットボット側から呼び出される
+ * 診断結果をコンソールにログ出力（デバッグ用）
  */
 
-import { kv } from '@vercel/kv';
-
-/**
- * CORS ヘッダー設定
- */
-const setCorsHeaders = (res) => {
+export default async function handler(req, res) {
+  // CORS ヘッダー設定
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader(
@@ -22,41 +15,6 @@ const setCorsHeaders = (res) => {
     'Access-Control-Allow-Headers',
     'Content-Type, X-Session-ID, X-Tenant-ID, Authorization'
   );
-};
-
-/**
- * sessionId バリデーション
- */
-const validateSessionId = (bodySessionId, headerSessionId) => {
-  if (!bodySessionId || !headerSessionId) {
-    return {
-      valid: false,
-      error: 'sessionId が提供されていません',
-    };
-  }
-
-  if (bodySessionId !== headerSessionId) {
-    return {
-      valid: false,
-      error: 'ボディとヘッダーの sessionId が一致しません',
-    };
-  }
-
-  if (!bodySessionId.startsWith('sess_')) {
-    return {
-      valid: false,
-      error: '無効な sessionId 形式です',
-    };
-  }
-
-  return { valid: true };
-};
-
-/**
- * メインハンドラ
- */
-export default async function handler(req, res) {
-  setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -65,77 +23,45 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({
       error: 'Method Not Allowed',
-      message: 'POST メソッドのみ対応しています',
     });
   }
 
   try {
-    const {
-      sessionId,
-      userId,
-      userName,
-      answers,
-      diagnosis,
-      createdAt,
-      timestamp,
-    } = req.body;
+    const { sessionId, userName, answers, diagnosis } = req.body;
 
-    if (!sessionId || !userName || !answers) {
+    if (!sessionId || !userName) {
       return res.status(400).json({
         error: 'Bad Request',
-        message: 'sessionId, userName, answers は必須です',
+        message: 'sessionId and userName are required',
       });
     }
 
     const headerSessionId = req.headers['x-session-id'];
-    const validation = validateSessionId(sessionId, headerSessionId);
 
-    if (!validation.valid) {
+    if (sessionId !== headerSessionId) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: validation.error,
+        message: 'Session ID mismatch',
       });
     }
 
-    const diagnosisData = {
+    console.log(`[${new Date().toISOString()}] ✅ 診断結果を受け取りました`, {
       sessionId,
-      userId: userId || `user_${Date.now()}`,
       userName,
-      answers,
       diagnosis,
-      timestamp: timestamp || new Date().toISOString(),
-      receivedAt: new Date().toISOString(),
-    };
-
-    // 📊 Vercel KV に保存
-    const kvKey = `diagnosis:${sessionId}:${Date.now()}`;
-    await kv.set(kvKey, JSON.stringify(diagnosisData), { ex: 86400 * 7 });
-
-    // 📍 セッション用のキーを保存
-    const sessionKey = `session:${sessionId}:latest`;
-    await kv.set(sessionKey, JSON.stringify(diagnosisData), { ex: 86400 * 7 });
-
-    console.log(
-      `[${new Date().toISOString()}] 📤 診断結果を KV に保存しました`,
-      {
-        sessionId,
-        userName,
-        kvKey,
-      }
-    );
+    });
 
     return res.status(200).json({
       success: true,
       message: '診断結果を受け取りました',
       data: {
         sessionId,
-        userId: diagnosisData.userId,
         userName,
-        receivedAt: diagnosisData.receivedAt,
+        receivedAt: new Date().toISOString(),
       },
     });
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] ❌ API エラー:`, error);
+    console.error(`❌ API エラー:`, error.message);
 
     return res.status(500).json({
       error: 'Internal Server Error',
