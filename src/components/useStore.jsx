@@ -27,15 +27,25 @@ export const useStore = create((set) => ({
     receivedSessions: [],
 
   addReceivedDiagnosis: (sessionData) => {
-    set((state) => ({
-      receivedSessions: [
-        ...state.receivedSessions,
-        {
-          ...sessionData,
-          receivedAt: new Date().toISOString(),
-        },
-      ],
-    }));
+    set((state) => {
+      const userId = sessionData.userId || `user_${Date.now()}`;
+
+      // 既存の診断結果から同じ userId のデータを除外
+      const filtered = state.receivedSessions.filter(
+        (item) => (item.userId || `user_${Date.now()}`) !== userId
+      );
+
+      // 新しい診断結果を先頭に追加（最新のみを表示）
+      return {
+        receivedSessions: [
+          {
+            ...sessionData,
+            receivedAt: new Date().toISOString(),
+          },
+          ...filtered,
+        ],
+      };
+    });
   },
 
   clearReceivedSessions: () => {
