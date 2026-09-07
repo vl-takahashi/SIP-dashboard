@@ -123,6 +123,10 @@ const CombinationTab = () => {
   const selectkindref = useRef();
   const selectarearef=useRef();
   const selectlayercheckref=useRef();
+    const selectdirectref=useRef(null);
+    const selectorigref=useRef();
+    const origselectref=useRef();
+    const destselectref=useRef();
   const [sliderLabel, setSliderLabel] = useState("");
   const [origcurrent,setorigcurrent]=useState("未選択");
   const [origdestcurrent,selectorigdestcurrent]=useState("dest");
