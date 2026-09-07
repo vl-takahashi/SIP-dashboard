@@ -27,6 +27,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@turf/turf": "^7.3.5",
     "@types/mapbox-gl": "^3.4.1",
+    "@vercel/kv": "^3.0.0",
     "chart.js": "^4.5.1",
     "chartjs-plugin-datalabels": "^2.2.0",
     "japanese-holidays": "^1.0.10",

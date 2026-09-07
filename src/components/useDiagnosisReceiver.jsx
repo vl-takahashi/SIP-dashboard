@@ -5,31 +5,32 @@ export const useDiagnosisReceiver = () => {
   const { addReceivedDiagnosis } = useStore();
 
   useEffect(() => {
-    // チャットボット API URL を取得
-    const getChatbotUrl = () => {
-      // 環境変数から取得
-      const envUrl = import.meta.env.VITE_CHATBOT_URL;
-      if (envUrl) {
-        console.log('チャットボット URL（環境変数）:', envUrl);
-        return envUrl;
-      }
-
-      // デフォルト URL
-      const defaultUrl = 'https://sip-chatbot-ten.vercel.app';
-      console.log('チャットボット URL（デフォルト）:', defaultUrl);
-      return defaultUrl;
+    // URL パラメータから sessionId を取得
+    const getSessionId = () => {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('sessionId');
     };
 
-    const chatbotUrl = getChatbotUrl();
-    if (!chatbotUrl) {
-      console.warn('⚠️ チャットボット API URL が設定されていません');
+    const sessionId = getSessionId();
+    if (!sessionId) {
+      console.warn('⚠️ sessionId がロードされていません');
       return;
     }
+
+    // ダッシュボード自身の /api/get-diagnosis-list をポーリング
+    const dashboardUrl = window.location.origin;
 
     // HTTP ポーリング（3秒ごと）で診断結果を取得
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`${chatbotUrl}/api/diagnosis-list`);
+        const response = await fetch(
+          `${dashboardUrl}/api/get-diagnosis-list?sessionId=${sessionId}`,
+          {
+            headers: {
+              'X-Session-ID': sessionId,
+            },
+          }
+        );
         const result = await response.json();
 
         if (result.success && result.data?.length > 0) {
@@ -46,7 +47,7 @@ export const useDiagnosisReceiver = () => {
     }, 3000);
 
     console.log('✅ 診断結果ポーリングを開始しました');
-    console.log(`📍 チャットボット URL: ${chatbotUrl}`);
+    console.log(`📍 セッション ID: ${sessionId}`);
 
     return () => clearInterval(pollInterval);
   }, [addReceivedDiagnosis]);
