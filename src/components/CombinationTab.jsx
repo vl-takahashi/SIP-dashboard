@@ -383,74 +383,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                       </div>
                       <UpdateLayers/>
 
-                        {/* 右上：情報表示切替（メッシュ情報/区域情報）＋データ操作（データ可視化/PCからアップロード）をグループ化したパネル。
-                            以前はright:"-45%"という位置指定（負のパーセント）で、たまたま右上に見えていただけだった。
-                            タブレット幅では余白・間隔を詰めて、地図の表示領域を圧迫しないようにする。 */}
-                        <div style={floatingStyle({ top: isTablet ? 60 : 68, right: isTablet ? 8 : 16, background: 'transparent', boxShadow: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: isTablet ? 6 : 8 })}>
-                          <div style={{ display: 'flex', gap: isTablet ? 8 : 12, alignItems: 'center', background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', padding: isTablet ? 6 : 8 }}>
-                            <MouseOver1/>
-                            <Mousearea/>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: isTablet ? 4 : 6, background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', padding: isTablet ? 6 : 8 }}>
-                            {/*<Fetch_test/>*/}
-                            <FundamentalVisualize/>
-                            <ExistedData/>
-                            {/* 📌 グラフ表示ボタン（それぞれ独立） */}
-                            {layercheckcurrent==="タイムスライダー" && (
-                              <div style={{ display: 'flex', gap: 4, flexDirection: 'column' }}>
-                            <Exportgeojson/>
-                                <button
-                                  onClick={() => setShowAccessibleList(!showAccessibleList)}
-                                  style={{
-                                    padding: '6px 10px',
-                                    background: showAccessibleList ? '#4CAF50' : '#2196F3',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 4,
-                                    cursor: 'pointer',
-                                    fontSize: 12,
-                                    fontWeight: 'bold',
-                                    marginTop: 4,
-                                    minHeight: '40px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 2
-                                  }}
-                                >
-                                  <div>🏘️ {destcurrent}</div>
-                                  <div>に到着できる住所を</div>
-                                  <div>{showAccessibleList ? '閉じる' : '表示'}</div>
-                                </button>
-                                <button
-                                  onClick={() => setShowBarChart(!showBarChart)}
-                                  style={{
-                                    padding: '6px 10px',
-                                    background: showBarChart ? '#4CAF50' : '#FF9800',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 4,
-                                    cursor: 'pointer',
-                                    fontSize: 12,
-                                    fontWeight: 'bold',
-                                    minHeight: '40px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 2
-                                  }}
-                                >
-                                  <div>📊 {destcurrent}</div>
-                                  <div>に到着できる地区別</div>
-                                  <div>{showBarChart ? '人口を閉じる' : '人口を表示'}</div>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
+                        
 
                         {/* 左上：レイヤー切替パネル。タブレットでは幅を絞り、セレクトの高さをタップしやすいサイズに保つ。
                             maxWidthは常に指定し、凡例（Legends）がタイムスライダー操作で文字幅・行数を変えても
