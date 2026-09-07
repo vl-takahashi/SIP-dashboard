@@ -19,10 +19,25 @@ const ExistedData=()=>{
       console.log(`📌 sessionId from URL: ${sessionId}`);
 
       if (n==0){
-        // 📌 sessionId と propertyFilter を指定
-        await refreshJsonData(dirHandle, sessionId, "ridingtime_direct_dest");
+        // 📌 元々の機能：すべてのレイヤーを読む
+        console.log('📂 すべてのレイヤーを読み込み中...');
+        await refreshJsonData(dirHandle, null, null);
+
+        // 📌 新機能：transit-data を KV に保存
+        if (sessionId) {
+          console.log(`🔄 transit-data を Vercel KV に保存中 (sessionId=${sessionId})...`);
+          await refreshJsonData(dirHandle, sessionId, "ridingtime_direct_dest");
+        }
       } else {
-        await nextJsonData(dirHandle, sessionId, "ridingtime_direct_dest");
+        // 📌 元々の機能：すべてのレイヤーを読む
+        console.log('📂 すべてのレイヤーを読み込み中...');
+        await nextJsonData(dirHandle, null, null);
+
+        // 📌 新機能：transit-data を KV に保存
+        if (sessionId) {
+          console.log(`🔄 transit-data を Vercel KV に保存中 (sessionId=${sessionId})...`);
+          await nextJsonData(dirHandle, sessionId, "ridingtime_direct_dest");
+        }
       };
     }
   return (
