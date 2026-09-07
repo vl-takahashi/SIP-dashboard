@@ -22,7 +22,7 @@ const ExistedData=()=>{
         // 📌 sessionId と propertyFilter を指定
         await refreshJsonData(dirHandle, sessionId, "ridingtime_direct_dest");
       } else {
-        await nextJsonData(dirHandle);
+        await nextJsonData(dirHandle, sessionId, "ridingtime_direct_dest");
       };
     }
   return (
