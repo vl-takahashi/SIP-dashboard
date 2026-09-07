@@ -41,6 +41,7 @@ const CombinationTab = () => {
     const selectDirect=useDirectStore((state)=> state.selectDirect);
   const questions = useQuestionsStore((state) => state.questions);
   const setQuestions = useQuestionsStore((state) => state.setQuestions);
+    const setorigdestcurrent=useDirectStore((state)=> state.selectOrig);
 
   // Vercel KV から Q1/Q2/Q3 データを取得
   const fetchQuestionsData = async (sid) => {
@@ -277,11 +278,11 @@ const CombinationTab = () => {
                               </select>
                               <br />
                               <fieldset>
-                                <input type="radio" value="dest" ref={origselectref}
+                                <input type="radio" value="dest" ref={origselectref} name="orig"
                                 onChange={(e) => {selectorigdestcurrent(e.target.value),setorigdestcurrent(e.target.value),origselectref.current.checked?!origselectref.current.checked:!origselectref.current.checked,origselectref.current.checked?destselectref.current.checked=false:destselectref.current.checked=true}}/>
                                 <label>目的地</label>
                                 <br></br>
-                                <input type="radio" value="orig" ref={destselectref}
+                                <input type="radio" value="orig" ref={destselectref} name="orig"
                                 onChange={(e) => {selectorigdestcurrent(e.target.value),setorigdestcurrent(e.target.value),destselectref.current.checked?!destselectref.current.checked:!destselectref.current.checked,destselectref.current.checked?origselectref.current.checked=false:origselectref.current.checked=true}}/>
                                 <label>出発地</label>
                               {origdestcurrent==="dest"&&directcurrent=="direct"&&<div><select
