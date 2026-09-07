@@ -1,7 +1,36 @@
 /**
  * POST /api/diagnosis
- * 診断結果を Vercel KV REST API に保存
+ * 診断結果を Vercel KV (Redis) に保存
  */
+
+import { createClient } from 'redis';
+
+let redisClient = null;
+
+async function getRedisClient() {
+  if (redisClient) {
+    return redisClient;
+  }
+
+  const redisUrl = process.env.REDIS_URL;
+  if (!redisUrl) {
+    console.warn('⚠️ REDIS_URL environment variable is not set');
+    return null;
+  }
+
+  try {
+    redisClient = createClient({ url: redisUrl });
+    redisClient.on('error', (err) =>
+      console.log('Redis Client Error', err)
+    );
+    await redisClient.connect();
+    console.log('✅ Redis connected');
+    return redisClient;
+  } catch (error) {
+    console.error('❌ Redis connection error:', error);
+    return null;
+  }
+}
 
 export default async function handler(req, res) {
   // CORS ヘッダー設定
@@ -55,50 +84,21 @@ export default async function handler(req, res) {
       receivedAt: new Date().toISOString(),
     };
 
-    // 📊 Vercel KV REST API に保存
-    const kvRestApiUrl = process.env.KV_REST_API_URL;
-    const kvRestApiToken = process.env.KV_REST_API_TOKEN;
+    // 📊 Redis に保存
+    const client = await getRedisClient();
 
-    if (!kvRestApiUrl || !kvRestApiToken) {
-      console.warn('⚠️ KV REST API の環境変数が設定されていません');
-      // 環境変数がない場合はログのみ出力
-      console.log(`✅ 診断結果（メモリに保存）:`, diagnosisData);
-
-      return res.status(200).json({
-        success: true,
-        message: '診断結果を受け取りました',
-        data: {
-          sessionId,
-          userName,
-          receivedAt: diagnosisData.receivedAt,
-        },
-      });
-    }
-
-    try {
-      // KV に保存：キー = `session:${sessionId}:latest`
-      const kvKey = `session:${sessionId}:latest`;
-      const kvSetUrl = `${kvRestApiUrl}/set/${kvKey}`;
-
-      const kvResponse = await fetch(kvSetUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${kvRestApiToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...diagnosisData,
-          ex: 86400 * 7, // 7日間保持
-        }),
-      });
-
-      if (!kvResponse.ok) {
-        console.warn(`⚠️ KV 保存エラー: ${kvResponse.status}`);
-      } else {
-        console.log(`✅ 診断結果を KV に保存: ${kvKey}`);
+    if (client) {
+      try {
+        const kvKey = `session:${sessionId}:latest`;
+        await client.setEx(
+          kvKey,
+          86400 * 7, // 7日間保持
+          JSON.stringify(diagnosisData)
+        );
+        console.log(`✅ 診断結果を Redis に保存: ${kvKey}`);
+      } catch (redisError) {
+        console.warn('⚠️ Redis 保存エラー:', redisError.message);
       }
-    } catch (kvError) {
-      console.warn('⚠️ KV 保存処理中にエラー:', kvError.message);
     }
 
     return res.status(200).json({

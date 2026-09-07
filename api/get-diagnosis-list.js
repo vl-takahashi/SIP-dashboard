@@ -1,7 +1,36 @@
 /**
  * GET /api/get-diagnosis-list
- * Vercel KV REST API から診断結果を取得
+ * Vercel KV (Redis) から診断結果を取得
  */
+
+import { createClient } from 'redis';
+
+let redisClient = null;
+
+async function getRedisClient() {
+  if (redisClient) {
+    return redisClient;
+  }
+
+  const redisUrl = process.env.REDIS_URL;
+  if (!redisUrl) {
+    console.warn('⚠️ REDIS_URL environment variable is not set');
+    return null;
+  }
+
+  try {
+    redisClient = createClient({ url: redisUrl });
+    redisClient.on('error', (err) =>
+      console.log('Redis Client Error', err)
+    );
+    await redisClient.connect();
+    console.log('✅ Redis connected');
+    return redisClient;
+  } catch (error) {
+    console.error('❌ Redis connection error:', error);
+    return null;
+  }
+}
 
 export default async function handler(req, res) {
   // CORS ヘッダー設定
@@ -34,34 +63,23 @@ export default async function handler(req, res) {
       });
     }
 
-    // 📊 Vercel KV REST API から取得
-    const kvRestApiUrl = process.env.KV_REST_API_URL;
-    const kvRestApiToken = process.env.KV_REST_API_TOKEN;
+    // 📊 Redis から取得
+    const client = await getRedisClient();
 
-    if (!kvRestApiUrl || !kvRestApiToken) {
-      console.warn('⚠️ KV REST API の環境変数が設定されていません');
+    if (!client) {
       return res.status(200).json({
         success: true,
         data: [],
         count: 0,
-        message: 'KV environment variables not configured',
+        message: 'Redis not configured',
       });
     }
 
     try {
-      // KV から取得：キー = `session:${sessionId}:latest`
       const kvKey = `session:${sessionId}:latest`;
-      const kvGetUrl = `${kvRestApiUrl}/get/${kvKey}`;
+      const data = await client.get(kvKey);
 
-      const kvResponse = await fetch(kvGetUrl, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${kvRestApiToken}`,
-        },
-      });
-
-      if (!kvResponse.ok) {
-        console.warn(`⚠️ KV 取得エラー: ${kvResponse.status}`);
+      if (!data) {
         return res.status(200).json({
           success: true,
           data: [],
@@ -69,22 +87,9 @@ export default async function handler(req, res) {
         });
       }
 
-      const kvData = await kvResponse.json();
+      const diagnosisData = JSON.parse(data);
 
-      if (!kvData.result) {
-        return res.status(200).json({
-          success: true,
-          data: [],
-          count: 0,
-        });
-      }
-
-      // KV から取得したデータをパース
-      const diagnosisData = typeof kvData.result === 'string'
-        ? JSON.parse(kvData.result)
-        : kvData.result;
-
-      console.log(`✅ 診断結果を KV から取得: ${kvKey}`);
+      console.log(`✅ 診断結果を Redis から取得: ${kvKey}`);
 
       return res.status(200).json({
         success: true,
@@ -92,8 +97,8 @@ export default async function handler(req, res) {
         count: 1,
         timestamp: new Date().toISOString(),
       });
-    } catch (kvError) {
-      console.warn('⚠️ KV 取得処理中にエラー:', kvError.message);
+    } catch (redisError) {
+      console.warn('⚠️ Redis 取得エラー:', redisError.message);
       return res.status(200).json({
         success: true,
         data: [],
