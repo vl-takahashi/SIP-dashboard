@@ -18,7 +18,7 @@ import RenderArea from './RenderArea';
 import RenderLine from './RenderLine';
 import MouseOver1 from './MouseOver1';
 import FileValidated from './FileValidated';
-import { useClickareaStore,useLayercheckStore,useOrigStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore} from "./useStore";
+import { useClickareaStore,useLayercheckStore,useOrigStore,useDirectStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore} from "./useStore";
 import { useQuestionsStore } from './useQuestionsStore';
 import FetchTest from './FetchTest';
 import SpatialLayercheck from './SpatialLayercheck';
