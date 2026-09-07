@@ -19,6 +19,7 @@ import RenderLine from './RenderLine';
 import MouseOver1 from './MouseOver1';
 import FileValidated from './FileValidated';
 import { useClickareaStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore} from "./useStore";
+import { useQuestionsStore } from './useQuestionsStore';
 import FetchTest from './FetchTest';
 import SpatialLayercheck from './SpatialLayercheck';
 import ODLayercheck from './ODLayercheck';
@@ -35,6 +36,60 @@ import GapRadar from "./GapRadar";
 import { useBreakpoint } from "./useBreakpoint";
   //reducer関数を作成
 const CombinationTab = () => {
+  // URL から sessionId を取得
+  const [sessionId, setSessionId] = useState(null);
+  const questions = useQuestionsStore((state) => state.questions);
+  const setQuestions = useQuestionsStore((state) => state.setQuestions);
+
+  // Vercel KV から Q1/Q2/Q3 データを取得
+  const fetchQuestionsData = async (sid) => {
+    try {
+      console.log('🔄 Q1/Q2/Q3 データを取得中:', sid);
+
+      const dashboardUrl = process.env.REACT_APP_DASHBOARD_URL || 'https://sip-dashboard-ghe9.vercel.app';
+      const apiUrl = `${dashboardUrl}/api/questions?sessionId=${sid}`;
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'X-Session-ID': sid,
+          'X-Tenant-ID': sid,
+        },
+      });
+
+      if (!response.ok) {
+        console.warn(`⚠️ Q1/Q2/Q3 データ取得エラー (${response.status})`);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('✅ Q1/Q2/Q3 データを取得:', data);
+
+      // useQuestionsStore に設定
+      setQuestions(
+        sid,
+        data.q1_destination,
+        data.q2_latitude,
+        data.q2_longitude,
+        data.q3_arrival_time,
+        data.address
+      );
+    } catch (error) {
+      console.error('❌ fetchQuestionsData エラー:', error);
+    }
+  };
+
+  // sessionId を URL から取得
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get('sessionId');
+    console.log('🔍 URL から sessionId を取得:', sid);
+    if (sid) {
+      setSessionId(sid);
+      fetchQuestionsData(sid);
+    }
+  }, []);
+
   const isFinishedStep1=useBarchartStore((state)=>state.bar);
   const time=useTimesliderStore((state)=> state.time);
   const area=useAreaStore((state)=> state.area);

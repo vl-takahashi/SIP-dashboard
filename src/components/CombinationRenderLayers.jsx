@@ -4,6 +4,7 @@ import Map from 'react-map-gl/mapbox';
 
 import {  mapboxAccessToken, mapstyle, osmTileUrl, initialCheck, vividColors } from "./Globalvariable";
 import {useHoverStore,useViewDemandStore,useAreaStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
+import { useQuestionsStore } from "./useQuestionsStore";
 const UpdateLayers = () => {
   const color_l=[];
   const setArea_list = useColorareaStore((state) => state.setColorarea);
@@ -17,6 +18,9 @@ const UpdateLayers = () => {
   const kind = useKindStore((state)=>state.select);
   const data = useDataStore((state) => state.data);
   const flag = useDataStore((state) => state.flag);
+
+  // Q1/Q2/Q3 データを取得
+  const questions = useQuestionsStore((state) => state.questions);
   let nw=[132.590317,34.618206];
   let ne=[132.94325324146035,34.61707537902578];
   let sw=[132.56834478273046,34.27392753449381];
@@ -554,9 +558,60 @@ const UpdateLayers = () => {
         }
         i+=1;
     }
+
+    // Q1/Q2/Q3 データからポイントレイヤーを生成
+    if (questions &&
+        questions.q1_destination &&
+        questions.q1_destination === dest &&
+        questions.q2_latitude &&
+        questions.q2_longitude) {
+
+      const q3_hour = Math.round(time * 100000000) + 11;
+
+      // Q3の到着時間が一致した時だけ表示
+      const isQ3Match = questions.q3_arrival_time === q3_hour;
+
+      console.log(`🏘️  住民データ: 目的地=${questions.q1_destination}, Q3時間=${questions.q3_arrival_time}, スライダー時間=${q3_hour}, 一致=${isQ3Match}`);
+
+      const residentPointLayer = {
+        id: 'resident-point-layer',
+        type: 'circle',
+        sourceData: {
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [questions.q2_longitude, questions.q2_latitude]
+            },
+            properties: {
+              address: questions.address,
+              q1_destination: questions.q1_destination,
+              q3_arrival_time: questions.q3_arrival_time
+            }
+          }]
+        },
+        paint: {
+          'circle-radius': 10,
+          'circle-color': '#0000ff', // 青固定
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#ffffff'
+        },
+        layout: {},
+        visible: isQ3Match, // Q3一致時だけ表示
+        hoverType: 'resident',
+        clickHandler: (feature) => {
+          console.log('🏘️  住民の位置をクリック:', feature.properties);
+        }
+      };
+
+      layers_row.push(residentPointLayer);
+    }
+
     //console.log(layers_row.length);
     return layers_row;
-  }, [data,flag,time,dest,weekday,kind,hover,address,area,layercheck]);
+  }, [data,flag,time,dest,weekday,kind,hover,address,area,layercheck,questions]);
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
   const loadedSourcesRef = useRef(new Set());

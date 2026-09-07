@@ -557,7 +557,7 @@ export async function nextJsonData(path) {
 }
 // フォルダ内のJSON群を読み込んでuseDataStoreに反映する。
 // path: ディレクトリハンドル（Tauriのファイル選択などから渡される）
-export async function refreshJsonData(path) {
+export async function refreshJsonData(path, sessionId = null, propertyFilter = null) {
   // sl: 「時刻・曜日情報を別途useDestStore/useWeekdayStoreにも登録する」対象のレイヤー種別
   const sl=["ridingtime_direct_dest","ridingtime_transit_dest","fare","frequency"];
   // sa: 「区域名(area)を別途useAreaStoreにも登録する」対象のレイヤー種別
@@ -570,8 +570,9 @@ export async function refreshJsonData(path) {
   // 前回分のデータが残ったまま積み上がり、最終的にメモリ膨張でクラッシュする原因になっていた。
   const freshRegistry = createEmptyRegistry();
   let failedFileCount = 0; // 読み込みに失敗したファイル数（デバッグ・ユーザー通知用）
+  let filteredTransitData = null; // sessionId指定時のフィルタリング結果
 
-          console.log("222")
+          console.log("222 - sessionId:", sessionId, "propertyFilter:", propertyFilter)
     for await (const entry of path.values()) {
       if (entry.kind !== 'file') continue;
 
@@ -589,9 +590,21 @@ export async function refreshJsonData(path) {
         if (!ls) {
           console.warn(`refreshJsonData: 未知のproperty="${props}" のファイルをスキップしました（${entry.name}）`);
           continue;
-        
-        
+        }
+
+        // 📌 propertyFilter 指定時：該当するproperty のみ処理
+        if (propertyFilter && props !== propertyFilter) {
+          console.log(`📋 propertyFilter="${propertyFilter}" のため、property="${props}" のファイルをスキップ（${entry.name}）`);
+          continue;
+        }
+
         const json = JSON.parse(text);
+
+        // 📌 sessionId指定時：transit-data を一度だけ Vercel KV に送信
+        if (sessionId && props === propertyFilter) {
+          filteredTransitData = json;
+          console.log(`✅ Vercel KV 送信対象: property="${props}", sessionId="${sessionId}"`);
+        }
 
         if (sl.includes(ls)) {
           freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","",json.point])
@@ -617,14 +630,39 @@ export async function refreshJsonData(path) {
           freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention]);
         }
         useFlagStore.getState().setflag();
+      } catch (fileError) {
+        // 1ファイル分の失敗はここで握って、次のファイルの処理を継続する
+        failedFileCount += 1;
+        console.warn(`refreshJsonData: ファイルの読み込みに失敗しました（${entry.name}）`, fileError.message);
       }
-    } catch (fileError) {
-      // 1ファイル分の失敗はここで握って、次のファイルの処理を継続する
-      failedFileCount += 1;
-      console.warn(`refreshJsonData: ファイルの読み込みに失敗しました（${entry.name}）`, fileError.message);
     }
-    
+
     console.log(`読み込み成功！（失敗ファイル数: ${failedFileCount}）`);
+
+    // 📌 sessionId指定時：フィルタリング済みデータを Vercel KV に送信
+    if (sessionId && filteredTransitData) {
+      try {
+        const response = await fetch('/api/transit-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Session-ID': sessionId,
+          },
+          body: JSON.stringify({
+            sessionId,
+            transitData: filteredTransitData,
+          }),
+        });
+        const result = await response.json();
+        if (result.success) {
+          console.log(`✅ transit-data を Vercel KV に保存: sessionId="${sessionId}"`);
+        } else {
+          console.warn(`⚠️ transit-data 保存失敗: ${result.message}`);
+        }
+      } catch (error) {
+        console.error(`❌ transit-data 保存エラー:`, error.message);
+      }
+    }
 
     // ★デバッグ：freshRegistry の全アイテムを確認
     console.log("🔍 freshRegistry:", freshRegistry);
