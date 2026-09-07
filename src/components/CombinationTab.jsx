@@ -124,6 +124,9 @@ const CombinationTab = () => {
   const selectarearef=useRef();
   const selectlayercheckref=useRef();
   const [sliderLabel, setSliderLabel] = useState("");
+  const [origcurrent,setorigcurrent]=useState("未選択");
+  const [origdestcurrent,selectorigdestcurrent]=useState("dest");
+  const [directcurrent,setdirectcurrent]=useState("直通");
   const [destcurrent,setdestcurrent]=useState("未選択");
   const [weekdaycurrent,setweekdaycurrent]=useState("未選択");
   const [layercheckcurrent,setlayercheckcurrent]=useState("未選択");
