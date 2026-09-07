@@ -690,7 +690,7 @@ export async function refreshJsonData(path, sessionId = null, propertyFilter = n
     useDataStore.getState().setDatafirst(freshRegistry);
     useBarchartStore.getState().setBar(true);
   }
-}
+
 export const useBarchartStore = create((set)=>({
   bar:false,
   setBar: (newText) => set({ bar: true }),
