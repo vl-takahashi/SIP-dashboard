@@ -47,12 +47,6 @@ const UpdateLayers = () => {
   let popmeshkey=[];
   const layers = useMemo(() => {
 
-    // Q1/Q2/Q3 データからポイントレイヤーを生成
-    if (questions &&
-        questions.q1_destination &&
-        questions.q1_destination === dest &&
-        questions.q2_latitude &&
-        questions.q2_longitude) {
 
       const q3_hour = Math.round(time * 100000000) + 11;
 
@@ -80,21 +74,29 @@ const UpdateLayers = () => {
           }]
         },
         paint: {
-          'circle-radius': 10,
+          'circle-radius': 50,
           'circle-color': '#0000ff', // 青固定
           'circle-opacity': 0.9,
           'circle-stroke-width': 3,
           'circle-stroke-color': '#ffffff'
         },
         layout: {},
-        visible: isQ3Match, // Q3一致時だけ表示
+        visible: true,//isQ3Match, // Q3一致時だけ表示
         hoverType: 'resident',
         clickHandler: (feature) => {
           console.log('🏘️  住民の位置をクリック:', feature.properties);
         }
+
       };
 
       layers_row.push(residentPointLayer);
+
+    // Q1/Q2/Q3 データからポイントレイヤーを生成
+    if (questions &&
+        questions.q1_destination &&
+        questions.q1_destination === dest &&
+        questions.q2_latitude &&
+        questions.q2_longitude) {
     }
 
     //console.log(layers_row.length);
