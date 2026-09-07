@@ -478,11 +478,10 @@ let filteredTransitData = null; // sessionId指定時のフィルタリング結
       // ★重要：1ファイルの処理をここで個別にtry/catchする。
       // 以前は全体を1つのtry/catchで囲っていたため、1件でもフォーマット異常のファイルがあると
       // それ以降の正常なファイルまで一切読み込まれなくなっていた。
-      try {
         const file = await entry.getFile();
         const text = await file.text();
         const props = JSON.parse(text).property;
-
+        console.log(props);
         // propertyがfolderlistのどれにも該当しない場合は、警告だけ出してスキップする
         // （以前は何もログを出さずに黙って無視していたため、原因調査がしづらかった）
         const ls = folderlist.find((key) => key === props);
@@ -493,16 +492,23 @@ let filteredTransitData = null; // sessionId指定時のフィルタリング結
           console.log(`✅ Vercel KV 送信対象: property="${props}", sessionId="${sessionId}"`);
         }
 
-        if (sl.includes(ls)) {
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","",json.point])
+        if (sl.includes(props)) {
+          freshRegistry[props].push([json.detail, true, json.data, json.agency || "","",json.point])
           // 曜日・目的地情報を別storeにも反映。ここが失敗してもファイル自体の読み込みは続ける。
-
-          useDestStore.getState().setDest(json.dest);
+          if (props.includes("direct_dest")){
+            useDestStore.getState().setDirectdest(json.dest);
+          } else if (props.includes("direct_orig")){
+            useDestStore.getState().setDirectorig(json.dest);
+          } else if (props.includes("transit_dest")){
+            useDestStore.getState().setTransitdest(json.dest);
+          } else if (props.includes("transit_orig")){
+            useDestStore.getState().setTransitorig(json.dest);
+          }
           useWeekdayStore.getState().setWeekday(json.weekday);
           useDataStore.getState().setRidingtime(json.data);
           // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[ls].push([json.dest, true, json.data, json.agency || "",json.dimention]);
-        } else if (sa.includes(ls)) {
+          freshRegistry[props].push([json.dest, true, json.data, json.agency || "",json.dimention]);
+        } else if (sa.includes(props)) {
           // geometryを消してデータ量を減らす（元のロジックを維持）。
           // json.data.featuresが無いケースでも落ちないようoptional chainingで保護。
           if (json.data?.features) json.data.features.geometry = null;
@@ -510,18 +516,13 @@ let filteredTransitData = null; // sessionId指定時のフィルタリング結
           // ★4要素目に agency を追加してグルーピング機能を有効化
           freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention]);
           freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","","",json.address]);
-        } else if (sp.includes(ls)) {
+        } else if (sp.includes(props)) {
           usePopmeshStore.getState().setPopmesh([json.detail, true, json.data, json.agency || "",json.dimention]);
         } else {
           // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention]);
+          freshRegistry[props].push([json.detail, true, json.data, json.agency || "",json.dimention]);
         }
         useFlagStore.getState().setflag();
-      } catch (fileError) {
-        // 1ファイル分の失敗はここで握って、次のファイルの処理を継続する
-        failedFileCount += 1;
-        console.warn(`refreshJsonData: ファイルの読み込みに失敗しました（${entry.name}）`, fileError.message);
-      }
     }
 
     console.log(`読み込み成功！（失敗ファイル数: ${failedFileCount}）`);
@@ -575,11 +576,10 @@ export async function refreshJsonData(path, sessionId = null, propertyFilter = n
       // ★重要：1ファイルの処理をここで個別にtry/catchする。
       // 以前は全体を1つのtry/catchで囲っていたため、1件でもフォーマット異常のファイルがあると
       // それ以降の正常なファイルまで一切読み込まれなくなっていた。
-      try {
         const file = await entry.getFile();
         const text = await file.text();
         const props = JSON.parse(text).property;
-
+        console.log(props)
         // propertyがfolderlistのどれにも該当しない場合は、警告だけ出してスキップする
         // （以前は何もログを出さずに黙って無視していたため、原因調査がしづらかった）
         const ls = folderlist.find((key) => key === props);
@@ -593,35 +593,38 @@ export async function refreshJsonData(path, sessionId = null, propertyFilter = n
           console.log(`✅ Vercel KV 送信対象: property="${props}", sessionId="${sessionId}"`);
         }
 
-        if (sl.includes(ls)) {
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","",json.point])
+        if (sl.includes(props)) {
+          freshRegistry[props].push([json.detail, true, json.data, json.agency || "","",json.point])
           // 曜日・目的地情報を別storeにも反映。ここが失敗してもファイル自体の読み込みは続ける。
-
-          useDestStore.getState().setDest(json.dest);
+          if (props.includes("direct_dest")){
+            useDestStore.getState().setDirectdest(json.dest);
+          } else if (props.includes("direct_orig")){
+            useDestStore.getState().setDirectorig(json.dest);
+          } else if (props.includes("transit_dest")){
+            useDestStore.getState().setTransitdest(json.dest);
+          } else if (props.includes("transit_orig")){
+            useDestStore.getState().setTransitorig(json.dest);
+          }
           useWeekdayStore.getState().setWeekday(json.weekday);
           useDataStore.getState().setRidingtime(json.data);
           // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[ls].push([json.dest, true, json.data, json.agency || "",json.dimention]);
-        } else if (sa.includes(ls)) {
+          freshRegistry[props].push([json.dest, true, json.data, json.agency || "",json.dimention]);
+          console.log("1")
+        } else if (sa.includes(props)) {
           // geometryを消してデータ量を減らす（元のロジックを維持）。
           // json.data.featuresが無いケースでも落ちないようoptional chainingで保護。
           if (json.data?.features) json.data.features.geometry = null;
           useAreaStore.getState().setArea(json.area);
           // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention]);
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","","",json.address]);
-        } else if (sp.includes(ls)) {
+          freshRegistry[props].push([json.detail, true, json.data, json.agency || "",json.dimention]);
+          freshRegistry[props].push([json.detail, true, json.data, json.agency || "","","",json.address]);
+        } else if (sp.includes(props)) {
           usePopmeshStore.getState().setPopmesh([json.detail, true, json.data, json.agency || "",json.dimention]);
         } else {
           // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention]);
+          freshRegistry[props].push([json.detail, true, json.data, json.agency || "",json.dimention]);
         }
         useFlagStore.getState().setflag();
-      } catch (fileError) {
-        // 1ファイル分の失敗はここで握って、次のファイルの処理を継続する
-        failedFileCount += 1;
-        console.warn(`refreshJsonData: ファイルの読み込みに失敗しました（${entry.name}）`, fileError.message);
-      }
     }
 
     console.log(`読み込み成功！（失敗ファイル数: ${failedFileCount}）`);
