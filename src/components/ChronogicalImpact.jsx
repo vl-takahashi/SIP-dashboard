@@ -188,11 +188,11 @@ const [agencyOptions, setAgencyOptions] = useState([]);
       metadataLink1.click();
       console.log("JSON ファイルをダウンロード:", metadataLink1.download);
 
-      const d002 = JSON.stringify(data.file, null, 2);
-      const metadataBlob2 = new Blob([d002], { type: 'application/json' });
-      metadataLink2.href = URL.createObjectURL(metadataBlob2);
-      metadataLink2.download = `chronogical_${routingvalue}_${transit}_${data.orig}_${dest_name}.geojson`;
-      metadataLink2.click();
+      //const d002 = JSON.stringify(data.file, null, 2);
+      //const metadataBlob2 = new Blob([d002], { type: 'application/json' });
+      //metadataLink2.href = URL.createObjectURL(metadataBlob2);
+      //metadataLink2.download = `chronogical_${routingvalue}_${transit}_${data.orig}_${dest_name}.geojson`;
+      //metadataLink2.click();
 
       // メモリリーク防止
       setTimeout(() => {
