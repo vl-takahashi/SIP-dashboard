@@ -38,6 +38,7 @@ import { useBreakpoint } from "./useBreakpoint";
 const CombinationTab = () => {
   // URL から sessionId を取得
   const [sessionId, setSessionId] = useState(null);
+    const selectDirect=useDirectStore((state)=> state.selectDirect);
   const questions = useQuestionsStore((state) => state.questions);
   const setQuestions = useQuestionsStore((state) => state.setQuestions);
 
@@ -127,6 +128,7 @@ const CombinationTab = () => {
     const selectorigref=useRef();
     const origselectref=useRef();
     const destselectref=useRef();
+  const direct={"直通":"direct","乗継":"transit"};
   const [sliderLabel, setSliderLabel] = useState("");
   const [origcurrent,setorigcurrent]=useState("未選択");
   const [origdestcurrent,selectorigdestcurrent]=useState("dest");
