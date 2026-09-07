@@ -44,7 +44,8 @@ const UpdateLayers = () => {
   const setClicknearestgetofftime = useClicknearestgetofftimeStore((state) => state.setClicknearestgetofftime);
   const setBoundary = useGetboundaryStore((state) => state.setBoundary);
   const setClicknearestrailline=useClicknearestraillineStore((state) => state.setClicknearestrailline);
-
+  let popmeshkey=[];
+  const layers = useMemo(() => {
 
     // Q1/Q2/Q3 データからポイントレイヤーを生成
     if (questions &&
@@ -80,7 +81,7 @@ const UpdateLayers = () => {
         },
         paint: {
           'circle-radius': 10,
-          'circle-color': '#00ff2f', // 青固定
+          'circle-color': '#0000ff', // 青固定
           'circle-opacity': 0.9,
           'circle-stroke-width': 3,
           'circle-stroke-color': '#ffffff'
