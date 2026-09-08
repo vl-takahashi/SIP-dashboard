@@ -28,7 +28,7 @@ import VisualizationIcon from './visualization.png';
 import LosVisualize from './LosVisualize';
 import GraphDialog from './GraphDialog';
 import styles from "../styles/PopUp.module.css";
-import usequestionsStore from "./useQuestionsStore";
+import { useQuestionsStore } from "./useQuestionsStore";
 import TinyBarChart from "./Barchart";
 import AddressChart from "./AddressChart";
 import AccessibleList from './AccessibilityList';
@@ -117,7 +117,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const [sliderLabel, setSliderLabel] = useState("");
 
   // ✅ 📌 useQuestionsStore を取得
-  const { setQuestions } = usequestionsStore.getState();
+  const { setQuestions } = useQuestionsStore.getState();
 
   // ✅ 📌 マウント時に Q1/Q2/Q3 データを取得
   useEffect(() => {
