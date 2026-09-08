@@ -44,6 +44,7 @@ const CustomerTab = () => {
   const selectArea=useAreaStore((state)=> state.selectArea);
   const selectKind=useKindStore((state)=> state.selectKind);
   const kind=useKindStore((state)=> state.kind);
+    const [sliderLabel, setSliderLabel] = useState("");
   const setquestion =useQuestionStore((state)=> state.setquestion);
   useEffect(() => {
     const h = 11 + parseInt(time * 100000000)

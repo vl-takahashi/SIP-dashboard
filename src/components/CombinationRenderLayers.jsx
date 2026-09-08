@@ -172,7 +172,7 @@ const UpdateLayers = () => {
         }
       }
     });
-  }, [layers, hover]);
+  }, [layers, hover,question]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
