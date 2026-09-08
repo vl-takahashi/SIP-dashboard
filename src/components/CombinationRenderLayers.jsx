@@ -5,7 +5,7 @@ import Map from 'react-map-gl/mapbox';
 import {  mapboxAccessToken, mapstyle, osmTileUrl, initialCheck, vividColors } from "./Globalvariable";
 import {useHoverStore,useViewDemandStore,useAreaStore,useQuestionStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
 import { useQuestionsStore } from "./useQuestionsStore";
-const UpdateLayers = () => {
+const CombinationLayers = () => {
   const color_l=[];
   const setArea_list = useColorareaStore((state) => state.setColorarea);
   const viewDemand=useViewDemandStore((state) => state.select);
@@ -57,11 +57,11 @@ const UpdateLayers = () => {
               type: 'Point',
               coordinates: [questions.q2_longitude, questions.q2_latitude]
             },
-            properties: {
-              address: questions.address,
-              q1_destination: questions.q1_destination,
-              q3_arrival_time: questions.q3_arrival_time
-            }
+            //properties: {
+              //address: questions.address,
+              //q1_destination: questions.q1_destination,
+              //q3_arrival_time: questions.q3_arrival_time
+            //}
           }]
         },
         paint: {
@@ -197,4 +197,4 @@ const UpdateLayers = () => {
     </div>
   );
 };
-export default UpdateLayers;
+export default CombinationLayers;
