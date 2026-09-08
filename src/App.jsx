@@ -14,7 +14,7 @@ import { useQuestionsStore } from './components/useQuestionsStore';
 
 function App() {
   const [activeTab, setActiveTab] = useState('default');
-    const updatedQuestionsList = useQuestionsStore((state) => state.questionsList);
+    const updatedQuestionsList = useQuestionsStore((state) => state.setQuestions);
 
   // ✅ 📌 Q1/Q2/Q3 データを取得・更新（sessionId が変わるたびに）
   useEffect(() => {
