@@ -114,6 +114,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const [searchText,setSearchText]=useState("");
   const viewAccessibility = useViewAccesibilityStore((state)=>state.select);
   const setViewAccessibility = useViewAccesibilityStore((state)=>state.selectView);
+  const [sliderLabel, setSliderLabel] = useState("");
 
   // 市町村選択時に地図中心を移動
   const handleCityChange = (e) => {
