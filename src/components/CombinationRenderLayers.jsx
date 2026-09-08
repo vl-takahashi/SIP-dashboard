@@ -40,6 +40,8 @@ const CombinationLayers = () => {
     // ✅ useMemo の中で layers_row を定義
     let layers_row=[];
 
+    console.log('🔄 【useMemo】questions:', questions);
+
       const q3_hour = Math.round(time * 100000000) + 11;
 
       // Q3の到着時間が一致した時だけ表示
@@ -64,7 +66,7 @@ const CombinationLayers = () => {
           }]
         },
         paint: {
-          'circle-radius': 50,
+          'circle-radius':10,
           'circle-color': '#0000ff', // 青固定
           'circle-opacity': 0.9,
           'circle-stroke-width': 3,
@@ -89,7 +91,8 @@ const CombinationLayers = () => {
         questions.q2_longitude) {
     }
 
-    //console.log(layers_row.length);
+    console.log('📌 【useMemo】layers_row:', layers_row);
+    console.log('📌 【useMemo】layers_row.length:', layers_row.length);
     return layers_row;
   }, [questions, time, dest, question]);
   // Map reference for Mapbox GL JS
@@ -265,7 +268,7 @@ const CombinationLayers = () => {
     });
 
     // Move イベント
-    map.on('move', () => {
+    const handleMove = () => {
       setviewDemand({
         longitude: map.getCenter().lng,
         latitude: map.getCenter().lat,
@@ -273,13 +276,15 @@ const CombinationLayers = () => {
         pitch: map.getPitch(),
         bearing: map.getBearing(),
       });
-    });
+    };
+    map.on('move', handleMove);
 
     // クリーンアップ
     return () => {
+      map.off('move', handleMove);
       map.remove();
     };
-  }, [mapboxAccessToken, mapstyle, viewDemand, layers]);
+  }, [mapboxAccessToken, mapstyle, layers]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
