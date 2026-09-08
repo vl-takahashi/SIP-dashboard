@@ -19,7 +19,7 @@ const CombinationLayers = () => {
   const kind = useKindStore((state)=>state.select);
   const data = useDataStore((state) => state.data);
   const flag = useDataStore((state) => state.flag);
-
+\
 
   // ✅ 全ての Q1/Q2/Q3 データを取得（配列）
   const questionsList = useQuestionsStore((state) => state.questionsList);
@@ -31,7 +31,7 @@ const CombinationLayers = () => {
   let sw=[132.56834478273046,34.27392753449381];
   let se=[132.90480109184705,34.292082779796985];
   const [address,setAddress]=useState("None");
-  const questions =useQuestionStore((state)=> state.questionsList);
+  const question =useQuestionStore((state)=> state.questionsList);
 
   const layers = useMemo(() => {
     // ✅ useMemo の中で layers_row を定義
@@ -41,9 +41,9 @@ const CombinationLayers = () => {
 
       const q3_hour = Math.round(time * 100000000) + 11;
 
-      // Q3の到着時間が一致した時だけ表示
-      const isQ3Match = questions?.q3_arrival_time === q3_hour;
       questionsList.forEach((q, index) => {
+      // Q3の到着時間が一致した時だけ表示
+        let isQ3Match = q?.q3_arrival_time === q3_hour;
         let residentPointLayer = {
           id: `resident-point-layer-${index}`,  // ✅ 一意の ID
           type: 'circle',
