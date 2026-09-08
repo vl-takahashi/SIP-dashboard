@@ -36,7 +36,7 @@ const CombinationLayers = () => {
   const [address,setAddress]=useState("None");
   const question =useQuestionStore((state)=> state.question);
   let layers_row=[];
-  const layers = useEffect(() => {
+  const layers = useMemo(() => {
 
 
       const q3_hour = Math.round(time * 100000000) + 11;
@@ -92,7 +92,7 @@ const CombinationLayers = () => {
 
     //console.log(layers_row.length);
     return layers_row;
-  }, []);
+  }, [questions, time, dest, question]);
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
   const loadedSourcesRef = useRef(new Set());
