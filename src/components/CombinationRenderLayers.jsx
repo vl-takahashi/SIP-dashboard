@@ -85,7 +85,7 @@ const CombinationLayers = () => {
 
     console.log('📌 【useMemo】layers_row:', layers_row);
     return layers_row;
-  }, [questionsList, time, dest]);
+  }, [questions, time, dest]);
 
     // Q1/Q2/Q3 データからポイントレイヤーを生成
   // Map reference for Mapbox GL JS
