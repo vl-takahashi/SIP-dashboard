@@ -221,7 +221,14 @@ const UpdateLayers = (props) => {
                 if (flagDataArray) {
                   // 配列の全データを検索
                   for (const flagData of flagDataArray) {
-                    const idx = flagData.meshIdMap[e.properties["KEY_CODE"]];
+                    let idx=null
+                    if ("KEY_CODE" in e.properties){
+                     idx= flagData.meshIdMap[e.properties["KEY_CODE"]];
+
+                    } else {
+                     idx= flagData.meshIdMap[e.properties["MESH_ID"]];
+
+                    }
                     
                     if (idx !== undefined) {
                     const item = flagData.data[idx];
