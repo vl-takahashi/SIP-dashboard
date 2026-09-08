@@ -8,6 +8,14 @@ import { create } from "zustand";
  */
 export const useQuestionsStore = create((set) => ({
   // ✅ 最新のデータ（1つ）
+  questions: {
+    sessionId: null,
+    q1_destination: null,
+    q2_latitude: null,
+    q2_longitude: null,
+    q3_arrival_time: null,
+    address: null,
+  },
 
   // ✅ 全ての Q1/Q2/Q3 データを管理（複数）
   questionsList: [], // [{sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address, timestamp}, ...]
@@ -27,7 +35,7 @@ export const useQuestionsStore = create((set) => ({
         address,
         timestamp: new Date().toISOString(),
       };
-      console.log(newQuestion);
+      console.log('📝 setQuestions:', newQuestion);
       // ✅ 重複チェック：同じ座標が既に存在するか
       const isDuplicate = state.questionsList.some(q =>
         q.q2_latitude === q2_lat && q.q2_longitude === q2_lon
@@ -36,10 +44,14 @@ export const useQuestionsStore = create((set) => ({
       // ✅ 重複なら追加しない
       if (isDuplicate) {
         console.log('⚠️ 重複座標：追加しません');
-        return state;
+        // ただし questions は最新データに更新
+        return {
+          questions: newQuestion,
+        };
       }
 
       return {
+        questions: newQuestion, // ✅ 最新データを更新
         questionsList: [...prev, newQuestion], // 全データ（重複なし）
       };
     }),

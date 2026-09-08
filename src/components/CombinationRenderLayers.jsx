@@ -20,14 +20,11 @@ const CombinationLayers = () => {
   const data = useDataStore((state) => state.data);
   const flag = useDataStore((state) => state.flag);
 
-  // Q1/Q2/Q3 データを取得
-  const questions = useQuestionsStore((state) => state.questionsList);
+  // Q1/Q2/Q3 最新データを取得（オブジェクト）
+  const questions = useQuestionsStore((state) => state.questions);
 
-  // ✅ 全ての Q1/Q2/Q3 データを取得（リスト）
+  // ✅ 全ての Q1/Q2/Q3 データを取得（配列）
   const questionsList = useQuestionsStore((state) => state.questionsList);
-
-  // ✅ 座標群を取得
-  const coordinates = useQuestionsStore((state) => state.coordinates);
 
   console.log('📋 【CombinationRenderLayers】questionsList:', questionsList);
 
@@ -47,8 +44,8 @@ const CombinationLayers = () => {
       const q3_hour = Math.round(time * 100000000) + 11;
 
       // Q3の到着時間が一致した時だけ表示
-      const isQ3Match = questions.q3_arrival_time === q3_hour;
-      questions.forEach((q)=>{
+      const isQ3Match = questions?.q3_arrival_time === q3_hour;
+      questionsList.forEach((q)=>{
         console.log(q);
         // ✅ coordinates 配列の全ポイントを features に変換
         let residentPointLayer = {
@@ -94,7 +91,7 @@ const CombinationLayers = () => {
 
     console.log('📌 【useMemo】layers_row:', layers_row);
     return layers_row;
-  }, [questions, time, dest, question, coordinates]);
+  }, [questions, questionsList, time, dest, question]);
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
   const loadedSourcesRef = useRef(new Set());
