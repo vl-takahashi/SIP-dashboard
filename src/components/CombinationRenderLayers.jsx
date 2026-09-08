@@ -82,10 +82,6 @@ const CombinationLayers = () => {
 
         layers_row.push(residentPointLayer);
       });
-      }
-    )
-
-    // Q1/Q2/Q3 データからポイントレイヤーを生成
     if (questions &&
         questions.q1_destination &&
         questions.q1_destination === dest &&
@@ -96,6 +92,8 @@ const CombinationLayers = () => {
     console.log('📌 【useMemo】layers_row:', layers_row);
     return layers_row;
   }, [questions, questionsList, time, dest, question]);
+
+    // Q1/Q2/Q3 データからポイントレイヤーを生成
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
   const loadedSourcesRef = useRef(new Set());
