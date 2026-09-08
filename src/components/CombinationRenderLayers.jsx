@@ -36,7 +36,7 @@ const UpdateLayers = () => {
       // Q3の到着時間が一致した時だけ表示
       const isQ3Match = questions.q3_arrival_time === q3_hour;
 
-      console.log(`🏘️  住民データ: 目的地=${questions.q1_destination}, Q3時間=${questions.q3_arrival_time}, スライダー時間=${q3_hour}, 一致=${isQ3Match}`);
+      console.log(`🏘️  住民データ: latlon=${questions.q2_longitude, questions.q2_latitude}, Q3時間=${questions.q3_arrival_time}, スライダー時間=${q3_hour}, 一致=${isQ3Match}`);
 
       const residentPointLayer = {
         id: 'resident-point-layer',
