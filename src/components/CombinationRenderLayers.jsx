@@ -94,7 +94,6 @@ const CombinationLayers = () => {
     }
 
     console.log('📌 【useMemo】layers_row:', layers_row);
-    console.log('📌 【useMemo】layers_row.length:', layers_row.length);
     return layers_row;
   }, [questions, time, dest, question, coordinates]);
   // Map reference for Mapbox GL JS
@@ -310,7 +309,7 @@ const CombinationLayers = () => {
 
   // ✅ 座標群の centroid を計算してマップを移動（初回だけ）
   useEffect(() => {
-    if (!mapRef.current || !mapRef.current._map || coordinates.length === 0) return;
+    if (!mapRef.current || !mapRef.current._map) return;
 
     // ✅ 初回だけ実行
     if (!isFirstFlyToRef.current) return;
