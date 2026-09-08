@@ -52,25 +52,13 @@ const CombinationLayers = () => {
           type: 'circle',
           sourceData: {
             type: 'FeatureCollection',
-            features: coordinates.length > 0
-              ? coordinates.map((coord, idx) => ({
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Point',
-                    coordinates: [coord.lon, coord.lat]
-                  },
-                  properties: {
-                    index: idx,
-                    timestamp: coord.timestamp
-                  }
-                }))
-              : [{
+            features: {
                   type: 'Feature',
                   geometry: {
                     type: 'Point',
                     coordinates: [q.q2_longitude, q.q2_latitude]
                   }
-                }]
+                }
           },
           paint: {
             'circle-radius':3,
