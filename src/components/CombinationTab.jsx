@@ -116,6 +116,65 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const setViewAccessibility = useViewAccesibilityStore((state)=>state.selectView);
   const [sliderLabel, setSliderLabel] = useState("");
 
+  // ✅ 📌 useQuestionsStore を取得
+  const { setQuestions } = useQuestionsStore.getState();
+
+  // ✅ 📌 マウント時に Q1/Q2/Q3 データを取得
+  useEffect(() => {
+    const fetchQuestionsData = async () => {
+      try {
+        // URL クエリから sessionId を取得
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('sessionId');
+
+        if (!sessionId) {
+          console.warn('⚠️ sessionId が URL に含まれていません');
+          return;
+        }
+
+        console.log(`🔄 Q1/Q2/Q3 データを取得中... sessionId=${sessionId}`);
+
+        // ✅ ダッシュボード API から GET
+        const response = await fetch(`/api/questions?sessionId=${sessionId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Session-ID': sessionId,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        console.log('✅ Q1/Q2/Q3 データを取得しました:', {
+          q1: data.q1_destination,
+          q2: `${data.q2_latitude}, ${data.q2_longitude}`,
+          q3: data.q3_arrival_time,
+        });
+
+        // ✅ useQuestionsStore に設定
+        setQuestions(
+          data.sessionId,
+          data.q1_destination,
+          data.q2_latitude,      // 🔴 座標：緯度
+          data.q2_longitude,     // 🔴 座標：経度
+          data.q3_arrival_time,
+          data.address
+        );
+
+        console.log('✅ useQuestionsStore に保存完了');
+      } catch (error) {
+        console.error('❌ Q1/Q2/Q3 データ取得エラー:', error.message);
+      }
+    };
+
+    // マウント時に1回のみ実行
+    fetchQuestionsData();
+  }, []); // 依存配列は空で、マウント時のみ実行
+
   // 市町村選択時に地図中心を移動
   const handleCityChange = (e) => {
     const cityName = e.target.value;
