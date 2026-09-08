@@ -103,10 +103,15 @@ const CombinationLayers = () => {
     const map = mapRef.current?.getMap?.();
     if (!map || !map.isStyleLoaded()) return;
 
+    console.log('📌 【useEffect】layers 配列:', layers);
+    console.log('📌 【useEffect】resident-point-layer 含まれているか:', layers.some(l => l.id === 'resident-point-layer'));
+
     // Separate layers: mesh first, then points on top
     const meshLayers = layers.filter(l => l.type === 'fill' || l.type === 'line');
     const pointLayers = layers.filter(l => l.type === 'symbol' || l.type === 'circle');
     const allLayers = [...meshLayers, ...pointLayers];
+
+    console.log('📌 【useEffect】pointLayers:', pointLayers);
 
     allLayers.forEach((layerConfig, index) => {
       if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
