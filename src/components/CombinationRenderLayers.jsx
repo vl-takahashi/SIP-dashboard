@@ -21,7 +21,7 @@ const CombinationLayers = () => {
   const flag = useDataStore((state) => state.flag);
 
   // Q1/Q2/Q3 データを取得
-  const questions = useQuestionsStore((state) => state.questions);
+  const questions = useQuestionsStore((state) => state.questionsList);
 
   // ✅ 全ての Q1/Q2/Q3 データを取得（リスト）
   const questionsList = useQuestionsStore((state) => state.questionsList);
