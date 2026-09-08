@@ -45,39 +45,43 @@ const CombinationLayers = () => {
 
       // Q3の到着時間が一致した時だけ表示
       const isQ3Match = questions?.q3_arrival_time === q3_hour;
-      questionsList.forEach((q)=>{
-        console.log(q);
-        // ✅ coordinates 配列の全ポイントを features に変換
+      questionsList.forEach((q, index) => {
         let residentPointLayer = {
-          id: 'resident-point-layer',
+          id: `resident-point-layer-${index}`,  // ✅ 一意の ID
           type: 'circle',
           sourceData: {
             type: 'FeatureCollection',
-            features: {
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Point',
-                    coordinates: [q.q2_longitude, q.q2_latitude]
-                  }
+            features: [  // ✅ 配列
+              {
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [q.q2_longitude, q.q2_latitude]
+                },
+                properties: {
+                  address: q.address,
+                  q1_destination: q.q1_destination,
                 }
+              }
+            ]
           },
           paint: {
-            'circle-radius':3,
-            'circle-color': '#0000ff', // 青固定
+            'circle-radius': 3,
+            'circle-color': '#0000ff',
             'circle-opacity': 0.9,
             'circle-stroke-width': 3,
             'circle-stroke-color': '#ffffff'
           },
           layout: {},
-          visible: true,//isQ3Match, // Q3一致時だけ表示
+          visible: true,
           hoverType: 'resident',
           clickHandler: (feature) => {
-            console.log('🏘️  住民の位置をクリック:', feature.properties);
+            console.log('🏘️ 住民の位置をクリック:', feature.properties);
           }
-
         };
 
         layers_row.push(residentPointLayer);
+      });
       }
     )
 
