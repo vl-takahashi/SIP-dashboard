@@ -80,16 +80,16 @@ const CombinationLayers = () => {
 
         layers_row.push(residentPointLayer);
       });
-    if (questions &&
-        questions.q1_destination &&
-        questions.q1_destination === dest &&
-        questions.q2_latitude &&
-        questions.q2_longitude) {
+    if (q &&
+        q.q1_destination &&
+        q.q1_destination === dest &&
+        q.q2_latitude &&
+        q.q2_longitude) {
     }
 
     console.log('📌 【useMemo】layers_row:', layers_row);
     return layers_row;
-  }, [questions, questionsList, time, dest, question]);
+  }, [questionsList, time, dest]);
 
     // Q1/Q2/Q3 データからポイントレイヤーを生成
   // Map reference for Mapbox GL JS
