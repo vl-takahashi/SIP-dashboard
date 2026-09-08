@@ -6,7 +6,7 @@ import Legends from "./Legends";
 // If using with mapbox-gl v1:
 // import Map from 'react-map-gl/mapbox-legacy';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import UpdateLayers from './AccessibilityRenderLayers'; // TODO: Migrate to Mapbox
+import CombinationLayers from './CombinationRenderLayers'; // TODO: Migrate to Mapbox
 
 import { Slider, Box, Typography } from '@mui/material';
 import Discuss from './Discuss';
@@ -381,7 +381,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                           ))}
                         </select>
                       </div>
-                      <UpdateLayers/>
+                      <CombinationLayers/>
 
                         
 
