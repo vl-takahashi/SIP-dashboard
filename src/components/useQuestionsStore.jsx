@@ -7,6 +7,7 @@ import { create } from "zustand";
  * - Q3: 希望到着時間（arrival_time）
  */
 export const useQuestionsStore = create((set) => ({
+  // ✅ 最新のデータ（1つ）
   questions: {
     sessionId: null,          // セッションID
     q1_destination: null,     // Q1: 目的地
@@ -16,32 +17,29 @@ export const useQuestionsStore = create((set) => ({
     address: null,            // Q1で入力した住所
   },
 
-  // ✅ 座標群を管理
-  coordinates: [], // [{lat, lon, timestamp}, ...]
+  // ✅ 全ての Q1/Q2/Q3 データを管理（複数）
+  questionsList: [], // [{sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address, timestamp}, ...]
 
   /**
-   * Q1/Q2/Q3 データを一括設定 + 座標を配列に追加
+   * Q1/Q2/Q3 データを一括設定 + リストに追加
    */
   setQuestions: (sessionId, q1_dest, q2_lat, q2_lon, q3_time, address) =>
-    set((state) => ({
-      questions: {
+    set((state) => {
+      const newQuestion = {
         sessionId,
         q1_destination: q1_dest,
         q2_latitude: q2_lat,
         q2_longitude: q2_lon,
         q3_arrival_time: q3_time,
         address,
-      },
-      // ✅ 新しい座標を coordinates に追加
-      coordinates: [
-        ...state.coordinates,
-        {
-          lat: q2_lat,
-          lon: q2_lon,
-          timestamp: new Date().toISOString(),
-        }
-      ],
-    })),
+        timestamp: new Date().toISOString(),
+      };
+
+      return {
+        questions: newQuestion, // 最新データ
+        questionsList: [...state.questionsList, newQuestion], // 全データ
+      };
+    }),
 
   /**
    * Q1データのみ設定

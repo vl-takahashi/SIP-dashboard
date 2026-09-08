@@ -296,8 +296,10 @@ const UpdateLayers = (props) => {
                 }
               };
               layers_ridingrow.push(layer);
+              {/*
               let point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
               let data1p=[];
+              console.log(point)
               for (const k of point){
                 data1p.push({"name":k["stopname"],"coordinates":[k["stoplon"],k["stoplat"]]})
               }
@@ -351,7 +353,7 @@ const UpdateLayers = (props) => {
                 hoverType: "所要時間",
                 clickHandler: (feature) => {}
               };
-              layers_ridingrow.push(layertextpoint);
+              layers_ridingrow.push(layertextpoint);*/}
 
             } else if (d === `ridingtime_transit_${d3}`) {
               const Area =area;
