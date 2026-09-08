@@ -8,14 +8,6 @@ import { create } from "zustand";
  */
 export const useQuestionsStore = create((set) => ({
   // ✅ 最新のデータ（1つ）
-  questions: {
-    sessionId: null,          // セッションID
-    q1_destination: null,     // Q1: 目的地
-    q2_latitude: null,        // Q2: 緯度
-    q2_longitude: null,       // Q2: 経度
-    q3_arrival_time: null,    // Q3: 希望到着時間（時間コード）
-    address: null,            // Q1で入力した住所
-  },
 
   // ✅ 全ての Q1/Q2/Q3 データを管理（複数）
   questionsList: [], // [{sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address, timestamp}, ...]
