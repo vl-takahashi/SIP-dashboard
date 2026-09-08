@@ -14,6 +14,7 @@ import { useQuestionsStore } from './components/useQuestionsStore';
 
 function App() {
   const [activeTab, setActiveTab] = useState('default');
+    const updatedQuestionsList = useQuestionsStore((state) => state.questionsList);
 
   // ✅ 📌 Q1/Q2/Q3 データを取得・更新（sessionId が変わるたびに）
   useEffect(() => {
@@ -46,9 +47,8 @@ function App() {
         const data = await response.json();
 
         console.log('✅ 【API】questionsList:', data.questionsList);
-
+        updatedQuestionsList(data.questionsList);
         // ✅ questionsList の全データを確認
-        const updatedQuestionsList = useQuestionsStore.getState.questionsList(data.questionsList);
         console.log('📊 【useQuestionsStore】全 questionsList:', updatedQuestionsList);
       } catch (error) {
         console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);
