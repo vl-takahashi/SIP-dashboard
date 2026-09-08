@@ -76,12 +76,12 @@ const CombinationLayers = () => {
 
         layers_row.push(residentPointLayer);
       });
-    if (q &&
+    {/*if (q &&
         q.q1_destination &&
         q.q1_destination === dest &&
         q.q2_latitude &&
         q.q2_longitude) {
-    }
+    }*/}
 
     console.log('📌 【useMemo】layers_row:', layers_row);
     return layers_row;
