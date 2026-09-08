@@ -52,7 +52,7 @@ function App() {
         });
 
         // ✅ useQuestionsStore に設定
-        const { setQuestions } = useQuestionsStore.getState().setQuestions();
+        const { questionsList,setQuestions } = useQuestionsStore.getState();
         setQuestions(
           data.sessionId,
           data.q1_destination,
@@ -62,7 +62,7 @@ function App() {
           data.address
         );
 
-        console.log('✅ 【App.jsx】useQuestionsStore に更新完了 → CombinationRenderLayers が再レンダリング');
+        console.log(`✅ 【App.jsx】useQuestionsStore に更新完了 → ${questionsList}`);
       } catch (error) {
         console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);
       }
