@@ -99,7 +99,7 @@ const CombinationLayers = () => {
   const clickHandlersRef = useRef({});
 
   // Setup layers in Mapbox GL JS
-  useEffect(() => {
+  useMemo(() => {
     const map = mapRef.current?.getMap?.();
     if (!map || !map.isStyleLoaded()) return;
 
