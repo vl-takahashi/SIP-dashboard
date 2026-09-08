@@ -199,61 +199,45 @@ const CombinationLayers = () => {
     });
   }, [layers, hover,question]);
 
-  // ✅ Map コンポーネントの onLoad コールバック
+  // ✅ Map コンポーネントの onLoad コールバック - ここでレイヤーも直接追加
   const handleMapLoad = (mapInstance) => {
     console.log('🗺️ 【handleMapLoad】Map loaded:', mapInstance);
+
     // mapRef.current に直接マップを設定
     if (mapRef.current) {
       mapRef.current.getMap = () => mapInstance;
       console.log('🗺️ 【handleMapLoad】getMap設定完了');
     }
-  };
 
-  // ✅ マップロード後にレイヤーを追加
-  useEffect(() => {
-    if (!mapRef.current || !mapRef.current.getMap) return;
-
-    const map = mapRef.current.getMap();
-    console.log('🗺️ 【useEffect(mapLoaded)】mapLoaded効果実行');
+    // ✅ ここで直接レイヤーを追加
+    console.log('🗺️ 【handleMapLoad】レイヤー追加開始...');
 
     // Separate layers: mesh first, then points on top
     const meshLayers = layers.filter(l => l.type === 'fill' || l.type === 'line');
     const pointLayers = layers.filter(l => l.type === 'symbol' || l.type === 'circle');
     const allLayers = [...meshLayers, ...pointLayers];
 
-    console.log('📌 【useEffect(mapLoaded)】pointLayers:', pointLayers);
+    console.log('📌 【handleMapLoad】pointLayers:', pointLayers);
 
     allLayers.forEach((layerConfig) => {
       if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
 
       const sourceId = layerConfig.source || layerConfig.id;
 
-      // Add/update source
-      if (!loadedSourcesRef.current.has(sourceId)) {
-        try {
-          map.addSource(sourceId, {
+      try {
+        // Add/update source
+        if (!loadedSourcesRef.current.has(sourceId)) {
+          mapInstance.addSource(sourceId, {
             type: 'geojson',
             data: layerConfig.sourceData
           });
           loadedSourcesRef.current.add(sourceId);
           console.log(`✅ Source added: ${sourceId}`);
-        } catch (e) {
-          const source = map.getSource(sourceId);
-          if (source && source.setData) {
-            source.setData(layerConfig.sourceData);
-          }
         }
-      } else {
-        const source = map.getSource(sourceId);
-        if (source && source.setData) {
-          source.setData(layerConfig.sourceData);
-        }
-      }
 
-      // Add layer if not exists
-      if (!map.getLayer(layerConfig.id)) {
-        try {
-          map.addLayer({
+        // Add layer if not exists
+        if (!mapInstance.getLayer(layerConfig.id)) {
+          mapInstance.addLayer({
             id: layerConfig.id,
             type: layerConfig.type,
             source: sourceId,
@@ -261,15 +245,15 @@ const CombinationLayers = () => {
             layout: layerConfig.layout
           });
           console.log(`✅ Layer added: ${layerConfig.id}`);
-        } catch (e) {
-          console.error(`❌ Failed to add layer ${layerConfig.id}:`, e);
         }
-      }
 
-      // Update visibility
-      map.setLayoutProperty(layerConfig.id, 'visibility', layerConfig.visible ? 'visible' : 'none');
+        // Update visibility
+        mapInstance.setLayoutProperty(layerConfig.id, 'visibility', layerConfig.visible ? 'visible' : 'none');
+      } catch (e) {
+        console.error(`❌ Failed to add layer ${layerConfig.id}:`, e);
+      }
     });
-  }, [mapRef, layers]);
+  };
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
