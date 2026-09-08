@@ -44,7 +44,7 @@ function App() {
         }
 
         const data = await response.json();
-
+        console.log(data);
         console.log('✅ 【App.jsx】Q1/Q2/Q3 データを取得しました:', {
           q1: data.q1_destination,
           q2: `${data.q2_latitude}, ${data.q2_longitude}`,

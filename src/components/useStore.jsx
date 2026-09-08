@@ -503,7 +503,8 @@ let filteredTransitData = null; // sessionId指定時のフィルタリング結
         }
 
         if (sl.includes(props)) {
-          freshRegistry[props].push([json.detail, true, json.data, json.agency || "","",json.point])
+          console.log(json.destpoint);
+          freshRegistry[props].push([json.detail, true, json.data, json.agency || "","",json.destpoint])
           // 曜日・目的地情報を別storeにも反映。ここが失敗してもファイル自体の読み込みは続ける。
           if (props.includes("direct_dest")){
             useDestStore.getState().setDirectdest(json.dest);
