@@ -201,6 +201,16 @@ const CombinationLayers = () => {
     });
   }, [layers, hover,question]);
 
+  // ✅ Map コンポーネントの onLoad コールバック
+  const handleMapLoad = (mapInstance) => {
+    console.log('🗺️ 【handleMapLoad】Map loaded:', mapInstance);
+    // mapRef.current に直接マップを設定
+    if (mapRef.current) {
+      mapRef.current.getMap = () => mapInstance;
+      console.log('🗺️ 【handleMapLoad】getMap設定完了');
+    }
+  };
+
   return (
     <div style={{ width: '100%', height: '100%' }}>
       <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10 }}>
@@ -212,6 +222,7 @@ const CombinationLayers = () => {
         mapboxAccessToken={mapboxAccessToken}
         mapStyle={mapstyle}
         onMove={({ viewState }) => setviewDemand(viewState)}
+        onLoad={handleMapLoad}
       />
     </div>
   );
