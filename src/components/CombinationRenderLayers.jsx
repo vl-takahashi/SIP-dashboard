@@ -22,12 +22,6 @@ const CombinationLayers = () => {
   // Q1/Q2/Q3 データを取得
   const questions = useQuestionsStore((state) => state.questions);
 
-  // ✅ デバッグ用ログ
-  console.log('🔍 【CombinationRenderLayers】useQuestionsStore から取得:', {
-    q2_latitude: questions.q2_latitude,
-    q2_longitude: questions.q2_longitude,
-    q1_destination: questions.q1_destination,
-  });
 
   let nw=[132.590317,34.618206];
   let ne=[132.94325324146035,34.61707537902578];
@@ -203,12 +197,12 @@ const CombinationLayers = () => {
     });
   }, [layers, hover,question]);
 
-  // ✅ Mapbox GL JS マップを初期化
+  // ✅ 1️⃣ Mapbox GL JS マップを初期化（マウント時に1回だけ）
   useEffect(() => {
-    // accessToken を設定
+    if (!mapRef.current) return;
+
     mapboxgl.accessToken = mapboxAccessToken;
 
-    // マップをマウント
     const map = new mapboxgl.Map({
       container: mapRef.current,
       style: mapstyle,
@@ -219,53 +213,6 @@ const CombinationLayers = () => {
     });
 
     console.log('🗺️ 【useEffect】Mapbox GL JS Map created');
-
-    // マップロード後にレイヤーを追加
-    map.on('load', () => {
-      console.log('🗺️ 【map.on(load)】マップロード完了');
-
-      // Separate layers: mesh first, then points on top
-      const meshLayers = layers.filter(l => l.type === 'fill' || l.type === 'line');
-      const pointLayers = layers.filter(l => l.type === 'symbol' || l.type === 'circle');
-      const allLayers = [...meshLayers, ...pointLayers];
-
-      console.log('📌 【map.on(load)】pointLayers:', pointLayers);
-
-      allLayers.forEach((layerConfig) => {
-        if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
-
-        const sourceId = layerConfig.source || layerConfig.id;
-
-        try {
-          // Add/update source
-          if (!loadedSourcesRef.current.has(sourceId)) {
-            map.addSource(sourceId, {
-              type: 'geojson',
-              data: layerConfig.sourceData
-            });
-            loadedSourcesRef.current.add(sourceId);
-            console.log(`✅ Source added: ${sourceId}`);
-          }
-
-          // Add layer if not exists
-          if (!map.getLayer(layerConfig.id)) {
-            map.addLayer({
-              id: layerConfig.id,
-              type: layerConfig.type,
-              source: sourceId,
-              paint: layerConfig.paint,
-              layout: layerConfig.layout
-            });
-            console.log(`✅ Layer added: ${layerConfig.id}`);
-          }
-
-          // Update visibility
-          map.setLayoutProperty(layerConfig.id, 'visibility', layerConfig.visible ? 'visible' : 'none');
-        } catch (e) {
-          console.error(`❌ Failed to add layer ${layerConfig.id}:`, e);
-        }
-      });
-    });
 
     // Move イベント
     const handleMove = () => {
@@ -279,12 +226,78 @@ const CombinationLayers = () => {
     };
     map.on('move', handleMove);
 
+    // mapRef に Map インスタンスを保存
+    mapRef.current._map = map;
+
     // クリーンアップ
     return () => {
       map.off('move', handleMove);
       map.remove();
     };
-  }, [mapboxAccessToken, mapstyle, layers]);
+  }, []); // マウント時に1回だけ
+
+  // ✅ 2️⃣ レイヤーを追加・更新（layers 変更時）
+  useEffect(() => {
+    if (!mapRef.current || !mapRef.current._map) return;
+
+    const map = mapRef.current._map;
+
+    if (!map.isStyleLoaded?.()) {
+      console.log('⏳ マップスタイル未読み込み');
+      return;
+    }
+
+    console.log('🗺️ 【useEffect(layers)】レイヤー追加開始...');
+
+    // Separate layers: mesh first, then points on top
+    const meshLayers = layers.filter(l => l.type === 'fill' || l.type === 'line');
+    const pointLayers = layers.filter(l => l.type === 'symbol' || l.type === 'circle');
+    const allLayers = [...meshLayers, ...pointLayers];
+
+    console.log('📌 【useEffect(layers)】pointLayers:', pointLayers);
+
+    allLayers.forEach((layerConfig) => {
+      if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
+
+      const sourceId = layerConfig.source || layerConfig.id;
+
+      try {
+        // Add/update source
+        if (!loadedSourcesRef.current.has(sourceId)) {
+          map.addSource(sourceId, {
+            type: 'geojson',
+            data: layerConfig.sourceData
+          });
+          loadedSourcesRef.current.add(sourceId);
+          console.log(`✅ Source added: ${sourceId}`);
+        } else {
+          const source = map.getSource(sourceId);
+          if (source && source.setData) {
+            source.setData(layerConfig.sourceData);
+          }
+        }
+
+        // Add layer if not exists
+        if (!map.getLayer(layerConfig.id)) {
+          map.addLayer({
+            id: layerConfig.id,
+            type: layerConfig.type,
+            source: sourceId,
+            paint: layerConfig.paint,
+            layout: layerConfig.layout
+          });
+          console.log(`✅ Layer added: ${layerConfig.id}`);
+        }
+
+        // Update visibility
+        if (map.getLayer(layerConfig.id)) {
+          map.setLayoutProperty(layerConfig.id, 'visibility', layerConfig.visible ? 'visible' : 'none');
+        }
+      } catch (e) {
+        console.error(`❌ Failed to add layer ${layerConfig.id}:`, e);
+      }
+    });
+  }, [layers]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
