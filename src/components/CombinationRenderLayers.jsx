@@ -106,6 +106,7 @@ const CombinationLayers = () => {
   const mapRef = useRef(null);
   const loadedSourcesRef = useRef(new Set());
   const clickHandlersRef = useRef({});
+  const isFirstFlyToRef = useRef(true); // ✅ 初回 flyTo フラグ
 
   // ✅ mapRef が設定されたか確認
   useEffect(() => {
@@ -312,9 +313,12 @@ const CombinationLayers = () => {
     });
   }, [layers]);
 
-  // ✅ 座標群の centroid を計算してマップを移動
+  // ✅ 座標群の centroid を計算してマップを移動（初回だけ）
   useEffect(() => {
     if (!mapRef.current || !mapRef.current._map || coordinates.length === 0) return;
+
+    // ✅ 初回だけ実行
+    if (!isFirstFlyToRef.current) return;
 
     const map = mapRef.current._map;
 
@@ -335,6 +339,9 @@ const CombinationLayers = () => {
       zoom: 14,
       duration: 1000,
     });
+
+    // ✅ 初回フラグを off
+    isFirstFlyToRef.current = false;
   }, [coordinates]);
 
   return (
