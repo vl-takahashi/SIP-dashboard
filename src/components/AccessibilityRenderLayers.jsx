@@ -361,7 +361,7 @@ const UpdateLayers = (props) => {
                 clickHandler: (feature) => {}
               };
               layers_ridingrow.push(layertextpoint);
-
+            }
             } else if (d === `ridingtime_transit_${d3}`) {
               const Area =area;
               let s = dest;
@@ -818,7 +818,7 @@ const UpdateLayers = (props) => {
               };
               layers_ridingrow.push(layer);}
           }}
-        }
+        
       }
     }
     return layers_ridingrow},[layercheck,time,dest,weekday,direct,weekdayflag])
