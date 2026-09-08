@@ -3,7 +3,7 @@ import React from 'react';
 import Map from 'react-map-gl/mapbox';
 
 import {  mapboxAccessToken, mapstyle, osmTileUrl, initialCheck, vividColors } from "./Globalvariable";
-import {useHoverStore,useViewDemandStore,useAreaStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
+import {useHoverStore,useViewDemandStore,useAreaStore,useQuestionStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
 import { useQuestionsStore } from "./useQuestionsStore";
 const UpdateLayers = () => {
   const color_l=[];
@@ -26,24 +26,7 @@ const UpdateLayers = () => {
   let sw=[132.56834478273046,34.27392753449381];
   let se=[132.90480109184705,34.292082779796985];
   const [address,setAddress]=useState("None");
-  const layercheck=useLayercheckStore((state)=> state.select);
-  const setFare = useFareStore((state) => state.setFare);
-  const setClickedareaaddress = useClickareaStore((state) => state.setClickareaaddress);
-  const setClickedlanduse = useClicklanduseStore((state) => state.setClicklanduse);
-  const setClickedplanningarea = useClickplanningareaStore((state) => state.setClickplanningarea);
-  const setClickedareapop = useClickareaStore((state) => state.setClickareapop);
-  const setClickedareahousehold = useClickareaStore((state) => state.setClickareahousehold);
-  const setClickedareapopdensity = useClickareaStore((state) => state.setClickareapopdensity);
-  const setClickneareststop = useClickneareststopStore((state) => state.setClickneareststop);
-  const setClickpopmesh = useClickmeshStore((state) => state.setClickmeshpop);
-  const setClickpopmeshaddress = useClickmeshStore((state) => state.setClickmeshaddress);
-  const setClickstop = useClickstopStore((state) => state.setClickstop);
-  const setFacility = useClickneareststopStore((state) => state.setFacility);
-  const setClicknearestbusline = useClicknearestbuslineStore((state) => state.setClicknearestbusline);
-  const setClicknearestridetime = useClicknearestridetimeStore((state) => state.setClicknearestridetime);
-  const setClicknearestgetofftime = useClicknearestgetofftimeStore((state) => state.setClicknearestgetofftime);
-  const setBoundary = useGetboundaryStore((state) => state.setBoundary);
-  const setClicknearestrailline=useClicknearestraillineStore((state) => state.setClicknearestrailline);
+  const question =useQuestionStore((state)=> state.question);
   let layers_row=[];
   const layers = useMemo(() => {
 
@@ -101,7 +84,7 @@ const UpdateLayers = () => {
 
     //console.log(layers_row.length);
     return layers_row;
-  }, [data,flag,time,dest,weekday,kind,hover,address,area,layercheck,questions]);
+  }, [question]);
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
   const loadedSourcesRef = useRef(new Set());

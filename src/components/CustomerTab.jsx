@@ -17,7 +17,7 @@ import RenderArea from './RenderArea';
 import RenderLine from './RenderLine';
 import MouseOver1 from './MouseOver1';
 import FileValidated from './FileValidated';
-import { useClickareaStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore} from "./useStore";
+import { useQuestionStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore} from "./useStore";
 import FetchTest from './FetchTest';
 import SpatialLayercheck from './SpatialLayercheck';
 import ChronogicalLayercheck from './ChronogicalLayercheck';
@@ -44,30 +44,7 @@ const CustomerTab = () => {
   const selectArea=useAreaStore((state)=> state.selectArea);
   const selectKind=useKindStore((state)=> state.selectKind);
   const kind=useKindStore((state)=> state.kind);
-  const clicktime=useTimesliderStore((state)=> state.setTime);
-  const clickareaaddress = useClickareaStore((state) => state.clickareaaddress);
-  const clickareapop = useClickareaStore((state) => state.clickareapop);
-  const clickareahousehold = useClickareaStore((state) => state.clickareahousehold);
-  const clickareapopdensity = useClickareaStore((state) => state.clickareapopdensity);
-  const clickneareststop=useClickneareststopStore((state) => state.clickneareststop);
-  const clickstop=useClickstopStore((state) => state.clickstop);
-  const clicknearestbusline=useClicknearestbuslineStore((state) => state.clicknearestbusline);
-  const clicknearestridetime=useClicknearestridetimeStore((state) => state.clicknearestridetime);
-  const clicknearestgetofftime=useClicknearestgetofftimeStore((state) => state.clicknearestgetofftime);
-  const [check,setLayerchecked] = useState(initialCheck);
-  const volumeRef=useRef();
-  const [value, setValue] = useState(time);
-  const selectdestref = useRef();
-  const selectweekdayref = useRef();
-  const selectkindref = useRef();
-  const selectarearef=useRef();
-  const selectlayercheckref=useRef();
-  const [sliderLabel, setSliderLabel] = useState("");
-  const [destcurrent,setdestcurrent]=useState("未選択");
-  const [weekdaycurrent,setweekdaycurrent]=useState("未選択");
-  const [layercheckcurrent,setlayercheckcurrent]=useState("未選択");
-  const [kindcurrent,setkindcurrent]=useState("未選択");
-  const [areacurrent,setareacurrent]=useState("未選択");
+  const setquestion =useQuestionStore((state)=> state.setquestion);
   useEffect(() => {
     const h = 11 + parseInt(time * 100000000)
     setSliderLabel(`選択範囲: ${h}:00-${h + 1}:00`)
@@ -117,6 +94,7 @@ const CustomerTab = () => {
                   </div>
                     )}
       {receivedSessions.length > 0 && (
+        setquestion(null),
         <div style={{ marginTop: '24px', padding: '16px', background: '#ecfdf5', borderRadius: '8px' }}>
           <h3 style={{ margin: '0 0 12px 0' }}>📥 受信した診断（{receivedSessions.length}件）</h3>
           {receivedSessions.map((session) => (

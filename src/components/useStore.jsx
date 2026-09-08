@@ -277,6 +277,16 @@ export const useLayercheckStore=create((set)=>({
         }
     }),
 }))
+export const useQuestionStore= create((set)=>({
+  question:false,
+  setquestion: (newItem) =>
+    set((state) => {
+
+      return {
+        question: !state.question,
+        }
+    }),
+}))
 export const useDataStore = create((set)=>({
   checkId:REGISTRY_ITEMIDS,
   // 生データの本体。読み込んだ各レイヤーのGeoJSON等をここに集約する。

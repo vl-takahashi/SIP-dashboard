@@ -102,7 +102,6 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const selectorigref=useRef();
   const origselectref=useRef();
   const destselectref=useRef();
-  const [sliderLabel, setSliderLabel] = useState("");
   const [destcurrent,setdestcurrent]=useState("未選択");
   const [origcurrent,setorigcurrent]=useState("未選択");
   const [origdestcurrent,selectorigdestcurrent]=useState("dest");
