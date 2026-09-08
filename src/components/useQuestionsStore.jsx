@@ -39,7 +39,6 @@ export const useQuestionsStore = create((set) => ({
       }
 
       return {
-        questions: newQuestion, // 最新データ
         questionsList: [...state.questionsList, newQuestion], // 全データ（重複なし）
       };
     }),

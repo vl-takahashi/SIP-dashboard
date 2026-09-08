@@ -52,7 +52,7 @@ function App() {
         });
 
         // ✅ useQuestionsStore に設定
-        const { setQuestions } = useQuestionsStore.getState();
+        const { setQuestions } = useQuestionsStore.getState().setQuestions();
         setQuestions(
           data.sessionId,
           data.q1_destination,
