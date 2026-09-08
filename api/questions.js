@@ -34,6 +34,11 @@ async function getRedisClient() {
 }
 
 export default async function handler(req, res) {
+  // ✅ キャッシュ無効化（常に最新データを返す）
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   // CORS ヘッダー設定
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');

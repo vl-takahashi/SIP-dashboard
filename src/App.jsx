@@ -39,6 +39,7 @@ function App() {
             'Content-Type': 'application/json',
             'X-Session-ID': sessionId,
           },
+          cache: 'no-store',  // ✅ キャッシュを無視（常に最新データ）
         });
 
         if (!response.ok) {
