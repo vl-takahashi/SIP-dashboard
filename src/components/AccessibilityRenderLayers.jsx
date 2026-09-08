@@ -137,9 +137,9 @@ const UpdateLayers = (props) => {
     if (Object.entries(data[d]).length>0&&time!=""&&dest!=""&&weekday!=""){
         
       //console.log(data[d]);
-    for(const d3 of origdest0){
-      if (d === `ridingtime_direct_${d3}`) {
-        for (const [key, d1] of Object.entries(data[d])){
+      for (const [key, d1] of Object.entries(data[d])){
+          for(const d3 of origdest0){
+                if (d === `ridingtime_direct_${d3}`) {
                   console.log(d)
                   i+=1
               const Area =area;
@@ -360,8 +360,8 @@ const UpdateLayers = (props) => {
                 clickHandler: (feature) => {}
               };
               layers_ridingrow.push(layertextpoint);
-            }
-          } else if (d === `ridingtime_transit_${d3}`) {
+
+            } else if (d === `ridingtime_transit_${d3}`) {
               const Area =area;
               let s = dest;
               let s0 = weekday;
@@ -816,7 +816,7 @@ const UpdateLayers = (props) => {
                 }
               };
               layers_ridingrow.push(layer);}
-          }
+          }}
         }
       
     }

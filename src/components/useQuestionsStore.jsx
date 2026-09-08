@@ -21,7 +21,7 @@ export const useQuestionsStore = create((set) => ({
   questionsList: [], // [{sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address, timestamp}, ...]
 
   /**
-   * Q1/Q2/Q3 データを一括設定 + リストに追加
+   * Q1/Q2/Q3 データを一括設定 + リストに追加（重複削除）
    */
   setQuestions: (sessionId, q1_dest, q2_lat, q2_lon, q3_time, address) =>
     set((state) => {
@@ -35,9 +35,20 @@ export const useQuestionsStore = create((set) => ({
         timestamp: new Date().toISOString(),
       };
 
+      // ✅ 重複チェック：同じ座標が既に存在するか
+      const isDuplicate = state.questionsList.some(q =>
+        q.q2_latitude === q2_lat && q.q2_longitude === q2_lon
+      );
+
+      // ✅ 重複なら追加しない
+      if (isDuplicate) {
+        console.log('⚠️ 重複座標：追加しません');
+        return state;
+      }
+
       return {
         questions: newQuestion, // 最新データ
-        questionsList: [...state.questionsList, newQuestion], // 全データ
+        questionsList: [...state.questionsList, newQuestion], // 全データ（重複なし）
       };
     }),
 
