@@ -36,7 +36,7 @@ const CombinationLayers = () => {
   let sw=[132.56834478273046,34.27392753449381];
   let se=[132.90480109184705,34.292082779796985];
   const [address,setAddress]=useState("None");
-  const question =useQuestionStore((state)=> state.question);
+  const question =useQuestionStore((state)=> state.questionsList);
 
   const layers = useMemo(() => {
     // ✅ useMemo の中で layers_row を定義
