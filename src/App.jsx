@@ -52,7 +52,8 @@ function App() {
         });
 
         // ✅ useQuestionsStore に設定
-        const { questionsList,setQuestions } = useQuestionsStore.getState();
+        const questionsList= useQuestionsStore.getState().questionsList;
+        const setQuestions = useQuestionsStore.getState().questionsList.setQuestions;
         setQuestions(
           data.sessionId,
           data.q1_destination,
@@ -62,6 +63,7 @@ function App() {
           data.address
         );
 
+        console.log("最新は");
         console.log(questionsList);
       } catch (error) {
         console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);
