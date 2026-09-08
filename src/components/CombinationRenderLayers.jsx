@@ -99,9 +99,16 @@ const CombinationLayers = () => {
   const clickHandlersRef = useRef({});
 
   // Setup layers in Mapbox GL JS
-  useMemo(() => {
+  useEffect(() => {
     const map = mapRef.current?.getMap?.();
-    if (!map || !map.isStyleLoaded()) return;
+
+    console.log('🗺️ 【useEffect】map:', map ? 'EXISTS' : 'NULL');
+    console.log('🗺️ 【useEffect】isStyleLoaded:', map?.isStyleLoaded?.());
+
+    if (!map || !map.isStyleLoaded()) {
+      console.warn('⚠️ 【useEffect】マップまたはスタイルが未読み込み');
+      return;
+    }
 
     console.log('📌 【useEffect】layers 配列:', layers);
     console.log('📌 【useEffect】resident-point-layer 含まれているか:', layers.some(l => l.id === 'resident-point-layer'));
