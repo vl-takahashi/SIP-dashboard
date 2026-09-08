@@ -296,7 +296,7 @@ const UpdateLayers = (props) => {
                 }
               };
               layers_ridingrow.push(layer);
-              const point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
+              let point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
               let data1p=[];
               for (const k of point){
                 data1p.push({"name":k["stopname"],"coordinates":[k["stoplon"],k["stoplat"]]})
