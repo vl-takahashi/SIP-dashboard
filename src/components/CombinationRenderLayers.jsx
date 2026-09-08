@@ -48,8 +48,7 @@ const CombinationLayers = () => {
 
       // Q3の到着時間が一致した時だけ表示
       const isQ3Match = questions.q3_arrival_time === q3_hour;
-      for (let q1 in questions){
-        let q=questions[q1];
+      questions.forEach((q)=>{
         console.log(q);
         // ✅ coordinates 配列の全ポイントを features に変換
         let residentPointLayer = {
@@ -83,7 +82,7 @@ const CombinationLayers = () => {
 
         layers_row.push(residentPointLayer);
       }
-      
+    )
 
     // Q1/Q2/Q3 データからポイントレイヤーを生成
     if (questions &&
