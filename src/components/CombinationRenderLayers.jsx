@@ -43,50 +43,52 @@ const CombinationLayers = () => {
 
       // Q3の到着時間が一致した時だけ表示
       const isQ3Match = questions.q3_arrival_time === q3_hour;
+      for (const q of questions){
+        // ✅ coordinates 配列の全ポイントを features に変換
+        const residentPointLayer = {
+          id: 'resident-point-layer',
+          type: 'circle',
+          sourceData: {
+            type: 'FeatureCollection',
+            features: coordinates.length > 0
+              ? coordinates.map((coord, idx) => ({
+                  type: 'Feature',
+                  geometry: {
+                    type: 'Point',
+                    coordinates: [coord.lon, coord.lat]
+                  },
+                  properties: {
+                    index: idx,
+                    timestamp: coord.timestamp
+                  }
+                }))
+              : [{
+                  type: 'Feature',
+                  geometry: {
+                    type: 'Point',
+                    coordinates: [q.q2_longitude, q.q2_latitude]
+                  }
+                }]
+          },
+          paint: {
+            'circle-radius':3,
+            'circle-color': '#0000ff', // 青固定
+            'circle-opacity': 0.9,
+            'circle-stroke-width': 3,
+            'circle-stroke-color': '#ffffff'
+          },
+          layout: {},
+          visible: true,//isQ3Match, // Q3一致時だけ表示
+          hoverType: 'resident',
+          clickHandler: (feature) => {
+            console.log('🏘️  住民の位置をクリック:', feature.properties);
+          }
 
-      // ✅ coordinates 配列の全ポイントを features に変換
-      const residentPointLayer = {
-        id: 'resident-point-layer',
-        type: 'circle',
-        sourceData: {
-          type: 'FeatureCollection',
-          features: coordinates.length > 0
-            ? coordinates.map((coord, idx) => ({
-                type: 'Feature',
-                geometry: {
-                  type: 'Point',
-                  coordinates: [coord.lon, coord.lat]
-                },
-                properties: {
-                  index: idx,
-                  timestamp: coord.timestamp
-                }
-              }))
-            : [{
-                type: 'Feature',
-                geometry: {
-                  type: 'Point',
-                  coordinates: [questions.q2_longitude, questions.q2_latitude]
-                }
-              }]
-        },
-        paint: {
-          'circle-radius':3,
-          'circle-color': '#0000ff', // 青固定
-          'circle-opacity': 0.9,
-          'circle-stroke-width': 3,
-          'circle-stroke-color': '#ffffff'
-        },
-        layout: {},
-        visible: true,//isQ3Match, // Q3一致時だけ表示
-        hoverType: 'resident',
-        clickHandler: (feature) => {
-          console.log('🏘️  住民の位置をクリック:', feature.properties);
-        }
+        };
 
-      };
-
-      layers_row.push(residentPointLayer);
+        layers_row.push(residentPointLayer);
+      }
+      
 
     // Q1/Q2/Q3 データからポイントレイヤーを生成
     if (questions &&
