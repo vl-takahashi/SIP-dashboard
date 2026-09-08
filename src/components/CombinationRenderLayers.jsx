@@ -21,17 +21,13 @@ const CombinationLayers = () => {
   const flag = useDataStore((state) => state.flag);
 
 
-  // ✅ 全ての Q1/Q2/Q3 データを取得（配列）
-  const questionsList = useQuestionsStore((state) => state.questionsList);
-
-  console.log('📋 【CombinationRenderLayers】questionsList:', questionsList);
 
   let nw=[132.590317,34.618206];
   let ne=[132.94325324146035,34.61707537902578];
   let sw=[132.56834478273046,34.27392753449381];
   let se=[132.90480109184705,34.292082779796985];
   const [address,setAddress]=useState("None");
-  const question =useQuestionStore((state)=> state.questionsList);
+  const questions =useQuestionStore((state)=> state.questionsList);
 
   const layers = useMemo(() => {
     // ✅ useMemo の中で layers_row を定義

@@ -35,7 +35,6 @@ export const useQuestionsStore = create((set) => ({
         address,
         timestamp: new Date().toISOString(),
       };
-      console.log('📝 setQuestions:', newQuestion);
       // ✅ 重複チェック：同じ座標が既に存在するか
       const isDuplicate = state.questionsList.some(q =>
         q.q2_latitude === q2_lat && q.q2_longitude === q2_lon
