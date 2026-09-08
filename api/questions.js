@@ -134,7 +134,7 @@ export default async function handler(req, res) {
         message: 'Q1/Q2/Q3 データを受け取りました',
         data: {
           sessionId,
-          timestamp: questionsData.timestamp,
+          timestamp: newQuestion.timestamp,
         },
       });
     } catch (error) {
@@ -204,6 +204,8 @@ export default async function handler(req, res) {
       }
 
       console.log(`✅ Q1/Q2/Q3 データを取得: ${kvKey} (全 ${questionsList.length} 件)`);
+      console.log(`🔴 【GET】latest:`, latest);
+      console.log(`📋 【GET】questionsList[0]:`, questionsList[0]);
 
       return res.status(200).json({
         questionsList,
