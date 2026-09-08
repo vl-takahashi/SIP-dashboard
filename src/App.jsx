@@ -46,21 +46,6 @@ function App() {
         const data = await response.json();
 
         console.log('✅ 【API】questionsList:', data.questionsList);
-        console.log('🔴 【API】latest:', data.latest);
-
-        // ✅ useQuestionsStore に設定（最新データを questions に、全データを questionsList に）
-        const setQuestions = useQuestionsStore.getState().setQuestions;
-
-        if (data.latest) {
-          setQuestions(
-            data.latest.sessionId,
-            data.latest.q1_destination,
-            data.latest.q2_latitude,      // 🔴 座標：緯度
-            data.latest.q2_longitude,     // 🔴 座標：経度
-            data.latest.q3_arrival_time,
-            data.latest.address
-          );
-        }
 
         // ✅ questionsList の全データを確認
         const updatedQuestionsList = useQuestionsStore.getState().questionsList;
