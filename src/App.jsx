@@ -48,9 +48,10 @@ function App() {
         const data = await response.json();
 
         console.log('✅ 【API】questionsList:', data.questionsList);
+        console.log('✅ 【API】latest:', data.latest);
+
+        // ✅ API から取得した questionsList をストアに設定（questions と questionsList を同時更新）
         updateQuestionsList(data.questionsList);
-        // ✅ questionsList の全データを確認
-        console.log('📊 【useQuestionsStore】全 questionsList:', updatedQuestionsList);
       } catch (error) {
         console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);
       }
