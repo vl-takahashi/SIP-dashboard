@@ -23,8 +23,13 @@ const CombinationLayers = () => {
   // Q1/Q2/Q3 データを取得
   const questions = useQuestionsStore((state) => state.questions);
 
+  // ✅ 全ての Q1/Q2/Q3 データを取得（リスト）
+  const questionsList = useQuestionsStore((state) => state.questionsList);
+
   // ✅ 座標群を取得
   const coordinates = useQuestionsStore((state) => state.coordinates);
+
+  console.log('📋 【CombinationRenderLayers】questionsList:', questionsList);
 
   let nw=[132.590317,34.618206];
   let ne=[132.94325324146035,34.61707537902578];
