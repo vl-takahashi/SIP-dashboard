@@ -48,7 +48,7 @@ function App() {
         console.log('✅ 【API】questionsList:', data.questionsList);
 
         // ✅ questionsList の全データを確認
-        const updatedQuestionsList = useQuestionsStore.getState().questionsList;
+        const updatedQuestionsList = useQuestionsStore.getState().questionsList(data.questionsList);
         console.log('📊 【useQuestionsStore】全 questionsList:', updatedQuestionsList);
       } catch (error) {
         console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);

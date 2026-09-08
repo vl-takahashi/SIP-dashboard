@@ -23,21 +23,11 @@ export const useQuestionsStore = create((set) => ({
   /**
    * Q1/Q2/Q3 データを一括設定 + リストに追加（重複削除）
    */
-  setQuestions: (sessionId, q1_dest, q2_lat, q2_lon, q3_time, address) =>
+  setQuestions: (q) =>
     set((state) => {
-      const prev=state.questionsList||[]
-      const newQuestion = {
-        sessionId,
-        q1_destination: q1_dest,
-        q2_latitude: q2_lat,
-        q2_longitude: q2_lon,
-        q3_arrival_time: q3_time,
-        address,
-        timestamp: new Date().toISOString(),
-      };
 
       return {
-        questionsList: [...prev, newQuestion], // 全データ（重複なし）
+        questionsList: q, // 全データ（重複なし）
       };
     }),
 
