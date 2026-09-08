@@ -35,22 +35,8 @@ export const useQuestionsStore = create((set) => ({
         address,
         timestamp: new Date().toISOString(),
       };
-      // ✅ 重複チェック：同じ座標が既に存在するか
-      const isDuplicate = state.questionsList.some(q =>
-        q.q2_latitude === q2_lat && q.q2_longitude === q2_lon
-      );
-
-      // ✅ 重複なら追加しない
-      if (isDuplicate) {
-        console.log('⚠️ 重複座標：追加しません');
-        // ただし questions は最新データに更新
-        return {
-          questions: newQuestion,
-        };
-      }
 
       return {
-        questions: newQuestion, // ✅ 最新データを更新
         questionsList: [...prev, newQuestion], // 全データ（重複なし）
       };
     }),
