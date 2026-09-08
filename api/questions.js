@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       }
 
       // Q1/Q2/Q3 データを構築
-      const questionsData = {
+      const newQuestion = {
         sessionId,
         q1_destination,
         q2_latitude,
@@ -82,18 +82,48 @@ export default async function handler(req, res) {
         timestamp: new Date().toISOString(),
       };
 
-      // 📝 Redis に保存
+      // 📝 Redis に保存（配列で蓄積）
       const client = await getRedisClient();
 
       if (client) {
         try {
           const kvKey = `questions:${sessionId}`;
+
+          // ✅ 既存データを取得
+          const existingData = await client.get(kvKey);
+          let questionsList = [];
+
+          if (existingData) {
+            try {
+              questionsList = JSON.parse(existingData);
+              if (!Array.isArray(questionsList)) {
+                questionsList = [questionsList]; // 古い単一オブジェクトを配列に変換
+              }
+            } catch (e) {
+              questionsList = [];
+            }
+          }
+
+          // ✅ 重複チェック（同じ座標が既に存在するか）
+          const isDuplicate = questionsList.some(q =>
+            q.q2_latitude === q2_latitude && q.q2_longitude === q2_longitude
+          );
+
+          if (!isDuplicate) {
+            // ✅ 新しいデータを配列に追加
+            questionsList.push(newQuestion);
+            console.log(`✅ 新しい座標を追加: [${q2_latitude}, ${q2_longitude}]`);
+          } else {
+            console.log(`⚠️ 重複座標：追加しません [${q2_latitude}, ${q2_longitude}]`);
+          }
+
+          // ✅ 配列全体を保存
           await client.setEx(
             kvKey,
             86400 * 7, // 7日間保持
-            JSON.stringify(questionsData)
+            JSON.stringify(questionsList)
           );
-          console.log(`✅ Q1/Q2/Q3 データを Redis に保存: ${kvKey}`);
+          console.log(`✅ Q1/Q2/Q3 データを Redis に保存: ${kvKey} (全 ${questionsList.length} 件)`);
         } catch (redisError) {
           console.warn('⚠️ Redis 保存エラー:', redisError.message);
         }
@@ -148,18 +178,37 @@ export default async function handler(req, res) {
       if (!data) {
         console.log(`⚠️ Q1/Q2/Q3 データが見つかりません: ${kvKey}`);
         return res.status(200).json({
-          q1_destination: null,
-          q2_latitude: null,
-          q2_longitude: null,
-          q3_arrival_time: null,
-          address: null,
+          questionsList: [],
+          latest: {
+            q1_destination: null,
+            q2_latitude: null,
+            q2_longitude: null,
+            q3_arrival_time: null,
+            address: null,
+          }
         });
       }
 
-      const questionsData = JSON.parse(data);
-      console.log(`✅ Q1/Q2/Q3 データを取得: ${kvKey}`);
+      let questionsData = JSON.parse(data);
 
-      return res.status(200).json(questionsData);
+      // ✅ 配列と単一オブジェクトの両方に対応
+      let questionsList = [];
+      let latest = null;
+
+      if (Array.isArray(questionsData)) {
+        questionsList = questionsData;
+        latest = questionsData[questionsData.length - 1] || null; // 最新データ
+      } else {
+        questionsList = [questionsData]; // 古い形式なら配列に変換
+        latest = questionsData;
+      }
+
+      console.log(`✅ Q1/Q2/Q3 データを取得: ${kvKey} (全 ${questionsList.length} 件)`);
+
+      return res.status(200).json({
+        questionsList,
+        latest
+      });
     } catch (error) {
       console.error(`❌ GET エラー:`, error.message);
 

@@ -44,27 +44,27 @@ function App() {
         }
 
         const data = await response.json();
-        console.log(data);
-        console.log('✅ 【App.jsx】Q1/Q2/Q3 データを取得しました:', {
-          q1: data.q1_destination,
-          q2: `${data.q2_latitude}, ${data.q2_longitude}`,
-          q3: data.q3_arrival_time,
-        });
 
-        // ✅ useQuestionsStore に設定
-        const setQuestions = useQuestionsStore.getState().setQuestions;
-        setQuestions(
-          data.sessionId,
-          data.q1_destination,
-          data.q2_latitude,      // 🔴 座標：緯度
-          data.q2_longitude,     // 🔴 座標：経度
-          data.q3_arrival_time,
-          data.address
-        );
+        console.log('✅ 【API】questionsList:', data.questionsList);
+        console.log('🔴 【API】latest:', data.latest);
 
-        console.log("最新は");
-        const questionsList= useQuestionsStore.getState().questionsList;
-        console.log(questionsList);
+        // ✅ useQuestionsStore に設定（最新データを questions に、全データを questionsList に）
+        const { setQuestions } = useQuestionsStore.getState();
+
+        if (data.latest) {
+          setQuestions(
+            data.latest.sessionId,
+            data.latest.q1_destination,
+            data.latest.q2_latitude,      // 🔴 座標：緯度
+            data.latest.q2_longitude,     // 🔴 座標：経度
+            data.latest.q3_arrival_time,
+            data.latest.address
+          );
+        }
+
+        // ✅ questionsList の全データを確認
+        const updatedQuestionsList = useQuestionsStore.getState().questionsList;
+        console.log('📊 【useQuestionsStore】全 questionsList:', updatedQuestionsList);
       } catch (error) {
         console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);
       }
