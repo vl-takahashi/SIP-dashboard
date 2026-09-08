@@ -21,6 +21,14 @@ const UpdateLayers = () => {
 
   // Q1/Q2/Q3 データを取得
   const questions = useQuestionsStore((state) => state.questions);
+
+  // ✅ デバッグ用ログ
+  console.log('🔍 【CombinationRenderLayers】useQuestionsStore から取得:', {
+    q2_latitude: questions.q2_latitude,
+    q2_longitude: questions.q2_longitude,
+    q1_destination: questions.q1_destination,
+  });
+
   let nw=[132.590317,34.618206];
   let ne=[132.94325324146035,34.61707537902578];
   let sw=[132.56834478273046,34.27392753449381];

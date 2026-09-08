@@ -63,6 +63,14 @@ function App() {
         );
 
         console.log('✅ 【App.jsx】useQuestionsStore に保存完了 → CombinationRenderLayers で取得可能');
+
+        // ✅ 保存されたか確認（デバッグ用）
+        const savedData = useQuestionsStore.getState().questions;
+        console.log('🔍 【App.jsx】保存後の useQuestionsStore:', {
+          q2_latitude: savedData.q2_latitude,
+          q2_longitude: savedData.q2_longitude,
+          q1_destination: savedData.q1_destination,
+        });
       } catch (error) {
         console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);
       }
