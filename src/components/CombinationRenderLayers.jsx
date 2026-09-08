@@ -45,7 +45,7 @@ const CombinationLayers = () => {
       const isQ3Match = questions.q3_arrival_time === q3_hour;
       for (const q of questions){
         // ✅ coordinates 配列の全ポイントを features に変換
-        const residentPointLayer = {
+        let residentPointLayer = {
           id: 'resident-point-layer',
           type: 'circle',
           sourceData: {
