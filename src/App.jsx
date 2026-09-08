@@ -49,7 +49,7 @@ function App() {
         console.log('🔴 【API】latest:', data.latest);
 
         // ✅ useQuestionsStore に設定（最新データを questions に、全データを questionsList に）
-        const { setQuestions } = useQuestionsStore.getState();
+        const setQuestions = useQuestionsStore.getState().setQuestions;
 
         if (data.latest) {
           setQuestions(
