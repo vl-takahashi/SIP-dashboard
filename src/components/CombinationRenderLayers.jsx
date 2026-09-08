@@ -1,6 +1,7 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import React from 'react';
 import mapboxgl from 'mapbox-gl';
+import * as turf from '@turf/turf';
 
 import {  mapboxAccessToken, mapstyle, osmTileUrl, initialCheck, vividColors } from "./Globalvariable";
 import {useHoverStore,useViewDemandStore,useAreaStore,useQuestionStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
@@ -22,6 +23,8 @@ const CombinationLayers = () => {
   // Q1/Q2/Q3 データを取得
   const questions = useQuestionsStore((state) => state.questions);
 
+  // ✅ 座標群を取得
+  const coordinates = useQuestionsStore((state) => state.coordinates);
 
   let nw=[132.590317,34.618206];
   let ne=[132.94325324146035,34.61707537902578];
@@ -60,7 +63,7 @@ const CombinationLayers = () => {
           }]
         },
         paint: {
-          'circle-radius':10,
+          'circle-radius':3,
           'circle-color': '#0000ff', // 青固定
           'circle-opacity': 0.9,
           'circle-stroke-width': 3,
@@ -298,6 +301,31 @@ const CombinationLayers = () => {
       }
     });
   }, [layers]);
+
+  // ✅ 座標群の centroid を計算してマップを移動
+  useEffect(() => {
+    if (!mapRef.current || !mapRef.current._map || coordinates.length === 0) return;
+
+    const map = mapRef.current._map;
+
+    // turf.js で座標群の centroid を計算
+    const points = turf.featureCollection(
+      coordinates.map(coord =>
+        turf.point([coord.lon, coord.lat])
+      )
+    );
+    const centroid = turf.center(points);
+    const [centerLon, centerLat] = centroid.geometry.coordinates;
+
+    console.log(`🎯 【map.flyTo】centroid: [${centerLat}, ${centerLon}]`);
+
+    // マップの中心を centroid に移動
+    map.flyTo({
+      center: [centerLon, centerLat],
+      zoom: 14,
+      duration: 1000,
+    });
+  }, [coordinates]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>

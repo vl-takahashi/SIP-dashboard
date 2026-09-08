@@ -16,11 +16,14 @@ export const useQuestionsStore = create((set) => ({
     address: null,            // Q1で入力した住所
   },
 
+  // ✅ 座標群を管理
+  coordinates: [], // [{lat, lon, timestamp}, ...]
+
   /**
-   * Q1/Q2/Q3 データを一括設定
+   * Q1/Q2/Q3 データを一括設定 + 座標を配列に追加
    */
   setQuestions: (sessionId, q1_dest, q2_lat, q2_lon, q3_time, address) =>
-    set(() => ({
+    set((state) => ({
       questions: {
         sessionId,
         q1_destination: q1_dest,
@@ -29,6 +32,15 @@ export const useQuestionsStore = create((set) => ({
         q3_arrival_time: q3_time,
         address,
       },
+      // ✅ 新しい座標を coordinates に追加
+      coordinates: [
+        ...state.coordinates,
+        {
+          lat: q2_lat,
+          lon: q2_lon,
+          timestamp: new Date().toISOString(),
+        }
+      ],
     })),
 
   /**

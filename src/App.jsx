@@ -15,7 +15,7 @@ import { useQuestionsStore } from './components/useQuestionsStore';
 function App() {
   const [activeTab, setActiveTab] = useState('default');
 
-  // ✅ 📌 App マウント時に Q1/Q2/Q3 データを先行取得
+  // ✅ 📌 Q1/Q2/Q3 データを取得・更新（sessionId が変わるたびに）
   useEffect(() => {
     const fetchQuestionsData = async () => {
       try {
@@ -51,7 +51,7 @@ function App() {
           q3: data.q3_arrival_time,
         });
 
-        // ✅ useQuestionsStore に設定（子コンポーネントのレンダリング前）
+        // ✅ useQuestionsStore に設定
         const { setQuestions } = useQuestionsStore.getState();
         setQuestions(
           data.sessionId,
@@ -62,23 +62,19 @@ function App() {
           data.address
         );
 
-        console.log('✅ 【App.jsx】useQuestionsStore に保存完了 → CombinationRenderLayers で取得可能');
-
-        // ✅ 保存されたか確認（デバッグ用）
-        const savedData = useQuestionsStore.getState().questions;
-        console.log('🔍 【App.jsx】保存後の useQuestionsStore:', {
-          q2_latitude: savedData.q2_latitude,
-          q2_longitude: savedData.q2_longitude,
-          q1_destination: savedData.q1_destination,
-        });
+        console.log('✅ 【App.jsx】useQuestionsStore に更新完了 → CombinationRenderLayers が再レンダリング');
       } catch (error) {
         console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);
       }
     };
 
-    // マウント時に先行実行
-    fetchQuestionsData();
-  }, []); // 依存配列は空で、マウント時のみ実行
+    // 定期的に API を呼び出し（1秒ごと）
+    fetchQuestionsData(); // 初回すぐに実行
+    const interval = setInterval(fetchQuestionsData, 1000);
+
+    // クリーンアップ
+    return () => clearInterval(interval);
+  }, []);
 
   
   function handleMuni(e) {
