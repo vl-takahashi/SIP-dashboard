@@ -68,9 +68,9 @@ function App() {
       }
     };
 
-    // 定期的に API を呼び出し（1秒ごと）
+    // 定期的に API を呼び出し（10秒ごと）
     fetchQuestionsData(); // 初回すぐに実行
-    const interval = setInterval(fetchQuestionsData, 1000);
+    const interval = setInterval(fetchQuestionsData, 10000);
 
     // クリーンアップ
     return () => clearInterval(interval);

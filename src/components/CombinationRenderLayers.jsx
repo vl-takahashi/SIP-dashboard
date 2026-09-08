@@ -44,23 +44,31 @@ const CombinationLayers = () => {
       // Q3の到着時間が一致した時だけ表示
       const isQ3Match = questions.q3_arrival_time === q3_hour;
 
+      // ✅ coordinates 配列の全ポイントを features に変換
       const residentPointLayer = {
         id: 'resident-point-layer',
         type: 'circle',
         sourceData: {
           type: 'FeatureCollection',
-          features: [{
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [questions.q2_longitude, questions.q2_latitude]
-            },
-            //properties: {
-              //address: questions.address,
-              //q1_destination: questions.q1_destination,
-              //q3_arrival_time: questions.q3_arrival_time
-            //}
-          }]
+          features: coordinates.length > 0
+            ? coordinates.map((coord, idx) => ({
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [coord.lon, coord.lat]
+                },
+                properties: {
+                  index: idx,
+                  timestamp: coord.timestamp
+                }
+              }))
+            : [{
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [questions.q2_longitude, questions.q2_latitude]
+                }
+              }]
         },
         paint: {
           'circle-radius':3,
@@ -91,7 +99,7 @@ const CombinationLayers = () => {
     console.log('📌 【useMemo】layers_row:', layers_row);
     console.log('📌 【useMemo】layers_row.length:', layers_row.length);
     return layers_row;
-  }, [questions, time, dest, question]);
+  }, [questions, time, dest, question, coordinates]);
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
   const loadedSourcesRef = useRef(new Set());
