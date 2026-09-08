@@ -62,7 +62,7 @@ function App() {
           data.address
         );
 
-        console.log(`✅ 【App.jsx】useQuestionsStore に更新完了 → ${questionsList}`);
+        console.log(questionsList);
       } catch (error) {
         console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);
       }
