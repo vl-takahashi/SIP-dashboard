@@ -98,10 +98,17 @@ const CombinationLayers = () => {
   const loadedSourcesRef = useRef(new Set());
   const clickHandlersRef = useRef({});
 
+  // ✅ mapRef が設定されたか確認
+  useEffect(() => {
+    console.log('🗺️ 【componentDidMount】mapRef.current:', mapRef.current);
+    console.log('🗺️ 【componentDidMount】mapRef.current?.getMap:', mapRef.current?.getMap);
+  }, []);
+
   // Setup layers in Mapbox GL JS
   useEffect(() => {
     const map = mapRef.current?.getMap?.();
 
+    console.log('🗺️ 【useEffect】mapRef.current:', mapRef.current);
     console.log('🗺️ 【useEffect】map:', map ? 'EXISTS' : 'NULL');
     console.log('🗺️ 【useEffect】isStyleLoaded:', map?.isStyleLoaded?.());
 
