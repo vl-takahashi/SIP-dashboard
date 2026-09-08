@@ -17,6 +17,7 @@ export const useQuestionsStore = create((set) => ({
    */
   setQuestions: (sessionId, q1_dest, q2_lat, q2_lon, q3_time, address) =>
     set((state) => {
+      const prev=state.questionsList||[]
       const newQuestion = {
         sessionId,
         q1_destination: q1_dest,
@@ -39,7 +40,7 @@ export const useQuestionsStore = create((set) => ({
       }
 
       return {
-        questionsList: [...state.questionsList, newQuestion], // 全データ（重複なし）
+        questionsList: [...prev, newQuestion], // 全データ（重複なし）
       };
     }),
 
