@@ -37,7 +37,7 @@ const CombinationLayers = () => {
 
       const q3_hour = Math.round(time * 100000000) + 11;
 
-      questionsList.forEach((q, index) => {
+      questions.forEach((q, index) => {
       // Q3の到着時間が一致した時だけ表示
         let isQ3Match = q?.q3_arrival_time === q3_hour;
         let residentPointLayer = {
