@@ -35,9 +35,10 @@ const CombinationLayers = () => {
   let se=[132.90480109184705,34.292082779796985];
   const [address,setAddress]=useState("None");
   const question =useQuestionStore((state)=> state.question);
-  let layers_row=[];
-  const layers = useMemo(() => {
 
+  const layers = useMemo(() => {
+    // ✅ useMemo の中で layers_row を定義
+    let layers_row=[];
 
       const q3_hour = Math.round(time * 100000000) + 11;
 
