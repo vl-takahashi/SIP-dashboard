@@ -19,7 +19,7 @@ const CombinationLayers = () => {
   const kind = useKindStore((state)=>state.select);
   const data = useDataStore((state) => state.data);
   const flag = useDataStore((state) => state.flag);
-\
+
 
   // ✅ 全ての Q1/Q2/Q3 データを取得（配列）
   const questionsList = useQuestionsStore((state) => state.questionsList);
