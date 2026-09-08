@@ -43,7 +43,9 @@ const CombinationLayers = () => {
 
       // Q3の到着時間が一致した時だけ表示
       const isQ3Match = questions.q3_arrival_time === q3_hour;
-      for (const q of questions){
+      for (let q1 in questions){
+        let q=questions[q1];
+        console.log(q);
         // ✅ coordinates 配列の全ポイントを features に変換
         let residentPointLayer = {
           id: 'resident-point-layer',
