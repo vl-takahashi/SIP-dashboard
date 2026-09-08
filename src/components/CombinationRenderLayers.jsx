@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import React from 'react';
-import Map from 'react-map-gl/mapbox';
+import mapboxgl from 'mapbox-gl';
 
 import {  mapboxAccessToken, mapstyle, osmTileUrl, initialCheck, vividColors } from "./Globalvariable";
 import {useHoverStore,useViewDemandStore,useAreaStore,useQuestionStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
@@ -199,75 +199,102 @@ const CombinationLayers = () => {
     });
   }, [layers, hover,question]);
 
-  // ✅ Map コンポーネントの onLoad コールバック - ここでレイヤーも直接追加
-  const handleMapLoad = (mapInstance) => {
-    console.log('🗺️ 【handleMapLoad】Map loaded:', mapInstance);
+  // ✅ Mapbox GL JS マップを初期化
+  useEffect(() => {
+    // accessToken を設定
+    mapboxgl.accessToken = mapboxAccessToken;
 
-    // mapRef.current に直接マップを設定
-    if (mapRef.current) {
-      mapRef.current.getMap = () => mapInstance;
-      console.log('🗺️ 【handleMapLoad】getMap設定完了');
-    }
-
-    // ✅ ここで直接レイヤーを追加
-    console.log('🗺️ 【handleMapLoad】レイヤー追加開始...');
-
-    // Separate layers: mesh first, then points on top
-    const meshLayers = layers.filter(l => l.type === 'fill' || l.type === 'line');
-    const pointLayers = layers.filter(l => l.type === 'symbol' || l.type === 'circle');
-    const allLayers = [...meshLayers, ...pointLayers];
-
-    console.log('📌 【handleMapLoad】pointLayers:', pointLayers);
-
-    allLayers.forEach((layerConfig) => {
-      if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
-
-      const sourceId = layerConfig.source || layerConfig.id;
-
-      try {
-        // Add/update source
-        if (!loadedSourcesRef.current.has(sourceId)) {
-          mapInstance.addSource(sourceId, {
-            type: 'geojson',
-            data: layerConfig.sourceData
-          });
-          loadedSourcesRef.current.add(sourceId);
-          console.log(`✅ Source added: ${sourceId}`);
-        }
-
-        // Add layer if not exists
-        if (!mapInstance.getLayer(layerConfig.id)) {
-          mapInstance.addLayer({
-            id: layerConfig.id,
-            type: layerConfig.type,
-            source: sourceId,
-            paint: layerConfig.paint,
-            layout: layerConfig.layout
-          });
-          console.log(`✅ Layer added: ${layerConfig.id}`);
-        }
-
-        // Update visibility
-        mapInstance.setLayoutProperty(layerConfig.id, 'visibility', layerConfig.visible ? 'visible' : 'none');
-      } catch (e) {
-        console.error(`❌ Failed to add layer ${layerConfig.id}:`, e);
-      }
+    // マップをマウント
+    const map = new mapboxgl.Map({
+      container: mapRef.current,
+      style: mapstyle,
+      center: [viewDemand.longitude || 132.741, viewDemand.latitude || 34.423],
+      zoom: viewDemand.zoom || 12,
+      pitch: viewDemand.pitch || 0,
+      bearing: viewDemand.bearing || 0,
     });
-  };
+
+    console.log('🗺️ 【useEffect】Mapbox GL JS Map created');
+
+    // マップロード後にレイヤーを追加
+    map.on('load', () => {
+      console.log('🗺️ 【map.on(load)】マップロード完了');
+
+      // Separate layers: mesh first, then points on top
+      const meshLayers = layers.filter(l => l.type === 'fill' || l.type === 'line');
+      const pointLayers = layers.filter(l => l.type === 'symbol' || l.type === 'circle');
+      const allLayers = [...meshLayers, ...pointLayers];
+
+      console.log('📌 【map.on(load)】pointLayers:', pointLayers);
+
+      allLayers.forEach((layerConfig) => {
+        if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
+
+        const sourceId = layerConfig.source || layerConfig.id;
+
+        try {
+          // Add/update source
+          if (!loadedSourcesRef.current.has(sourceId)) {
+            map.addSource(sourceId, {
+              type: 'geojson',
+              data: layerConfig.sourceData
+            });
+            loadedSourcesRef.current.add(sourceId);
+            console.log(`✅ Source added: ${sourceId}`);
+          }
+
+          // Add layer if not exists
+          if (!map.getLayer(layerConfig.id)) {
+            map.addLayer({
+              id: layerConfig.id,
+              type: layerConfig.type,
+              source: sourceId,
+              paint: layerConfig.paint,
+              layout: layerConfig.layout
+            });
+            console.log(`✅ Layer added: ${layerConfig.id}`);
+          }
+
+          // Update visibility
+          map.setLayoutProperty(layerConfig.id, 'visibility', layerConfig.visible ? 'visible' : 'none');
+        } catch (e) {
+          console.error(`❌ Failed to add layer ${layerConfig.id}:`, e);
+        }
+      });
+    });
+
+    // Move イベント
+    map.on('move', () => {
+      setviewDemand({
+        longitude: map.getCenter().lng,
+        latitude: map.getCenter().lat,
+        zoom: map.getZoom(),
+        pitch: map.getPitch(),
+        bearing: map.getBearing(),
+      });
+    });
+
+    // クリーンアップ
+    return () => {
+      map.remove();
+    };
+  }, [mapboxAccessToken, mapstyle, viewDemand, layers]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10 }}>
-        <p>{address}</p>
-      </div>
-      <Map
+      {/* Mapbox GL JS マップコンテナ */}
+      <div
         ref={mapRef}
-        initialViewState={viewDemand}
-        mapboxAccessToken={mapboxAccessToken}
-        mapStyle={mapstyle}
-        onMove={({ viewState }) => setviewDemand(viewState)}
-        onLoad={handleMapLoad}
-      />
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'relative'
+        }}
+      >
+        <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10 }}>
+          <p>{address}</p>
+        </div>
+      </div>
     </div>
   );
 };
