@@ -307,36 +307,6 @@ const CombinationLayers = () => {
     });
   }, [layers]);
 
-  // ✅ 座標群の centroid を計算してマップを移動（初回だけ）
-  useEffect(() => {
-    if (!mapRef.current || !mapRef.current._map) return;
-
-    // ✅ 初回だけ実行
-    if (!isFirstFlyToRef.current) return;
-
-    const map = mapRef.current._map;
-
-    // turf.js で座標群の centroid を計算
-    const points = turf.featureCollection(
-      coordinates.map(coord =>
-        turf.point([coord.lon, coord.lat])
-      )
-    );
-    const centroid = turf.center(points);
-    const [centerLon, centerLat] = centroid.geometry.coordinates;
-
-    console.log(`🎯 【map.flyTo】centroid: [${centerLat}, ${centerLon}]`);
-
-    // マップの中心を centroid に移動
-    map.flyTo({
-      center: [centerLon, centerLat],
-      zoom: 14,
-      duration: 1000,
-    });
-
-    // ✅ 初回フラグを off
-    isFirstFlyToRef.current = false;
-  }, [coordinates]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
