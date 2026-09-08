@@ -53,7 +53,7 @@ function App() {
 
         // ✅ useQuestionsStore に設定
         const questionsList= useQuestionsStore.getState().questionsList;
-        const setQuestions = useQuestionsStore.getState().questionsList.setQuestions;
+        const setQuestions = useQuestionsStore.getState().setQuestions;
         setQuestions(
           data.sessionId,
           data.q1_destination,
