@@ -28,7 +28,7 @@ import VisualizationIcon from './visualization.png';
 import LosVisualize from './LosVisualize';
 import GraphDialog from './GraphDialog';
 import styles from "../styles/PopUp.module.css";
-import FundamentalVisualize from "./FundamentalVisualize";
+import useQuestionsStore from "./useQuestionsStore";
 import TinyBarChart from "./Barchart";
 import AddressChart from "./AddressChart";
 import AccessibleList from './AccessibilityList';
