@@ -1,7 +1,6 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import React from 'react';
 import * as Plotly from 'plotly.js-dist-min';
-import mapboxgl from 'mapbox-gl';
 
 import { mapboxAccessToken } from "./Globalvariable";
 import { useDestStore, useWeekdayStore, useTimesliderStore, useDataStore } from "./useStore";
@@ -15,8 +14,6 @@ const CombinationLayers = () => {
   const Weekdayflag = useWeekdayStore((state) => state.selectflag);
 
   const plotDiv = useRef(null);
-  const mapCanvasRef = useRef(null);
-  const mapInstanceRef = useRef(null);
   const [mapDataUrl, setMapDataUrl] = useState(null);
 
   // ✅ 色判定関数（既存ロジックを維持）
@@ -82,52 +79,36 @@ const CombinationLayers = () => {
     return inside;
   };
 
-  // ✅ Mapbox 地図を Canvas に描画
-  const generateMapCanvas = async (minLng, maxLng, minLat, maxLat) => {
+  // ✅ Mapbox Static Image API で背景地図を取得
+  const generateMapBackground = async (minLng, maxLng, minLat, maxLat) => {
     try {
-      if (!mapCanvasRef.current) return null;
+      const centerLng = (minLng + maxLng) / 2;
+      const centerLat = (minLat + maxLat) / 2;
 
-      const canvas = mapCanvasRef.current;
-      const width = 512;
-      const height = 512;
+      // ✅ Mapbox Static Image API URL
+      // フォーマット: https://api.mapbox.com/styles/v1/{username}/{id}/static/{lon},{lat},{zoom},{bearing},{pitch}/@{retina}/{width}x{height}
+      const zoom = 12;
+      const width = 600;
+      const height = 600;
 
-      canvas.width = width;
-      canvas.height = height;
+      const url = `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${centerLng},${centerLat},${zoom},0,0/${width}x${height}@2x?access_token=${mapboxAccessToken}`;
 
-      // 既存のマップを削除
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
+      console.log('🗺️ 背景地図 URL:', url);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      // ✅ 隠された canvas に Mapbox インスタンスを作成
-      const map = new mapboxgl.Map({
-        container: canvas,
-        style: 'mapbox://styles/mapbox/light-v11',
-        center: [(minLng + maxLng) / 2, (minLat + maxLat) / 2],
-        zoom: 11,
-        accessToken: mapboxAccessToken,
-        antialias: true,
-        preserveDrawingBuffer: true,
-      });
+      const blob = await response.blob();
+      const dataUrl = URL.createObjectURL(blob);
 
-      mapInstanceRef.current = map;
-
-      // マップの読み込み完了を待機
-      await new Promise((resolve) => {
-        map.on('style.load', () => {
-          setTimeout(() => resolve(), 500); // レンダリング完了を待機
-        });
-      });
-
-      // Canvas から画像データを取得
-      const dataUrl = canvas.toDataURL('image/png');
       setMapDataUrl(dataUrl);
-      console.log('🗺️ Mapbox Canvas 描画完了');
+      console.log('✅ Mapbox Static Image 取得完了');
 
       return dataUrl;
     } catch (error) {
-      console.error('❌ Mapbox Canvas エラー:', error);
+      console.error('❌ Mapbox Static Image エラー:', error);
       return null;
     }
   };
@@ -280,7 +261,7 @@ const CombinationLayers = () => {
     console.log('📊 3D Scatter プロット更新:', { count: plotData[0].x.length });
   }, [plotData, questionsList]);
 
-  // ✅ マップ Canvas 初期化
+  // ✅ 背景地図を取得
   useEffect(() => {
     if (questionsList.length === 0) return;
 
@@ -293,35 +274,23 @@ const CombinationLayers = () => {
       const minLat = Math.min(...lats) - 0.05;
       const maxLat = Math.max(...lats) + 0.05;
 
-      generateMapCanvas(minLng, maxLng, minLat, maxLat);
+      generateMapBackground(minLng, maxLng, minLat, maxLat);
     }
   }, [questionsList]);
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* ✅ Mapbox Canvas（隠す） */}
-      <canvas
-        ref={mapCanvasRef}
-        style={{
-          display: 'none',
-          position: 'absolute',
-        }}
-      />
-
-      {/* ✅ Plotly 3D Chart */}
-      <div
-        ref={plotDiv}
-        style={{
-          width: '100%',
-          height: 'calc(100vh - 200px)',
-          backgroundColor: '#ffffff',
-          backgroundImage: mapDataUrl ? `url(${mapDataUrl})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      />
-    </div>
+    <div
+      ref={plotDiv}
+      style={{
+        width: '100%',
+        height: 'calc(100vh - 200px)',
+        backgroundColor: '#f0f0f0',
+        backgroundImage: mapDataUrl ? `url(${mapDataUrl})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    />
   );
 };
 
