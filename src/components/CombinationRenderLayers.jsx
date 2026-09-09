@@ -134,8 +134,6 @@ const CombinationLayers = () => {
             'circle-radius': 8,
             'circle-color': ['get', 'color'],
             'circle-opacity': 0.9,
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff',
           },
         });
 
