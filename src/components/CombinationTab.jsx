@@ -12,23 +12,9 @@ import { Slider, Box, Typography } from '@mui/material';
 import Discuss from './Discuss';
 import FundamentalLayercheck from "./FundamentalLayercheck";
 import {initialCheck,mapboxAccessToken,mapstyle,tooltipHandler,marks,COLORS,yakuba} from "./Globalvariable";
-import Exportgeojson from "./Exportgeojson";
-import Stack from '@mui/material/Stack';
-import Render_point from './RenderPoint';
-import RenderArea from './RenderArea';
-import RenderLine from './RenderLine';
-import MouseOver1 from './MouseOver1';
-import Mousearea from "./MouseArea";
-import FileValidated from './FileValidated';
+
 import { useClickareaStore,useOrigStore,useLayerflagStore,useDirectStore,useEditStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore,useViewAccesibilityStore} from "./useStore";
-import FetchTest from './FetchTest';
-import SpatialLayercheck from './SpatialLayercheck';
-import ChronogicalLayercheck from './ChronogicalLayercheck';
-import VisualizationIcon from './visualization.png';
-import LosVisualize from './LosVisualize';
-import GraphDialog from './GraphDialog';
-import styles from "../styles/PopUp.module.css";
-import { useQuestionsStore } from "./useQuestionsStore";
+
 import TinyBarChart from "./Barchart";
 import AddressChart from "./AddressChart";
 import AccessibleList from './AccessibilityList';
