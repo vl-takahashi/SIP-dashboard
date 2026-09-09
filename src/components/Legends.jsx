@@ -1,21 +1,40 @@
 import React from "react";
-import { useTimesliderStore } from "./useStore";
+import { useTimesliderStore, useLegendStore } from "./useStore";
 
 export default function Legends(props) {
+  const { tabName } = props;
   const time = useTimesliderStore((state) => state.time);
+  const legends = useLegendStore((state) => state.legends);
   const isUnselected = time === -7/100000000;
 
-  // ✅ 色分けロジック凡例（丸アイコンのみ、テキストは説明文のみ）
-  const legendItems = isUnselected
-    ? [
-        { color: '#3b82f6', label: 'どれかの時間帯では利用可能' },
-        { color: '#ef4444', label: 'どの時間帯もアクセスできない' },
-      ]
-    : [
-        { color: '#3b82f6', label: '希望到着時間帯に合った便に乗れる' },
-        { color: '#f59e0b', label: '希望到着時間帯と合っていない。' },
-        { color: '#ef4444', label: 'どの時間帯もアクセスできない' },
-      ];
+  // ✅ q3_hour を計算（選択時間帯）
+  const q3_hour = Math.round(time * 100000000) + 11;
+
+  // ✅ 色分けロジック凡例（タブに応じて表示内容を変更）
+  let legendItems;
+  let isCircle = true; // デフォルト：丸
+
+  if (tabName === 'CombinationTab') {
+    // ✅ CombinationTab：q3_hour を含む動的な凡例（丸アイコン）
+    isCircle = true;
+    legendItems = isUnselected
+      ? [
+          { color: '#3b82f6', label: 'どれかの時間帯では利用可能' },
+          { color: '#ef4444', label: 'どの時間帯もアクセスできない' },
+        ]
+      : [
+          { color: '#3b82f6', label: `${q3_hour}時に合った便に乗れる` },
+          { color: '#f59e0b', label: `${q3_hour}時と合っていない。` },
+          { color: '#ef4444', label: 'どの時間帯もアクセスできない' },
+        ];
+  } else {
+    // ✅ AccessibilityTab：useStore の legend データを使用（四角アイコン）
+    isCircle = false;
+    legendItems = legends.map((item) => ({
+      color: `rgb(${item[0][0]}, ${item[0][1]}, ${item[0][2]})`,
+      label: `${item[1]}-${legends.indexOf(item) < legends.length - 1 ? legends[legends.indexOf(item) + 1][1] : '∞'}分`,
+    })) || [];
+  }
 
   return (
     <div
@@ -49,11 +68,13 @@ export default function Legends(props) {
           <div
             style={{
               backgroundColor: item.color,
-              width: '10px',
-              height: '10px',
+              width: isCircle ? '10px' : '24px',
+              height: isCircle ? '10px' : '22px',
               flexShrink: 0,
-              borderRadius: '50%',
-              marginTop: '4px',
+              borderRadius: isCircle ? '50%' : '3px',
+              marginTop: isCircle ? '4px' : '0px',
+              border: !isCircle ? '1px solid rgba(0,0,0,0.1)' : 'none',
+              padding: !isCircle ? '2px' : '0px',
             }}
           />
           <p

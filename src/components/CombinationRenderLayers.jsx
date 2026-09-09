@@ -4,7 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import Map from 'react-map-gl/mapbox';
 import * as turf from '@turf/turf';
 
-import { mapstyle, mapboxAccessToken } from "./Globalvariable";
+import { mapstyle, mapboxAccessToken, yakuba } from "./Globalvariable";
 import { useDestStore,useViewCombinationStore, useWeekdayStore, useTimesliderStore, useDataStore } from "./useStore";
 import { useQuestionsStore } from "./useQuestionsStore";
 
@@ -14,8 +14,9 @@ const CombinationLayers = () => {
   const data = useDataStore((state) => state.data);
   const questionsList = useQuestionsStore((state) => state.questionsList);
   const Weekdayflag = useWeekdayStore((state) => state.selectflag);
-    const viewAccessibility=useViewCombinationStore((state) => state.select);
 
+  // ✅ viewAccessibility から地図表示位置を取得（市町村選択で更新される）
+  const viewAccessibility = useViewCombinationStore((state) => state.select);
   const setviewCombination=useViewCombinationStore((state) => state.selectView);
   
     const mapRef = useRef(null);
@@ -165,6 +166,7 @@ const CombinationLayers = () => {
       }
     }
   }, [pointsGeoJSON]);
+
 
   return (
       <div style={{ width: '100%', height: '100%' }}>

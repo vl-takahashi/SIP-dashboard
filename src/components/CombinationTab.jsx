@@ -13,7 +13,7 @@ import Discuss from './Discuss';
 import FundamentalLayercheck from "./FundamentalLayercheck";
 import {initialCheck,mapboxAccessToken,mapstyle,tooltipHandler,marks,COLORS,yakuba} from "./Globalvariable";
 
-import { useClickareaStore,useOrigStore,useLayerflagStore,useDirectStore,useEditStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore,useViewAccesibilityStore} from "./useStore";
+import { useClickareaStore,useOrigStore,useLayerflagStore,useDirectStore,useEditStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore,useViewAccesibilityStore,useViewCombinationStore} from "./useStore";
 import { useQuestionsStore } from "./useQuestionsStore";
 
 import TinyBarChart from "./Barchart";
@@ -99,9 +99,22 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const [areacurrent,setareacurrent]=useState("未選択");
   const [selectedCity,setSelectedCity]=useState("東京都新宿区");
   const [searchText,setSearchText]=useState("");
-  const viewAccessibility = useViewAccesibilityStore((state)=>state.select);
-  const setViewAccessibility = useViewAccesibilityStore((state)=>state.selectView);
+  // ✅ CombinationTab 用の viewStore を使用（AccessibilityTab と分離）
+  const viewCombination = useViewCombinationStore((state)=>state.select);
+  const setViewCombination = useViewCombinationStore((state)=>state.selectView);
   const [sliderLabel, setSliderLabel] = useState("");
+
+  // ✅ マウント時に初期座標（新宿区）にリセット
+  useEffect(() => {
+    const initialViewState = {
+      longitude: yakuba["東京都新宿区"]["lng"],
+      latitude: yakuba["東京都新宿区"]["lat"],
+      zoom: 12,
+      pitch: 0,
+      bearing: 0,
+    };
+    setViewCombination(initialViewState);
+  }, []);
 
   // ✅ CombinationTab の datepick（AccessibilityTab と同じロジック）
   const datepick = (e) => {
@@ -128,14 +141,14 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
     if(yakuba[cityName]) {
       const { lat, lng } = yakuba[cityName];
       const newViewState = {
-        ...viewAccessibility,
+        ...viewCombination,
         longitude: lng,
         latitude: lat,
         zoom: 12,
-        pitch: 0,
+        pitch: 45,
         bearing: 0
       };
-      setViewAccessibility(newViewState);
+      setViewCombination(newViewState);
     }
   };
   // テキスト入力で自動選択
@@ -158,14 +171,14 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
       if(yakuba[matching]) {
         const { lat, lng } = yakuba[matching];
         const newViewState = {
-          ...viewAccessibility,
+          ...viewCombination,
           longitude: lng,
           latitude: lat,
           zoom: 12,
-          pitch: 0,
+          pitch: 45,
           bearing: 0
         };
-        setViewAccessibility(newViewState);
+        setViewCombination(newViewState);
       }
     }
   };
@@ -438,7 +451,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                           </select>
                             {layercheckcurrent==="タイムスライダー"&&
                             <div style={{ marginTop: 8, maxHeight: isTablet ? '50vh' : undefined, overflowY: isTablet ? 'auto' : undefined }}>
-                            <Legends selectkind={kindcurrent}/>
+                            <Legends tabName="CombinationTab" selectkind={kindcurrent}/>
                             </div>}
                         </div>
                       </div>

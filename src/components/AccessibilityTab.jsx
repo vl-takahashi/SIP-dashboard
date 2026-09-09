@@ -116,6 +116,18 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const viewAccessibility = useViewAccesibilityStore((state)=>state.select);
   const setViewAccessibility = useViewAccesibilityStore((state)=>state.selectView);
 
+  // ✅ マウント時に初期座標（新宿区）にリセット
+  useEffect(() => {
+    const initialViewState = {
+      longitude: yakuba["東京都新宿区"]["lng"],
+      latitude: yakuba["東京都新宿区"]["lat"],
+      zoom: 12,
+      pitch: 0,
+      bearing: 0,
+    };
+    setViewAccessibility(initialViewState);
+  }, []);
+
   // 市町村選択時に地図中心を移動
   const handleCityChange = (e) => {
     const cityName = e.target.value;
@@ -481,7 +493,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                           </div>}
                             {layercheckcurrent==="タイムスライダー"&&
                             <div style={{ marginTop: 8, maxHeight: isTablet ? '50vh' : undefined, overflowY: isTablet ? 'auto' : undefined }}>
-                            <Legends selectkind={kindcurrent}/>
+                            <Legends tabName="AccessibilityTab" selectkind={kindcurrent}/>
                             </div>}
                         </div>
                       </div>
