@@ -19,8 +19,10 @@ const CombinationLayers = () => {
   const loadedSourcesRef = useRef(new Set());
 
   // ✅ 色判定関数（改良版）
-  // 選択時間には通らないが、他の時間帯には通る座標を検出
+  // タイムスライダー未選択時：どれかの時間帯では利用可能か判定
+  // タイムスライダー選択時：選択時間vs他の時間帯で判定
   const evaluateCoordinateMatch = (q, ridingtimeArray) => {
+    const isUnselected = time < 0;  // ✅ 未選択状態（time < 0）
     const q3_hour = Math.round(time * 100000000) + 11;
 
     if (!q?.q2_latitude || !q?.q2_longitude) return '#888888'; // グレー
@@ -50,15 +52,29 @@ const CombinationLayers = () => {
 
       if (!inMesh) continue;
 
-      // ✅ 時間帯一致判定
-      if (parseInt(condition.hour) === q3_hour) {
-        currentTimeMatch = true;  // 現在の選択時間で合致
+      if (isUnselected) {
+        // ✅ 未選択時：どれかの時間帯で合致したら OK
+        otherTimeMatch = true;
       } else {
-        otherTimeMatch = true;    // 他の時間帯で合致
+        // ✅ 選択時：時間帯で分類
+        if (parseInt(condition.hour) === q3_hour) {
+          currentTimeMatch = true;  // 現在の選択時間で合致
+        } else {
+          otherTimeMatch = true;    // 他の時間帯で合致
+        }
       }
     }
 
-    // ✅ 改良された色分け
+    // ✅ 未選択時の色分け
+    if (isUnselected) {
+      if (otherTimeMatch) {
+        return '#3b82f6'; // 🔵 青：どれかの時間帯では利用可能
+      } else {
+        return '#ef4444'; // 🔴 赤：どの時間帯もアクセスできない
+      }
+    }
+
+    // ✅ 選択時の色分け
     if (currentTimeMatch) {
       return '#3b82f6'; // 🔵 青：現在の時間帯で合致
     } else if (otherTimeMatch && !currentTimeMatch) {
