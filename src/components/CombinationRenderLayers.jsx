@@ -175,7 +175,7 @@ const CombinationLayers = () => {
         // スケーリングで地図の表示範囲に合わせる
         const x = q.q2_longitude * 1000;  // 経度（東西方向）
         const y = q.q2_latitude * 1000;   // 緯度（南北方向）
-        const z = (q3_hour || 11) * 5;    // Z 軸に時間帯
+        const z = (q.q3_arrival_time || 1) * 5;  // Z 軸に時間帯（null なら 1）
 
         // ✅ Three.js sphere 作成
         const geometry = new THREE.SphereGeometry(3, 16, 16);
