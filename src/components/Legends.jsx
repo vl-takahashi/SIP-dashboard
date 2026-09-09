@@ -5,16 +5,16 @@ export default function Legends(props) {
   const time = useTimesliderStore((state) => state.time);
   const isUnselected = time === -7/100000000;
 
-  // ✅ 色分けロジック凡例
+  // ✅ 色分けロジック凡例（丸アイコンのみ、テキストは説明文のみ）
   const legendItems = isUnselected
     ? [
-        { color: '#3b82f6', label: '🔵 青：どれかの時間帯では利用可能' },
-        { color: '#ef4444', label: '🔴 赤：どの時間帯もアクセスできない' },
+        { color: '#3b82f6', label: 'どれかの時間帯では利用可能' },
+        { color: '#ef4444', label: 'どの時間帯もアクセスできない' },
       ]
     : [
-        { color: '#3b82f6', label: '🔵 青：希望到着時間帯に合った便に乗れる' },
-        { color: '#f59e0b', label: '🟡 黄：希望到着時間帯と合っていない。' },
-        { color: '#ef4444', label: '🔴 赤：どの時間帯もアクセスできない' },
+        { color: '#3b82f6', label: '希望到着時間帯に合った便に乗れる' },
+        { color: '#f59e0b', label: '希望到着時間帯と合っていない。' },
+        { color: '#ef4444', label: 'どの時間帯もアクセスできない' },
       ];
 
   return (
