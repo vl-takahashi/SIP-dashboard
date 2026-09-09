@@ -88,7 +88,7 @@ const CombinationLayers = () => {
     let layers_row = [];
     const ridingtimeArray = data?.["ridingtime_direct_dest"] || [];
 
-    console.log('🔄 【useMemo】questionsList:', questions);
+    console.log('🔄 【useMemo】questionsList:', questionsList);
 
     questionsList.forEach((q, index) => {
       // ✅ 座標の評価
