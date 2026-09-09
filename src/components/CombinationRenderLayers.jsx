@@ -164,13 +164,18 @@ const CombinationLayers = () => {
         if (!q?.q2_latitude || !q?.q2_longitude) return;
 
         const color = evaluateCoordinateMatch(q, ridingtimeArray);
-        const q3_hour = Math.round(time * 100000000) + 11;
 
-        // ✅ Mapbox 座標系をスクリーン座標に変換
-        const pixel = map.current.project([q.q2_longitude, q.q2_latitude]);
-        const x = pixel.x - window.innerWidth / 2;
-        const y = window.innerHeight / 2 - pixel.y;
-        const z = q3_hour * 5; // Z 軸に時間帯
+        // ✅ チャットボットから送信された q3_arrival_time を使用
+        // q3_arrival_time が null の場合は、タイムスライダーの値から計算
+        const q3_hour = q.q3_arrival_time !== null && q.q3_arrival_time !== undefined
+          ? q.q3_arrival_time
+          : (Math.round(time * 100000000) + 11);
+
+        // ✅ KV から取得した緯度経度をそのまま 3D 座標として使用
+        // スケーリングで地図の表示範囲に合わせる
+        const x = q.q2_longitude * 1000;  // 経度（東西方向）
+        const y = q.q2_latitude * 1000;   // 緯度（南北方向）
+        const z = (q3_hour || 11) * 5;    // Z 軸に時間帯
 
         // ✅ Three.js sphere 作成
         const geometry = new THREE.SphereGeometry(3, 16, 16);
