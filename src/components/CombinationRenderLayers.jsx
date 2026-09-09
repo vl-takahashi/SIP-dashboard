@@ -251,7 +251,7 @@ const CombinationLayers = () => {
         }
       }
     });
-  }, [layers, hover,questions]);
+  }, [layers, hover,questionsList]);
 
   // ✅ 1️⃣ Mapbox GL JS マップを初期化（マウント時に1回だけ）
   useEffect(() => {
