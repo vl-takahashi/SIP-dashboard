@@ -58,7 +58,7 @@ export default async function handler(req, res) {
   // POST: Q1/Q2/Q3 データを保存
   if (req.method === 'POST') {
     try {
-      const { sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address, weekday } = req.body;
+      const { sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address, weekday, timestamp, targetDate } = req.body;
 
       if (!sessionId) {
         return res.status(400).json({
@@ -77,6 +77,7 @@ export default async function handler(req, res) {
       }
 
       // Q1/Q2/Q3 データを構築
+      // ✅ チャットボット側から送信された timestamp をそのまま使用（ネットワーク遅延を避ける）
       const newQuestion = {
         sessionId,
         q1_destination,
@@ -85,7 +86,9 @@ export default async function handler(req, res) {
         q3_arrival_time,
         address,
         weekday,  // ✅ 平日/休日フラグを追加
-        timestamp: new Date().toISOString(),
+        targetDate,  // ✅ 回答対象日を追加（YYYY-MM-DD）
+        timestamp: timestamp || new Date().toISOString(),  // ✅ クライアント timestamp を優先
+        receivedAt: new Date().toISOString(),  // ✅ サーバー受信時刻（参照用）
       };
 
       // 📝 Redis に保存（配列で蓄積）

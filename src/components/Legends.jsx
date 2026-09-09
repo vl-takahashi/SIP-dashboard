@@ -19,8 +19,8 @@ export default function Legends(props) {
     isCircle = true;
     legendItems = isUnselected
       ? [
-          { color: '#3b82f6', label: 'どれかの時間帯では利用可能' },
-          { color: '#ef4444', label: 'どの時間帯もアクセスできない' },
+          { color: '#3b82f6', label: '到着可能な時間帯はある' },
+          { color: '#ef4444', label: '到着可能な時間帯はない' },
         ]
       : [
           { color: '#3b82f6', label: `${q3_hour}時着の便に希望通り乗れる` },

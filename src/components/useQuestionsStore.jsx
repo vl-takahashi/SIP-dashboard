@@ -15,10 +15,11 @@ export const useQuestionsStore = create((set) => ({
     q2_longitude: null,
     q3_arrival_time: null,
     address: null,
+    targetDate: null,  // ✅ 回答対象日（YYYY-MM-DD）
   },
 
   // ✅ 全ての Q1/Q2/Q3 データを管理（複数）
-  questionsList: [], // [{sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address, timestamp}, ...]
+  questionsList: [], // [{sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address, timestamp, targetDate}, ...]
 
   /**
    * Q1/Q2/Q3 データを一括設定
@@ -32,14 +33,17 @@ export const useQuestionsStore = create((set) => ({
         if (!utcString) return utcString;
         try {
           const date = new Date(utcString);
-          // UTC時刻を JST 文字列に変換（UTC+9）
-          const year = date.getUTCFullYear();
-          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-          const day = String(date.getUTCDate()).padStart(2, '0');
-          const hours = String(date.getUTCHours() + 9).padStart(2, '0');
-          const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-          const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-          const ms = String(date.getUTCMilliseconds()).padStart(3, '0');
+          // 9時間足す
+          const jstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+
+          // JST でフォーマット
+          const year = jstDate.getUTCFullYear();
+          const month = String(jstDate.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(jstDate.getUTCDate()).padStart(2, '0');
+          const hours = String(jstDate.getUTCHours()).padStart(2, '0');
+          const minutes = String(jstDate.getUTCMinutes()).padStart(2, '0');
+          const seconds = String(jstDate.getUTCSeconds()).padStart(2, '0');
+          const ms = String(jstDate.getUTCMilliseconds()).padStart(3, '0');
           return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}+09:00`;
         } catch (e) {
           return utcString;
@@ -105,6 +109,7 @@ export const useQuestionsStore = create((set) => ({
         q2_longitude: null,
         q3_arrival_time: null,
         address: null,
+        targetDate: null,  // ✅ クリア時も targetDate をリセット
       },
     })),
 

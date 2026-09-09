@@ -32,6 +32,10 @@ const [showAddressChart, setShowAddressChart] = useState(false);  // 📌 BarCha
 const [showBarChart, setShowBarChart] = useState(false);  // 📌 BarChart 表示/非表示
 const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 AccessibleList 表示/非表示
   const { isTablet } = useBreakpoint();
+
+  // ✅ useQuestionsStore から targetDate を取得
+  const targetDate = useQuestionsStore((state) => state.questions?.targetDate);
+
   // 📌 ドラッグ・リサイズ機能用のstate
   const [panelPosition, setPanelPosition] = useState({ x: 0, y: 0 });
   const [panelSize, setPanelSize] = useState({ width: isTablet ? 400 : 280, height: 400 });
@@ -218,8 +222,28 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
         const data = await response.json();
 
         if (data.questionsList && Array.isArray(data.questionsList)) {
-          console.log('📊 ポーリング更新:', { count: data.questionsList.length, latest: data.latest });
-          setQuestions(data.questionsList);
+          // ✅ targetDate でフィルタリング
+          // 本日は前日のデータを表示する方式
+          const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+          const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]; // 前日
+
+          // フィルタリング：targetDate が前日（または本日）のデータのみ
+          const filteredList = data.questionsList.filter(item => {
+            // targetDate が未設定の場合は含める（古いデータ対応）
+            if (!item.targetDate) return true;
+            // 前日または本日のデータのみ表示
+            return item.targetDate === yesterday || item.targetDate === today;
+          });
+
+          console.log('📊 ポーリング更新:', {
+            total: data.questionsList.length,
+            filtered: filteredList.length,
+            today,
+            yesterday,
+            latest: data.latest?.targetDate
+          });
+
+          setQuestions(filteredList.length > 0 ? filteredList : data.questionsList);
         }
       } catch (error) {
         console.error('❌ ポーリング失敗:', error.message);
@@ -371,14 +395,34 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             position: 'absolute', // 重要：DeckGLの親として必須
                             height: '85%',
                             width: '100%',
-                            paddingTop: isTablet ? 56 : 60,
+                            paddingTop: targetDate ? (isTablet ? 96 : 100) : (isTablet ? 56 : 60),  // ✅ 日付バナー分を追加
                             boxSizing: 'border-box',
                           }}>
+
+                      {/* ✅ 日付情報バナー */}
+                      {targetDate && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          zIndex: 20,
+                          background: '#fbbf24',
+                          color: '#000',
+                          padding: '8px 16px',
+                          textAlign: 'center',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          borderBottom: '2px solid #f59e0b',
+                        }}>
+                          📅 {targetDate} のデータを表示中
+                        </div>
+                      )}
 
                       {/* 市町村選択ドロップダウン（地図上部に固定） */}
                       <div style={{
                         position: 'absolute',
-                        top: 0,
+                        top: targetDate ? 40 : 0,  // ✅ 日付バナーがある場合は下にずらす
                         left: 0,
                         right: 0,
                         zIndex: 15,
