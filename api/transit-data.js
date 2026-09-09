@@ -50,10 +50,10 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // POST: transit-data を保存
+  // POST: transit-data を保存またはコピー
   if (req.method === 'POST') {
     try {
-      const { sessionId, transitData } = req.body;
+      const { sessionId, transitData, sourceSessionId } = req.body;
 
       if (!sessionId) {
         return res.status(400).json({
@@ -71,37 +71,96 @@ export default async function handler(req, res) {
         });
       }
 
-      // transit-data を構築
-      const data = {
-        sessionId,
-        transitData, // property=ridingtime_direct_dest のJSONをそのまま保存
-        timestamp: new Date().toISOString(),
-      };
-
-      // 📝 Redis に保存
       const client = await getRedisClient();
 
-      if (client) {
+      if (!client) {
+        return res.status(503).json({
+          error: 'Service Unavailable',
+          message: 'Redis connection failed',
+        });
+      }
+
+      // ✅ ケース1: 新しい transit-data を保存
+      if (transitData && !sourceSessionId) {
         try {
+          const data = {
+            sessionId,
+            transitData,
+            timestamp: new Date().toISOString(),
+          };
+
           const kvKey = `transit-data:${sessionId}`;
           await client.setEx(
             kvKey,
             86400 * 7, // 7日間保持
             JSON.stringify(data)
           );
-          console.log(`✅ transit-data を Redis に保存: ${kvKey}`);
+          console.log(`✅ transit-data を保存: ${kvKey}`);
+
+          return res.status(200).json({
+            success: true,
+            message: 'transit-data を保存しました',
+            data: {
+              sessionId,
+              timestamp: data.timestamp,
+            },
+          });
         } catch (redisError) {
           console.warn('⚠️ Redis 保存エラー:', redisError.message);
+          return res.status(500).json({
+            error: 'Internal Server Error',
+            message: redisError.message,
+          });
         }
       }
 
-      return res.status(200).json({
-        success: true,
-        message: 'transit-data を受け取りました',
-        data: {
-          sessionId,
-          timestamp: data.timestamp,
-        },
+      // ✅ ケース2: transit-data をコピー（sourceSessionId → sessionId）
+      if (sourceSessionId && !transitData) {
+        try {
+          const sourceKey = `transit-data:${sourceSessionId}`;
+          const sourceData = await client.get(sourceKey);
+
+          if (!sourceData) {
+            return res.status(400).json({
+              error: 'Bad Request',
+              message: `ソースセッション ${sourceSessionId} に transit-data がありません`,
+            });
+          }
+
+          // ✅ コピー先にコピー
+          const targetKey = `transit-data:${sessionId}`;
+          const copiedData = JSON.parse(sourceData);
+          copiedData.sessionId = sessionId; // sessionId を更新
+          copiedData.timestamp = new Date().toISOString();
+
+          await client.setEx(
+            targetKey,
+            86400 * 7, // 7日間保持
+            JSON.stringify(copiedData)
+          );
+
+          console.log(`✅ transit-data をコピー: ${sourceKey} → ${targetKey}`);
+
+          return res.status(200).json({
+            success: true,
+            message: `transit-data をコピーしました（${sourceSessionId} → ${sessionId}）`,
+            data: {
+              sessionId,
+              timestamp: copiedData.timestamp,
+            },
+          });
+        } catch (error) {
+          console.error('❌ コピーエラー:', error.message);
+          return res.status(500).json({
+            error: 'Internal Server Error',
+            message: error.message,
+          });
+        }
+      }
+
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'transitData または sourceSessionId のいずれかが必要です',
       });
     } catch (error) {
       console.error(`❌ POST エラー:`, error.message);

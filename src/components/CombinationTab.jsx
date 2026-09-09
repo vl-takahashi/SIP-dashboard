@@ -46,7 +46,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const isDataUploaded = !!dataStore && Object.keys(dataStore).length > 0; // ✅ データがアップロード済みか
 
   // ✅ セッション生成ハンドラー
-  const handleGenerateSession = () => {
+  const handleGenerateSession = async () => {
     if (!isDataUploaded) {
       alert('❌ データがアップロードされていません');
       return;
@@ -59,11 +59,45 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
     }
     const dateString = targetDateCalc.toISOString().split('T')[0];
 
-    // ✅ URL prefix を正確に設定
-    const baseUrl = 'https://sip-chatbot-ten.vercel.app/';
-    const newUrl = `${baseUrl}?sessionId=${newSessionId}&targetDate=${dateString}`;
+    // ✅ デフォルトセッション（またはファシリテーター側の現在のセッション）から transit-data をコピー
+    const currentSessionId = new URLSearchParams(window.location.search).get('sessionId') || 'default_session';
 
-    setGeneratedSessionUrl(newUrl);
+    try {
+      console.log(`📋 transit-data をコピー中: ${currentSessionId} → ${newSessionId}`);
+      const copyResponse = await fetch('/api/transit-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-ID': newSessionId,
+        },
+        body: JSON.stringify({
+          sessionId: newSessionId,
+          sourceSessionId: currentSessionId, // ✅ ソースセッションを指定
+        }),
+      });
+
+      if (!copyResponse.ok) {
+        console.warn('⚠️ transit-data コピーに失敗（続行します）:', copyResponse.status);
+      } else {
+        const copyResult = await copyResponse.json();
+        console.log('✅ transit-data をコピーしました:', copyResult);
+      }
+    } catch (error) {
+      console.warn('⚠️ transit-data コピーエラー（続行します）:', error.message);
+    }
+
+    // ✅ 住民用 URL
+    const baseUrl = 'https://sip-chatbot-ten.vercel.app/';
+    const residentUrl = `${baseUrl}?sessionId=${newSessionId}&targetDate=${dateString}`;
+
+    // ✅ ファシリテーター用 URL（同じセッションで同期）
+    const facilitatorUrl = `?sessionId=${newSessionId}`;
+
+    // ✅ 住民用 URL を表示
+    setGeneratedSessionUrl(residentUrl);
+
+    // ✅ ファシリテーター自身を新しいセッションページに遷移
+    window.location.href = facilitatorUrl;
   };
 
   // 📌 ドラッグ・リサイズ機能用のstate
@@ -280,9 +314,9 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
       }
     };
 
-    // 初回は即座に実行、以降は 2 秒ごと
+    // 初回は即座に実行、以降は 10 秒ごと
     fetchQuestionsData();
-    const interval = setInterval(fetchQuestionsData, 2000);
+    const interval = setInterval(fetchQuestionsData, 10000);
 
     return () => clearInterval(interval);
   }, []);
@@ -608,8 +642,9 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             </button>
                             <button
                               onClick={() => {
-                                setGeneratedSessionId(null);
                                 setGeneratedSessionUrl(null);
+                                // ✅ ダッシュボード全体をリセット（セッションなしの状態に戻る）
+                                window.location.href = '?';
                               }}
                               style={{
                                 width: '100%',
