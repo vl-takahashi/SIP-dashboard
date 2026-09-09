@@ -23,12 +23,38 @@ export const useQuestionsStore = create((set) => ({
   /**
    * Q1/Q2/Q3 データを一括設定
    * API から取得した questionsList を渡すと、questions と questionsList を同時に更新
+   * ✅ timestamp を UTC から JST に変換
    */
   setQuestions: (questionsList) =>
     set((state) => {
+      // ✅ timestamp を JST に変換する関数
+      const convertToJST = (utcString) => {
+        if (!utcString) return utcString;
+        try {
+          const date = new Date(utcString);
+          // UTC時刻を JST 文字列に変換（UTC+9）
+          const year = date.getUTCFullYear();
+          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          const hours = String(date.getUTCHours() + 9).padStart(2, '0');
+          const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+          const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+          const ms = String(date.getUTCMilliseconds()).padStart(3, '0');
+          return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}+09:00`;
+        } catch (e) {
+          return utcString;
+        }
+      };
+
+      // ✅ questionsList の各要素の timestamp を変換
+      const convertedList = questionsList?.map((item) => ({
+        ...item,
+        timestamp: convertToJST(item.timestamp),
+      })) || [];
+
       return {
-        questions: questionsList?.[questionsList.length - 1] || state.questions,  // ✅ 最新データ
-        questionsList: questionsList || [],  // ✅ 全データ
+        questions: convertedList?.[convertedList.length - 1] || state.questions,  // ✅ 最新データ
+        questionsList: convertedList,  // ✅ 全データ
       };
     }),
 

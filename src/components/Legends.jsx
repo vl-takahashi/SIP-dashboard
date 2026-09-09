@@ -23,9 +23,9 @@ export default function Legends(props) {
           { color: '#ef4444', label: 'どの時間帯もアクセスできない' },
         ]
       : [
-          { color: '#3b82f6', label: `${q3_hour}時に合った便に乗れる` },
-          { color: '#f59e0b', label: `${q3_hour}時と合っていない。` },
-          { color: '#ef4444', label: 'どの時間帯もアクセスできない' },
+          { color: '#3b82f6', label: `${q3_hour}時着の便に希望通り乗れる` },
+          { color: '#f59e0b', label: `${q3_hour}時着の便に乗りたいのに乗れない。` },
+          { color: '#ef4444', label: 'どの時間帯にも乗れない' },
         ];
   } else {
     // ✅ AccessibilityTab：useStore の legend データを使用（四角アイコン）
