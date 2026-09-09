@@ -19,6 +19,7 @@ const CombinationLayers = () => {
   const map = useRef(null);
   const threeSceneRef = useRef(null);
   const rendererRef = useRef(null);
+  const cameraRef = useRef(null);  // ✅ camera を useRef に保存
 
   // ✅ 色判定関数
   const evaluateCoordinateMatch = (q, ridingtimeArray) => {
@@ -106,6 +107,7 @@ const CombinationLayers = () => {
           10000
         );
         camera.position.set(0, 0, 50);
+        cameraRef.current = camera;  // ✅ camera を useRef に保存
 
         // ✅ 照明追加
         const light = new THREE.DirectionalLight(0xffffff, 1);
@@ -124,16 +126,20 @@ const CombinationLayers = () => {
             console.log('✅ Three.js レイヤー追加');
           },
           render() {
-            // Mapbox の座標系を Three.js に変換
-            const matrix = map.current.transform.rawMatrix;
-            const mvMatrix = new THREE.Matrix4();
-            mvMatrix.fromArray(matrix);
-            camera.projectionMatrix = mvMatrix;
+            // ✅ scene, renderer, camera が存在するか確認
+            if (!threeSceneRef.current || !rendererRef.current || !cameraRef.current) {
+              console.warn('⚠️ scene、renderer、または camera がまだ初期化されていません');
+              return;
+            }
 
-            // Three.js レンダリング
-            renderer.resetState();
-            renderer.render(scene, camera);
-            map.current.triggerRepaint();
+            try {
+              // Three.js レンダリング
+              rendererRef.current.resetState();
+              rendererRef.current.render(threeSceneRef.current, cameraRef.current);
+              map.current.triggerRepaint();
+            } catch (error) {
+              console.error('❌ Three.js render エラー:', error);
+            }
           },
         };
 
