@@ -413,11 +413,6 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               <option key={index} value={item}>{item}</option>
                             ))}
                           </select>
-                          {layercheckcurrent==="複数レイヤー表示"&&
-                          <div style={{ marginTop: 8, maxHeight: isTablet ? '50vh' : undefined, overflowY: isTablet ? 'auto' : undefined }}>
-                            <h3 style={{margin:'0 0 4px'}}>レイヤー</h3>
-                            <SpatialLayercheck checked={check}/>
-                          </div>}
                             {layercheckcurrent==="タイムスライダー"&&
                             <div style={{ marginTop: 8, maxHeight: isTablet ? '50vh' : undefined, overflowY: isTablet ? 'auto' : undefined }}>
                             <Legends selectkind={kindcurrent}/>
