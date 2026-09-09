@@ -88,6 +88,49 @@ const CombinationLayers = () => {
     let layers_row = [];
     const ridingtimeArray = data?.["ridingtime_direct_dest"] || [];
 
+    // ✅ メッシュレイヤーを先に追加（背景として）
+    const popmeshData = data?.["popmesh"];
+    if (popmeshData?.data?.type === 'FeatureCollection' &&
+        Array.isArray(popmeshData.data.features) &&
+        popmeshData.data.features.length > 0) {
+      const meshLayer = {
+        id: 'popmesh-layer',
+        type: 'fill',
+        sourceData: popmeshData.data,
+        paint: {
+          'fill-color': '#e0e0e0',
+          'fill-opacity': 0.2,
+        },
+        layout: {},
+        visible: true,
+      };
+      layers_row.push(meshLayer);
+
+      const meshOutlineLayer = {
+        id: 'popmesh-outline-layer',
+        type: 'line',
+        sourceData: popmeshData.data,
+        paint: {
+          'line-color': '#888888',
+          'line-width': 0.5,
+          'line-opacity': 0.4,
+        },
+        layout: {},
+        visible: true,
+      };
+      layers_row.push(meshOutlineLayer);
+
+      console.log('📍 メッシュレイヤー追加:', {
+        featureCount: popmeshData.data.features.length,
+      });
+    } else {
+      console.warn('⚠️ popmesh データが無効:', {
+        type: popmeshData?.data?.type,
+        isArray: Array.isArray(popmeshData?.data?.features),
+        length: popmeshData?.data?.features?.length,
+      });
+    }
+
     console.log('🔄 【useMemo】questionsList:', questionsList);
 
     questionsList.forEach((q, index) => {
@@ -142,7 +185,7 @@ const CombinationLayers = () => {
     });
 
     return layers_row;
-  }, [questionsList, time, dest, Weekdayflag]);
+  }, [questionsList, time, dest, Weekdayflag, data]);
     // Q1/Q2/Q3 データからポイントレイヤーを生成
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
@@ -180,7 +223,20 @@ const CombinationLayers = () => {
     console.log('📌 【useEffect】pointLayers:', pointLayers);
 
     allLayers.forEach((layerConfig, index) => {
-      if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
+      if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) {
+        console.warn('⚠️ layerConfig invalid:', { id: layerConfig?.id, hasSourceData: !!layerConfig?.sourceData });
+        return;
+      }
+
+      // ✅ sourceData の妥当性チェック
+      if (!layerConfig.sourceData.type || !Array.isArray(layerConfig.sourceData.features)) {
+        console.warn('⚠️ sourceData invalid:', {
+          type: layerConfig.sourceData.type,
+          hasFeatures: Array.isArray(layerConfig.sourceData.features),
+          id: layerConfig.id
+        });
+        return;
+      }
 
       const sourceId = layerConfig.source || layerConfig.id;
 
@@ -193,6 +249,7 @@ const CombinationLayers = () => {
           });
           loadedSourcesRef.current.add(sourceId);
         } catch (e) {
+          console.error('❌ addSource error:', e.message, { sourceId, layerId: layerConfig.id });
           const source = map.getSource(sourceId);
           if (source && source.setData) {
             source.setData(layerConfig.sourceData);
