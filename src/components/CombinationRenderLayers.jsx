@@ -226,20 +226,20 @@ const CombinationLayers = () => {
       scene: {
         xaxis: {
           title: '経度 (Longitude)',
-          backgroundcolor: 'rgba(230, 230,250, 0.5)',
-          gridcolor: 'white',
+          backgroundcolor: 'rgba(230, 230, 250, 0.2)',
+          gridcolor: 'rgba(255, 255, 255, 0.3)',
           showbackground: true,
         },
         yaxis: {
           title: '緯度 (Latitude)',
-          backgroundcolor: 'rgba(230, 250,230, 0.5)',
-          gridcolor: 'white',
+          backgroundcolor: 'rgba(230, 250, 230, 0.2)',
+          gridcolor: 'rgba(255, 255, 255, 0.3)',
           showbackground: true,
         },
         zaxis: {
           title: '到着希望時間帯 (Hour)',
-          backgroundcolor: 'rgba(250, 230, 230, 0.5)',
-          gridcolor: 'white',
+          backgroundcolor: 'rgba(250, 230, 230, 0.2)',
+          gridcolor: 'rgba(255, 255, 255, 0.3)',
           showbackground: true,
         },
         camera: {
@@ -248,7 +248,8 @@ const CombinationLayers = () => {
       },
       margin: { l: 0, r: 0, t: 50, b: 0 },
       height: window.innerHeight - 200,
-      paper_bgcolor: '#f8f9fa',
+      paper_bgcolor: 'rgba(0, 0, 0, 0)', // ✅ 完全透明
+      plot_bgcolor: 'rgba(0, 0, 0, 0)',  // ✅ プロット背景も透明
     };
 
     const config = {
@@ -290,13 +291,12 @@ const CombinationLayers = () => {
         position: 'relative',
       }}
     >
-      {/* ✅ Plotly を透明にして背景地図を透ける */}
+      {/* ✅ Plotly を完全透明にして背景地図を透ける */}
       <div
         ref={plotDiv}
         style={{
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)', // ほぼ透明
         }}
       />
     </div>
