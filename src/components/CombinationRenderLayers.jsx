@@ -280,17 +280,26 @@ const CombinationLayers = () => {
 
   return (
     <div
-      ref={plotDiv}
       style={{
         width: '100%',
         height: 'calc(100vh - 200px)',
-        backgroundColor: '#f0f0f0',
         backgroundImage: mapDataUrl ? `url(${mapDataUrl})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
+        position: 'relative',
       }}
-    />
+    >
+      {/* ✅ Plotly を透明にして背景地図を透ける */}
+      <div
+        ref={plotDiv}
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)', // ほぼ透明
+        }}
+      />
+    </div>
   );
 };
 
