@@ -1,10 +1,11 @@
 import { useMemo, useRef, useEffect } from 'react';
 import React from 'react';
 import mapboxgl from 'mapbox-gl';
+import Map from 'react-map-gl/mapbox';
 import * as turf from '@turf/turf';
 
 import { mapstyle, mapboxAccessToken } from "./Globalvariable";
-import { useDestStore, useWeekdayStore, useTimesliderStore, useDataStore } from "./useStore";
+import { useDestStore,useViewCombinationStore, useWeekdayStore, useTimesliderStore, useDataStore } from "./useStore";
 import { useQuestionsStore } from "./useQuestionsStore";
 
 const CombinationLayers = () => {
@@ -13,9 +14,12 @@ const CombinationLayers = () => {
   const data = useDataStore((state) => state.data);
   const questionsList = useQuestionsStore((state) => state.questionsList);
   const Weekdayflag = useWeekdayStore((state) => state.selectflag);
+    const viewAccessibility=useViewCombinationStore((state) => state.select);
 
-  const mapContainer = useRef(null);
-  const map = useRef(null);
+  const setviewCombination=useViewCombinationStore((state) => state.selectView);
+  
+    const mapRef = useRef(null);
+  const map = useRef(null); // ✅ Mapbox GL Map インスタンス
   const loadedSourcesRef = useRef(new Set());
 
   // ✅ 色判定関数（改良版）
@@ -120,34 +124,21 @@ const CombinationLayers = () => {
     };
   }, [questionsList, time, dest, Weekdayflag, data]);
 
-  // ✅ Mapbox GL 初期化・更新
+  // ✅ Mapbox GL <Map> コンポーネントのレイヤー管理
   useEffect(() => {
-    if (!mapContainer.current) return;
+    const mapboxMap = mapRef.current?.getMap?.();
+    if (!mapboxMap || !mapboxMap.isStyleLoaded()) return;
 
-    // ✅ マップ初期化（最初の1回のみ）
-    if (!map.current) {
-      mapboxgl.accessToken = mapboxAccessToken;  // ✅ Globalvariable から取得
-
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: mapstyle,
-        center: [132.75, 34.4],
-        zoom: 11,
-        pitch: 45,
-        bearing: 0,
-      });
-
-      map.current.on('load', () => {
-        console.log('🗺️ Mapbox GL 読み込み完了');
-
-        // ✅ points ソースを追加
-        map.current.addSource('points', {
+    // ✅ points ソースを追加（初回のみ）
+    if (!loadedSourcesRef.current.has('points')) {
+      try {
+        mapboxMap.addSource('points', {
           type: 'geojson',
           data: pointsGeoJSON,
         });
 
-        // ✅ circle レイヤーを追加（シンプルなポイント表示）
-        map.current.addLayer({
+        // ✅ circle レイヤーを追加
+        mapboxMap.addLayer({
           id: 'points-layer',
           type: 'circle',
           source: 'points',
@@ -159,44 +150,32 @@ const CombinationLayers = () => {
         });
 
         loadedSourcesRef.current.add('points');
-
-        // ✅ ホバーエフェクト
-        map.current.on('mousemove', 'points-layer', () => {
-          map.current.getCanvas().style.cursor = 'pointer';
-        });
-
-        map.current.on('mouseleave', 'points-layer', () => {
-          map.current.getCanvas().style.cursor = '';
-        });
-
-        // ✅ クリックで情報表示
-        map.current.on('click', 'points-layer', (e) => {
-          const properties = e.features[0].properties;
-          console.log('📍 ポイントクリック:', properties);
-        });
-      });
+        console.log('🗺️ points レイヤー追加完了');
+      } catch (error) {
+        console.warn('⚠️ source 既に存在:', error.message);
+      }
     } else {
       // ✅ ソース更新
-      if (loadedSourcesRef.current.has('points')) {
-        const source = map.current.getSource('points');
-        if (source && source.setData) {
-          source.setData(pointsGeoJSON);
-          console.log('📊 ポイント更新:', {
-            count: pointsGeoJSON.features.length,
-          });
-        }
+      const source = mapboxMap.getSource('points');
+      if (source && source.setData) {
+        source.setData(pointsGeoJSON);
+        console.log('📊 ポイント更新:', {
+          count: pointsGeoJSON.features.length,
+        });
       }
     }
   }, [pointsGeoJSON]);
 
   return (
-    <div
-      ref={mapContainer}
-      style={{
-        width: '100%',
-        height: 'calc(100vh - 200px)',
-      }}
-    />
+      <div style={{ width: '100%', height: '100%' }}>
+        <Map
+          ref={mapRef}
+          initialViewState={viewAccessibility}
+          mapboxAccessToken={mapboxAccessToken}
+          mapStyle={mapstyle}
+          onMove={({ viewState }) => setviewCombination(viewState)}
+        />
+      </div>
   );
 };
 

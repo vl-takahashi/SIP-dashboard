@@ -413,7 +413,6 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                       </div>
                       <CombinationLayers/>
 
-                        
 
                         {/* 左上：レイヤー切替パネル。タブレットでは幅を絞り、セレクトの高さをタップしやすいサイズに保つ。
                             maxWidthは常に指定し、凡例（Legends）がタイムスライダー操作で文字幅・行数を変えても
@@ -459,7 +458,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             alignItems: 'center',
                             px: 2,
                             boxShadow: 3,
-                            zIndex: 10
+                            zIndex: 10,
+                            backgroundColor: '#ffffff'
                           }}
                         >
                           <br />

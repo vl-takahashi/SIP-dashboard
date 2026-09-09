@@ -182,6 +182,19 @@ export const useMeshidStore=create((set)=>({
         }
     }),
 }))
+export const useViewCombinationStore=create((set)=>({
+  select:INITIAL_VIEW_STATE,
+  selectView: (newItem) =>
+    set((state) => {
+
+      INITIAL_VIEW_STATE["longitude"]=newItem[0];
+      INITIAL_VIEW_STATE["latitude"]=newItem[1];
+
+      return {
+        select: newItem,
+        }
+    }),
+}))
 export const useViewAccesibilityStore=create((set)=>({
   select:INITIAL_VIEW_STATE,
   selectView: (newItem) =>

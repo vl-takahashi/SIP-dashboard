@@ -501,7 +501,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             alignItems: 'center',
                             px: 2,
                             boxShadow: 3,
-                            zIndex: 10
+                            zIndex: 10,
+                            backgroundColor: '#ffffff'
                           }}
                         >
                           <br />
