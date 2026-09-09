@@ -32,69 +32,119 @@ const CombinationLayers = () => {
   // ✅ CombinationTab の weekday フラグを取得（AccessibilityTab と区別）
   const Weekdayflag=useWeekdayStore((state)=> state.selectflag);
 
-  const layers = useMemo(() => {
-    // ✅ useMemo の中で layers_row を定義
-    let layers_row=[];
+  // ✅ 複数時間帯をチェック：現在の時間帯 vs 他の時間帯でのアクセス可否を判定
+  const evaluateCoordinateMatch = (q, ridingtimeArray) => {
+    const dest = useDestStore((state) => state.select);
+    const q3_hour = Math.round(time * 100000000) + 11;
 
-    console.log('🔄 【useMemo】questions:', questions);
+    if (!q?.q2_latitude || !q?.q2_longitude) return '#888888';
+    if (!Weekdayflag) return '#888888'; // weekday 未選択
 
-      const q3_hour = Math.round(time * 100000000) + 11;
+    const popmeshFeatures = data?.["popmesh"]?.data?.features || [];
 
-      questions.forEach((q, index) => {
-      // ✅ weekday フラグを比較（CombinationTab の選択と一致するか）
-      const isWeekdayMatch = !Weekdayflag || q?.weekday === Weekdayflag;
+    let currentTimeMatch = false; // 現在選択時間帯で一致 + メッシュ内
+    let otherTimeMatch = false;   // 他の時間帯で一致 + メッシュ内
 
-      // Q3の到着時間が一致した時だけ表示
-        let isQ3Match = q?.q3_arrival_time === q3_hour && q?.q1_destination === dest && isWeekdayMatch;
+    for (const meshData of ridingtimeArray) {
+      if (!meshData?.condition || !meshData?.data) continue;
 
-        console.log('📊 【座標判定】', { weekday: q?.weekday, flag: Weekdayflag, match: isWeekdayMatch });
-        let residentPointLayer = {
-          id: `resident-point-layer-${index}`,  // ✅ 一意の ID
-          type: 'circle',
-          sourceData: {
-            type: 'FeatureCollection',
-            features: [  // ✅ 配列
-              {
-                type: 'Feature',
-                geometry: {
-                  type: 'Point',
-                  coordinates: [q.q2_longitude, q.q2_latitude]
-                },
-                properties: {
-                  address: q.address,
-                  q1_destination: q.q1_destination,
-                }
-              }
-            ]
-          },
-          paint: {
-            'circle-radius': 3,
-            'circle-color': '#0000ff',
-            'circle-opacity': 0.9,
-            'circle-stroke-width': 0,
-            'circle-stroke-color': '#ffffff'
-          },
-          layout: {},
-          visible: isQ3Match,
-          hoverType: 'resident',
-          clickHandler: (feature) => {
-            console.log('🏘️ 住民の位置をクリック:', feature.properties);
-          }
-        };
+      const { condition } = meshData;
+      const isDestMatch = condition.to === dest;
+      const isWeekdayMatch = condition.weekday === Weekdayflag;
 
-        layers_row.push(residentPointLayer);
+      if (!isDestMatch || !isWeekdayMatch) continue;
+
+      // メッシュ内判定
+      const directmeshids = meshData.data.flatMap(
+        (mesh) => mesh.directmeshid || []
+      );
+      const point = turf.point([q.q2_longitude, q.q2_latitude]);
+      const inMesh = directmeshids.some((meshid) => {
+        const feature = popmeshFeatures.find(
+          (f) => f.properties?.MESH_ID === meshid
+        );
+        return feature && turf.booleanPointInPolygon(point, feature);
       });
-    {/*if (q &&
-        q.q1_destination &&
-        q.q1_destination === dest &&
-        q.q2_latitude &&
-        q.q2_longitude) {
-    }*/}
 
-    console.log('📌 【useMemo】layers_row:', layers_row);
+      if (!inMesh) continue; // メッシュ外はスキップ
+
+      // ✅ 時間帯一致判定
+      if (parseInt(condition.hour) === q3_hour) {
+        currentTimeMatch = true; // 現在の時間帯で一致
+      } else {
+        otherTimeMatch = true; // 他の時間帯で一致
+      }
+    }
+
+    // ✅ 色判定
+    if (currentTimeMatch) {
+      return '#3b82f6'; // 🔵 青：希望到着時間帯に合った便がある
+    } else if (otherTimeMatch) {
+      return '#f59e0b'; // 🟡 黄：他時間帯だと便がある
+    } else {
+      return '#ef4444'; // 🔴 赤：どの時間帯もアクセスできない
+    }
+  };
+
+  const layers = useMemo(() => {
+    let layers_row = [];
+    const ridingtimeArray = data?.["ridingtime_direct_dest"] || [];
+
+    console.log('🔄 【useMemo】questionsList:', questions);
+
+    questionsList.forEach((q, index) => {
+      // ✅ 座標の評価
+      const circleColor = evaluateCoordinateMatch(q, ridingtimeArray);
+
+      let residentPointLayer = {
+        id: `resident-point-layer-${index}`,
+        type: 'circle',
+        sourceData: {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [q.q2_longitude, q.q2_latitude],
+              },
+              properties: {
+                address: q.address,
+                q1_destination: q.q1_destination,
+                weekday: q.weekday,
+              },
+            },
+          ],
+        },
+        paint: {
+          'circle-radius': 6,
+          'circle-color': circleColor, // ✅ 動的色
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#ffffff',
+        },
+        layout: {},
+        visible: true,
+        hoverType: 'resident',
+        clickHandler: (feature) => {
+          console.log('🏘️ 座標クリック:', {
+            ...feature.properties,
+            coordinates: feature.geometry.coordinates,
+          });
+        },
+      };
+
+      layers_row.push(residentPointLayer);
+
+      console.log('📍 座標判定:', {
+        index,
+        coordinates: [q.q2_latitude, q.q2_longitude],
+        color: circleColor,
+      });
+    });
+
     return layers_row;
-  }, [questions, time, dest]);
-
+  }, [questions, time, dest, Weekdayflag]);
     // Q1/Q2/Q3 データからポイントレイヤーを生成
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
