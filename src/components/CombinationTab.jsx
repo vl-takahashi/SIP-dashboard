@@ -106,7 +106,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const [origcurrent,setorigcurrent]=useState("未選択");
   const [origdestcurrent,selectorigdestcurrent]=useState("dest");
   const [directcurrent,setdirectcurrent]=useState("直通");
-  const [weekdaycurrent,setweekdaycurrent]=useState("未選択");
+  const [weekdaycurrent,setweekdaycurrent]=useState("未選択");  // ✅ CombinationTab の weekday フラグ
   const [layercheckcurrent,setlayercheckcurrent]=useState("複数レイヤー表示");
   const [kindcurrent,setkindcurrent]=useState("所要時間");
   const [areacurrent,setareacurrent]=useState("未選択");
@@ -115,6 +115,23 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const viewAccessibility = useViewAccesibilityStore((state)=>state.select);
   const setViewAccessibility = useViewAccesibilityStore((state)=>state.selectView);
   const [sliderLabel, setSliderLabel] = useState("");
+
+  // ✅ CombinationTab の datepick（AccessibilityTab と同じロジック）
+  const datepick = (e) => {
+    let datel = "0000000";
+    const dateindex = e.target.valueAsDate.getUTCDay();
+    console.log('📅 【CombinationTab】選択日の曜日:', dateindex);
+
+    datel = dateindex != "0"
+      ? datel.slice(0, parseInt(dateindex) - 1) + "1" + datel.slice(parseInt(dateindex))
+      : datel.slice(0, 6) + "1";
+
+    console.log('📊 【CombinationTab】生成されたweekday フラグ:', datel);
+
+    // ✅ selectWeekdayflag に weekday フラグを保存
+    selectWeekdayflag(datel);
+    setweekdaycurrent(e.target.value);
+  };
 
   // 市町村選択時に地図中心を移動
   const handleCityChange = (e) => {
@@ -165,17 +182,6 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
       }
     }
   };
-
-  const datepick=(e)=>{
-    let datel="0000000";
-    const dateindex=e.target.valueAsDate.getUTCDay();
-    console.log(dateindex)
-    datel=dateindex!="0"?datel.slice(0, parseInt(dateindex)-1) + "1" + datel.slice(parseInt(dateindex)):datel.slice(0, 6) + "1";
-    console.log(datel);
-    selectWeekday(e.target.valueAsDate);
-    selectWeekdayflag(dateindex);
-    setweekdaycurrent(e.target.value)
-  }
   useEffect(() => {
     const h = 11 + parseInt(time * 100000000)
     setSliderLabel(`選択範囲: ${h}:00-${h + 1}:00`)

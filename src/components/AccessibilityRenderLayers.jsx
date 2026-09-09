@@ -130,19 +130,18 @@ const UpdateLayers = (props) => {
   let s02=parseInt(weekdayflag)-1;
   let directtransit=["direct","transit"];
   let origdest0=["orig","dest"];
-  for (let d in data){
     // 例: check配列の中にこのレイヤー名が含まれているか確認
     // 都市計画では「表示/非表示」の切り替えが頻繁なのでここで制御
     //const isVisible = check.includes(d.property.name); 
-    if (Object.entries(data[d]).length>0&&time!=""&&dest!=""&&weekday!=""){
+    
+    for(const d3 of origdest0){
+      let d=`ridingtime_direct_${d3}`
+      if (data[d]!=null&&time!=""&&dest!=""&&weekday!=""){
         
-      //console.log(data[d]);
-      for (const d2 of directtransit){
-        for(const d3 of origdest0){
-          if (d === `ridingtime_${d2}_${d3}`){
-                for (const [key, d1] of Object.entries(data[d])){
-                  console.log(d)
-                  i+=1
+        try{
+          for (const [key, d1] of Object.entries(data[d])){
+            console.log(data[d])
+            i+=1
               const Area =area;
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
               let flag=[];
@@ -362,7 +361,14 @@ const UpdateLayers = (props) => {
               };
               layers_ridingrow.push(layertextpoint);
             }
-            } else if (d === `ridingtime_transit_${d3}`) {
+          }catch{
+          
+        }
+        } 
+    for(const d3 of origdest0){
+      let d=`ridingtime_transit_${d3}`
+      if (data[d]!=null&&time!=""&&dest!=""&&weekday!=""){
+          for (const [key, d1] of Object.entries(data[d])){
               const Area =area;
               let s = dest;
               let s0 = weekday;
@@ -773,52 +779,8 @@ const UpdateLayers = (props) => {
               };
               console.log(layertextpoint);
               //layers_ridingrow.push(layertextpoint);
-
-            } else if (d === "fare") {
-              let e=parseInt(Math.round(time*100000000)+11);
-              let s = `${dest}_${weekday}_${e}_getofffare_direct`;
-              //console.log(dest,weekday,Math.round(time*100000000)+5);
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-              console.log(kind);
-              let datav=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
-              const isLayer = layercheck === "複数レイヤー表示";
-              const isActive = kind === "運賃" && layercheck === "タイムスライダー"?true:false;
-              let data1=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
-              //const data1r=data1.features.filter((e)=>{return bounds[0]<=e.geometry.coordinates[0][0][0]||e.geometry.coordinates[0][2][0]<=bounds[2]||bounds[1]<=e.geometry.coordinates[0][0][1]||e.geometry.coordinates[0][2][1]<=bounds[3]});
-              const data1r=data1;
-              console.log(isActive,data1,datav);
-              let ratiolist=[];
-              const layer={
-                id: ly,
-                type: 'fill',
-                sourceData: isActive?data1r:data1,
-                paint: {
-                  'fill-color': [
-                    'case',
-                    ['!=', ['get', s], null],
-                    [
-                      'rgb',
-                      ['max', 0, ['min', 255, ['floor', ['*', ['/', ['to-number', ['get', s]], 1000], 135]]]],
-                      ['max', 0, ['min', 255, ['floor', ['*', ['/', ['to-number', ['get', s]], 1000], 196]]]],
-                      255
-                    ],
-                    'rgba(0, 0, 0, 0)'
-                  ],
-                  'fill-opacity': 1
-                },
-                layout: {},
-                visible: isActive?true:datav,
-                hoverType: "運賃",
-                clickHandler: (feature) => {
-                  try{
-                    setFare(feature.properties[s]);
-                  } catch(e){
-                  }
-                }
-              };
-              layers_ridingrow.push(layer);}
-          }}
-        
+            }
+      }
       }
     }
     return layers_ridingrow},[layercheck,time,dest,weekday,direct,weekdayflag])

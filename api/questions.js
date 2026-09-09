@@ -58,7 +58,7 @@ export default async function handler(req, res) {
   // POST: Q1/Q2/Q3 データを保存
   if (req.method === 'POST') {
     try {
-      const { sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address } = req.body;
+      const { sessionId, q1_destination, q2_latitude, q2_longitude, q3_arrival_time, address, weekday } = req.body;
 
       if (!sessionId) {
         return res.status(400).json({
@@ -84,6 +84,7 @@ export default async function handler(req, res) {
         q2_longitude,
         q3_arrival_time,
         address,
+        weekday,  // ✅ 平日/休日フラグを追加
         timestamp: new Date().toISOString(),
       };
 

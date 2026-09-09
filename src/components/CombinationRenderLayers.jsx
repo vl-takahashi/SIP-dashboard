@@ -29,6 +29,9 @@ const CombinationLayers = () => {
   const [address,setAddress]=useState("None");
   const questions =useQuestionsStore((state)=> state.questionsList);
 
+  // ✅ CombinationTab の weekday フラグを取得（AccessibilityTab と区別）
+  const Weekdayflag=useWeekdayStore((state)=> state.selectflag);
+
   const layers = useMemo(() => {
     // ✅ useMemo の中で layers_row を定義
     let layers_row=[];
@@ -38,8 +41,13 @@ const CombinationLayers = () => {
       const q3_hour = Math.round(time * 100000000) + 11;
 
       questions.forEach((q, index) => {
+      // ✅ weekday フラグを比較（CombinationTab の選択と一致するか）
+      const isWeekdayMatch = !Weekdayflag || q?.weekday === Weekdayflag;
+
       // Q3の到着時間が一致した時だけ表示
-        let isQ3Match = q?.q3_arrival_time === q3_hour;
+        let isQ3Match = q?.q3_arrival_time === q3_hour && q?.q1_destination === dest && isWeekdayMatch;
+
+        console.log('📊 【座標判定】', { weekday: q?.weekday, flag: Weekdayflag, match: isWeekdayMatch });
         let residentPointLayer = {
           id: `resident-point-layer-${index}`,  // ✅ 一意の ID
           type: 'circle',
@@ -63,11 +71,11 @@ const CombinationLayers = () => {
             'circle-radius': 3,
             'circle-color': '#0000ff',
             'circle-opacity': 0.9,
-            'circle-stroke-width': 3,
+            'circle-stroke-width': 0,
             'circle-stroke-color': '#ffffff'
           },
           layout: {},
-          visible: true,
+          visible: isQ3Match,
           hoverType: 'resident',
           clickHandler: (feature) => {
             console.log('🏘️ 住民の位置をクリック:', feature.properties);
