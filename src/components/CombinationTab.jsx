@@ -33,8 +33,11 @@ const [showBarChart, setShowBarChart] = useState(false);  // 📌 BarChart 表�
 const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 AccessibleList 表示/非表示
   const { isTablet } = useBreakpoint();
 
-  // ✅ useQuestionsStore から targetDate を取得
-  const targetDate = useQuestionsStore((state) => state.questions?.targetDate);
+  // ✅ useQuestionsStore から targetDate を取得、または URL parameter から取得
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlTargetDate = urlParams.get('targetDate'); // URL から targetDate を取得
+  const storeTargetDate = useQuestionsStore((state) => state.questions?.targetDate);
+  const targetDate = urlTargetDate || storeTargetDate; // URL の targetDate を優先
 
   // 📌 ドラッグ・リサイズ機能用のstate
   const [panelPosition, setPanelPosition] = useState({ x: 0, y: 0 });
