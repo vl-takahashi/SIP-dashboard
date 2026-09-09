@@ -21,7 +21,9 @@ const DemandRenderLayers = () => {
     const mapRef = useRef(null);
   const [address,setAddress]=useState("None");
   const layercheck=useLayercheckStore((state)=> state.select);
-    const viewAccessibility=useViewAccesibilityStore((state) => state.select);
+  // ✅ DemandTab 用の viewStore を使用（他タブと分離）
+  const viewDemand=useViewDemandStore((state) => state.select);
+  const setViewDemand=useViewDemandStore((state) => state.selectView);
   let popmeshkey=[];
     const layers = useMemo(() => {
         if (!data) return [];
@@ -137,10 +139,10 @@ const DemandRenderLayers = () => {
       </div>
       <Map
         ref={mapRef}
-        initialViewState={viewAccessibility}
+        initialViewState={viewDemand}
         mapboxAccessToken={mapboxAccessToken}
         mapStyle={mapstyle}
-        onMove={({ viewState }) => setviewAccessibility(viewState)}
+        onMove={({ viewState }) => setViewDemand(viewState)}
       />
     </div>
   );

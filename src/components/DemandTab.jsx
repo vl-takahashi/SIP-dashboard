@@ -11,7 +11,7 @@ import { Slider, Box, Typography } from '@mui/material';
 import Discuss from './Discuss';
 import ODLayercheck from "./ODLayercheck";
 import ExistedData from './ExistedData';
-import {initialCheck,mapboxAccessToken,mapstyle,tooltipHandler,marks} from "./Globalvariable";
+import {initialCheck,mapboxAccessToken,mapstyle,tooltipHandler,marks,COLORS,yakuba} from "./Globalvariable";
 
 import Stack from '@mui/material/Stack';
 import Render_point from './RenderPoint';
@@ -19,7 +19,7 @@ import RenderArea from './RenderArea';
 import RenderLine from './RenderLine';
 import MouseOver1 from './MouseOver1';
 import FileValidated from './FileValidated';
-import { useClickareaStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore} from "./useStore";
+import { useClickareaStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore,useViewDemandStore} from "./useStore";
 import FetchTest from './FetchTest';
 import ChronogicalLayercheck from './ChronogicalLayercheck';
 import VisualizationIcon from './visualization.png';
@@ -69,6 +69,24 @@ const DemandTab = () => {
   const [layercheckcurrent,setlayercheckcurrent]=useState("未選択");
   const [kindcurrent,setkindcurrent]=useState("未選択");
   const [areacurrent,setareacurrent]=useState("未選択");
+  const [selectedCity,setSelectedCity]=useState("東京都新宿区");
+  const [searchText,setSearchText]=useState("");
+  // ✅ DemandTab 用の viewStore を使用（他タブと分離）
+  const viewDemand = useViewDemandStore((state)=>state.select);
+  const setViewDemand = useViewDemandStore((state)=>state.selectView);
+
+  // ✅ マウント時に初期座標（新宿区）にリセット
+  useEffect(() => {
+    const initialViewState = {
+      longitude: yakuba["東京都新宿区"]["lng"],
+      latitude: yakuba["東京都新宿区"]["lat"],
+      zoom: 12,
+      pitch: 0,
+      bearing: 0,
+    };
+    setViewDemand(initialViewState);
+  }, []);
+
   useEffect(() => {
     const h = 11 + parseInt(time * 100000000)
     setSliderLabel(`選択範囲: ${h}:00-${h + 1}:00`)
