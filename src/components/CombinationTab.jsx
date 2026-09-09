@@ -39,6 +39,28 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const storeTargetDate = useQuestionsStore((state) => state.questions?.targetDate);
   const targetDate = urlTargetDate || storeTargetDate; // URL の targetDate を優先
 
+  // ✅ セッション生成用 state
+  const [showSessionGenerator, setShowSessionGenerator] = useState(false);
+  const [selectedSessionDate, setSelectedSessionDate] = useState('yesterday');
+  const [generatedSessionId, setGeneratedSessionId] = useState(null);
+  const [generatedSessionUrl, setGeneratedSessionUrl] = useState(null);
+
+  // ✅ セッション生成ハンドラー
+  const handleGenerateSession = () => {
+    const newSessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const targetDateCalc = new Date();
+    if (selectedSessionDate === 'yesterday') {
+      targetDateCalc.setDate(targetDateCalc.getDate() - 1);
+    }
+    const dateString = targetDateCalc.toISOString().split('T')[0];
+
+    const baseUrl = `${window.location.origin}${window.location.pathname.replace(/dashboard|index/, 'chatbot')}`;
+    const newUrl = `${baseUrl}?sessionId=${newSessionId}&targetDate=${dateString}`;
+
+    setGeneratedSessionId(newSessionId);
+    setGeneratedSessionUrl(newUrl);
+  };
+
   // 📌 ドラッグ・リサイズ機能用のstate
   const [panelPosition, setPanelPosition] = useState({ x: 0, y: 0 });
   const [panelSize, setPanelSize] = useState({ width: isTablet ? 400 : 280, height: 400 });
@@ -501,6 +523,105 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             <Legends tabName="CombinationTab" selectkind={kindcurrent}/>
                             </div>}
                         </div>
+
+                        {/* ✅ 右上：セッション生成パネル */}
+                        {!generatedSessionUrl && (
+                          <div style={floatingStyle({ top: isTablet ? 8 : 100, right: isTablet ? 8 : 16, minWidth: 200 })}>
+                            <h3 style={{ fontSize: 14, fontWeight: 'bold', margin: '0 0 12px 0' }}>🆕 セッション生成</h3>
+                            <select
+                              value={selectedSessionDate}
+                              onChange={(e) => setSelectedSessionDate(e.target.value)}
+                              style={{
+                                width: '100%',
+                                height: 36,
+                                border: `1px solid ${COLORS.border}`,
+                                borderRadius: 6,
+                                marginBottom: 8,
+                                fontSize: 13,
+                                padding: '0 8px',
+                              }}
+                            >
+                              <option value="yesterday">前日のデータ</option>
+                              <option value="today">本日のデータ</option>
+                            </select>
+                            <button
+                              onClick={handleGenerateSession}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                background: '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 6,
+                                fontSize: 13,
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              URL を生成
+                            </button>
+                          </div>
+                        )}
+
+                        {/* ✅ 右上：生成されたURL表示 */}
+                        {generatedSessionUrl && (
+                          <div style={floatingStyle({ top: isTablet ? 8 : 100, right: isTablet ? 8 : 16, minWidth: 280, maxWidth: 400 })}>
+                            <h3 style={{ fontSize: 14, fontWeight: 'bold', margin: '0 0 12px 0' }}>✅ 住民用URL生成完了</h3>
+                            <div style={{
+                              background: '#f0fdf4',
+                              padding: 10,
+                              borderRadius: 6,
+                              marginBottom: 12,
+                              wordBreak: 'break-all',
+                              fontFamily: 'monospace',
+                              fontSize: 11,
+                              color: '#1f2937',
+                              maxHeight: 100,
+                              overflowY: 'auto',
+                            }}>
+                              {generatedSessionUrl}
+                            </div>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(generatedSessionUrl);
+                                alert('✅ URL をコピーしました');
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                background: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 6,
+                                fontSize: 13,
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                marginBottom: 8,
+                              }}
+                            >
+                              📋 URL をコピー
+                            </button>
+                            <button
+                              onClick={() => {
+                                setGeneratedSessionId(null);
+                                setGeneratedSessionUrl(null);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                background: '#6b7280',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 6,
+                                fontSize: 13,
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              リセット
+                            </button>
+                          </div>
+                        )}
                       </div>
                       {layercheckcurrent==="タイムスライダー"&&
                       <p>{destcurrent}に{parseInt(10+time*100000000)}-{parseInt(11+time*100000000)}到着(芸陽バス){weekdaycurrent}ダイヤ</p>}
