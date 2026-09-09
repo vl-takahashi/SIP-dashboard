@@ -49,11 +49,11 @@ export default function Legends(props) {
           <div
             style={{
               backgroundColor: item.color,
-              width: '24px',
-              height: '24px',
+              width: '10px',
+              height: '10px',
               flexShrink: 0,
-              borderRadius: '3px',
-              border: '1px solid rgba(0,0,0,0.1)',
+              borderRadius: '50%',
+              marginTop: '4px',
             }}
           />
           <p

@@ -89,7 +89,12 @@ const CombinationLayers = () => {
     const ridingtimeArray = data?.["ridingtime_direct_dest"] || [];
 
     const features = questionsList.map((q, index) => {
-      if (!q?.q2_latitude || !q?.q2_longitude) return null;
+      // ✅ 必須キーのいずれかが null なら除外
+      const requiredKeys = ['q2_latitude', 'q2_longitude', 'q1_destination', 'q3_arrival_time', 'address', 'weekday'];
+      if (requiredKeys.some(key => q?.[key] == null)) {
+        console.warn(`⚠️ 除外: インデックス ${index} - 必須キー不足:`, q);
+        return null;
+      }
 
       const color = evaluateCoordinateMatch(q, ridingtimeArray);
 
