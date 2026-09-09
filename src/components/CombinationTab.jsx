@@ -40,13 +40,18 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const targetDate = urlTargetDate || storeTargetDate; // URL の targetDate を優先
 
   // ✅ セッション生成用 state
-  const [showSessionGenerator, setShowSessionGenerator] = useState(false);
   const [selectedSessionDate, setSelectedSessionDate] = useState('yesterday');
-  const [generatedSessionId, setGeneratedSessionId] = useState(null);
   const [generatedSessionUrl, setGeneratedSessionUrl] = useState(null);
+  const dataStore = useDataStore((state) => state.data); // ✅ データアップロード状態を監視
+  const isDataUploaded = !!dataStore && Object.keys(dataStore).length > 0; // ✅ データがアップロード済みか
 
   // ✅ セッション生成ハンドラー
   const handleGenerateSession = () => {
+    if (!isDataUploaded) {
+      alert('❌ データがアップロードされていません');
+      return;
+    }
+
     const newSessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const targetDateCalc = new Date();
     if (selectedSessionDate === 'yesterday') {
@@ -54,10 +59,10 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
     }
     const dateString = targetDateCalc.toISOString().split('T')[0];
 
-    const baseUrl = `${window.location.origin}${window.location.pathname.replace(/dashboard|index/, 'chatbot')}`;
+    // ✅ URL prefix を正確に設定
+    const baseUrl = 'https://sip-chatbot-ten.vercel.app/';
     const newUrl = `${baseUrl}?sessionId=${newSessionId}&targetDate=${dateString}`;
 
-    setGeneratedSessionId(newSessionId);
     setGeneratedSessionUrl(newUrl);
   };
 
