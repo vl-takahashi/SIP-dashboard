@@ -172,9 +172,8 @@ const CombinationLayers = () => {
           : (Math.round(time * 100000000) + 11);
 
         // ✅ KV から取得した緯度経度をそのまま 3D 座標として使用
-        // スケーリングで地図の表示範囲に合わせる
-        const x = q.q2_longitude * 1000;  // 経度（東西方向）
-        const y = q.q2_latitude * 1000;   // 緯度（南北方向）
+        const x = q.q2_longitude;  // 経度（東西方向）
+        const y = q.q2_latitude;   // 緯度（南北方向）
         const z = (q.q3_arrival_time || 1) * 5;  // Z 軸に時間帯（null なら 1）
 
         // ✅ Three.js sphere 作成
