@@ -17,54 +17,8 @@ function App() {
   const updateQuestionsList = useQuestionsStore((state) => state.setQuestions);
   const updatedQuestionsList = useQuestionsStore((state) => state.questionsList);
 
-  // ✅ 📌 Q1/Q2/Q3 データを取得・更新（sessionId が変わるたびに）
-  useEffect(() => {
-    const fetchQuestionsData = async () => {
-      try {
-        // URL クエリから sessionId を取得
-        const params = new URLSearchParams(window.location.search);
-        const sessionId = params.get('sessionId');
-
-        if (!sessionId) {
-          console.warn('⚠️ sessionId が URL に含まれていません');
-          return;
-        }
-
-        console.log(`🔄 【App.jsx】Q1/Q2/Q3 データを取得中... sessionId=${sessionId}`);
-
-        // ✅ ダッシュボード API から GET
-        const response = await fetch(`/api/questions?sessionId=${sessionId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Session-ID': sessionId,
-          },
-          cache: 'no-store',  // ✅ キャッシュを無視（常に最新データ）
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        console.log('✅ 【API】questionsList:', data.questionsList);
-        console.log('✅ 【API】latest:', data.latest);
-
-        // ✅ API から取得した questionsList をストアに設定（questions と questionsList を同時更新）
-        updateQuestionsList(data.questionsList);
-      } catch (error) {
-        console.error('❌ 【App.jsx】Q1/Q2/Q3 データ取得エラー:', error.message);
-      }
-    };
-
-    // 定期的に API を呼び出し（10秒ごと）
-    fetchQuestionsData(); // 初回すぐに実行
-    const interval = setInterval(fetchQuestionsData, 10000);
-
-    // クリーンアップ
-    return () => clearInterval(interval);
-  }, []);
+  // ✅ ポーリングは CombinationTab.jsx で実装済み（2秒間隔）
+  // App.jsx では削除して重複を避ける
 
   
   function handleMuni(e) {
