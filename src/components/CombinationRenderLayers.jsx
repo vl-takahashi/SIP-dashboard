@@ -3,7 +3,7 @@ import React from 'react';
 import mapboxgl from 'mapbox-gl';
 import * as turf from '@turf/turf';
 
-import { mapstyle } from "./Globalvariable";
+import { mapstyle, mapboxAccessToken } from "./Globalvariable";
 import { useDestStore, useWeekdayStore, useTimesliderStore, useDataStore } from "./useStore";
 import { useQuestionsStore } from "./useQuestionsStore";
 
@@ -22,7 +22,7 @@ const CombinationLayers = () => {
   // タイムスライダー未選択時：どれかの時間帯では利用可能か判定
   // タイムスライダー選択時：選択時間vs他の時間帯で判定
   const evaluateCoordinateMatch = (q, ridingtimeArray) => {
-    const isUnselected = time < 0;  // ✅ 未選択状態（time < 0）
+    const isUnselected = time === -7/100000000;  // ✅ 未選択状態（初期値と同じ）
     const q3_hour = Math.round(time * 100000000) + 11;
 
     if (!q?.q2_latitude || !q?.q2_longitude) return '#888888'; // グレー
@@ -121,7 +121,7 @@ const CombinationLayers = () => {
 
     // ✅ マップ初期化（最初の1回のみ）
     if (!map.current) {
-      mapboxgl.accessToken = 'pk.eyJ1IjoiZ2Vvc3BhdGlhbCIsImEiOiJjbGRobzd5MjAwMGczM21vMDh6OTF4eHBhIn0.EhV4L80IF4VJvZS9e8Hh-g';
+      mapboxgl.accessToken = mapboxAccessToken;  // ✅ Globalvariable から取得
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
