@@ -4,7 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import * as THREE from 'three';
 import * as turf from '@turf/turf';
 
-import { mapboxAccessToken } from "./Globalvariable";
+import { mapboxAccessToken, mapstyle } from "./Globalvariable";
 import { useDestStore, useWeekdayStore, useTimesliderStore, useDataStore } from "./useStore";
 import { useQuestionsStore } from "./useQuestionsStore";
 
@@ -74,7 +74,7 @@ const CombinationLayers = () => {
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/light-v11',
+        style: mapstyle,  // ✅ AccessibilityTab と同じカスタムスタイル（OSM タイル）
         center: [132.75, 34.4],
         zoom: 11,
         pitch: 45,
