@@ -14,6 +14,7 @@ import FundamentalLayercheck from "./FundamentalLayercheck";
 import {initialCheck,mapboxAccessToken,mapstyle,tooltipHandler,marks,COLORS,yakuba} from "./Globalvariable";
 
 import { useClickareaStore,useOrigStore,useLayerflagStore,useDirectStore,useEditStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore,useViewAccesibilityStore} from "./useStore";
+import { useQuestionsStore } from "./useQuestionsStore";
 
 import TinyBarChart from "./Barchart";
 import AddressChart from "./AddressChart";
@@ -182,6 +183,43 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   },[kind]);
   useEffect(() => {
   },[isFinishedStep1]);
+
+  // ✅ ポーリング: 2秒ごとに /api/questions からデータ取得
+  const { setQuestions } = useQuestionsStore.getState();
+  useEffect(() => {
+    const fetchQuestionsData = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('sessionId') || 'default_session';
+
+        const response = await fetch(`/api/questions?sessionId=${sessionId}`, {
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        const data = await response.json();
+
+        if (data.questionsList && Array.isArray(data.questionsList)) {
+          console.log('📊 ポーリング更新:', { count: data.questionsList.length, latest: data.latest });
+          setQuestions(data.questionsList);
+        }
+      } catch (error) {
+        console.error('❌ ポーリング失敗:', error.message);
+      }
+    };
+
+    // 初回は即座に実行、以降は 2 秒ごと
+    fetchQuestionsData();
+    const interval = setInterval(fetchQuestionsData, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const [isPopUpVisible, setPopUpVisible] = useState(false);
 
   const dialogRef = useRef<HTMLDialogElement>(null);
