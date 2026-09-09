@@ -20,14 +20,12 @@ const CombinationLayers = () => {
   const data = useDataStore((state) => state.data);
   const flag = useDataStore((state) => state.flag);
 
-
-
   let nw=[132.590317,34.618206];
   let ne=[132.94325324146035,34.61707537902578];
   let sw=[132.56834478273046,34.27392753449381];
   let se=[132.90480109184705,34.292082779796985];
   const [address,setAddress]=useState("None");
-  const questions =useQuestionsStore((state)=> state.questionsList);
+  const questionsList =useQuestionsStore((state)=> state.questionsList);
 
   // ✅ CombinationTab の weekday フラグを取得（AccessibilityTab と区別）
   const Weekdayflag=useWeekdayStore((state)=> state.selectflag);
@@ -144,7 +142,7 @@ const CombinationLayers = () => {
     });
 
     return layers_row;
-  }, [questions, time, dest, Weekdayflag]);
+  }, [questionsList, time, dest, Weekdayflag]);
     // Q1/Q2/Q3 データからポイントレイヤーを生成
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
