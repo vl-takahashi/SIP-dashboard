@@ -237,7 +237,7 @@ const CombinationLayers = () => {
             map.off('click', layerConfig.id, clickHandlersRef.current[layerConfig.id]);
           }
           const handler = (e) => {
-            if (e.features && e.features.length > 0) {
+            if (e.features) {
               layerConfig.clickHandler(e.features[0]);
             }
           };
