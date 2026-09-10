@@ -1,6 +1,6 @@
 /**
  * Vercel API ルート: 診断モジュール呼び出し
- * formdata をそのまま ECS に転送（シンプル版）
+ * formdata をそのまま ECS に転送（バッファ読み込み版）
  */
 
 export default async (req, res) => {
@@ -23,13 +23,21 @@ export default async (req, res) => {
     console.log(`[Diagnostic] Method: ${req.method}`);
     console.log(`[Diagnostic] Content-Type: ${req.headers['content-type']}`);
 
-    // リクエスト本体をそのまま ECS に転送
+    // リクエスト本体をバッファとして読む
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+    const bodyBuffer = Buffer.concat(chunks);
+    console.log(`[Diagnostic] Body size: ${bodyBuffer.length} bytes`);
+
+    // バッファをそのまま ECS に転送
     const ecsResponse = await fetch(url, {
       method: req.method,
       headers: {
         'Content-Type': req.headers['content-type'] || 'application/octet-stream',
       },
-      body: req.body,
+      body: bodyBuffer,
     });
 
     if (!ecsResponse.ok) {
