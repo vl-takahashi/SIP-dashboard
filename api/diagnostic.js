@@ -20,29 +20,40 @@ export default async (req, res) => {
   }
 
   try {
-    // リクエスト本体を取得（FormData または JSON）
+    console.log('[Diagnostic Module] Request headers:', req.headers);
+    console.log('[Diagnostic Module] req.body type:', typeof req.body);
+    console.log('[Diagnostic Module] req.body keys:', req.body ? Object.keys(req.body) : 'null');
+
+    // リクエスト本体を取得
     let payload = req.body;
+
+    // req.body が null または undefined の場合、エラー
+    if (!payload) {
+      console.error('[Diagnostic Module] req.body is null/undefined');
+      // フォールバック：Content-Type で判定
+      const contentType = req.headers['content-type'] || '';
+      if (contentType.includes('application/x-www-form-urlencoded')) {
+        console.log('[Diagnostic Module] Received form-urlencoded data (unsupported)');
+        return res.status(400).json({
+          error: 'FormData is not directly supported. Please send JSON.',
+          contentType: contentType,
+        });
+      }
+      throw new Error('No request body received');
+    }
 
     // req.body が文字列の場合、JSON パース
     if (typeof payload === 'string') {
       payload = JSON.parse(payload);
     }
 
-    // FormData の場合、オブジェクトに変換
-    if (payload instanceof FormData) {
-      const formDataObj = {};
-      for (const [key, value] of payload.entries()) {
-        formDataObj[key] = value;
-      }
-      payload = formDataObj;
-    }
-
-    console.log('[Diagnostic Module] Received payload:', {
+    console.log('[Diagnostic Module] Payload structure:', {
       destination: payload.destination,
       rideonstop: payload.rideonstop,
       hour: payload.hour,
       frequency: payload.frequency,
       budget: payload.budget,
+      keys: Object.keys(payload).slice(0, 10),
     });
 
     // ECS バックエンド URL（HTTP）
