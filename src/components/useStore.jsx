@@ -529,10 +529,8 @@ let filteredTransitData = null; // sessionId指定時のフィルタリング結
           freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention]);
           freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","","",json.address]);
         } else if (sp.includes(props)) {
-          const popmeshData = [json.detail, true, json.data, json.agency || "",json.dimention];
-          usePopmeshStore.getState().setPopmesh(popmeshData);
-          // ✅ useDataStore にも保存（ChronogicalImpact で取得できるように）
-          freshRegistry[props].push(popmeshData);
+          // ✅ freshRegistry に直接保存（usePopmeshStore は使わない）
+          freshRegistry[props].push([json.detail, true, json.data, json.agency || "",json.dimention]);
         } else {
           // ★4要素目に agency を追加してグルーピング機能を有効化
           freshRegistry[props].push([json.detail, true, json.data, json.agency || "",json.dimention]);
@@ -634,10 +632,8 @@ export async function refreshJsonData(path, sessionId = null, propertyFilter = n
           freshRegistry[props].push([json.detail, true, json.data, json.agency || "",json.dimention]);
           freshRegistry[props].push([json.detail, true, json.data, json.agency || "","","",json.address]);
         } else if (sp.includes(props)) {
-          const popmeshData = [json.detail, true, json.data, json.agency || "",json.dimention];
-          usePopmeshStore.getState().setPopmesh(popmeshData);
-          // ✅ useDataStore にも保存（ChronogicalImpact で取得できるように）
-          freshRegistry[props].push(popmeshData);
+          // ✅ freshRegistry に直接保存（usePopmeshStore は使わない）
+          freshRegistry[props].push([json.detail, true, json.data, json.agency || "",json.dimention]);
         } else {
           // ★4要素目に agency を追加してグルーピング機能を有効化
           freshRegistry[props].push([json.detail, true, json.data, json.agency || "",json.dimention]);
