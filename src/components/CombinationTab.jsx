@@ -77,8 +77,11 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
       return;
     }
 
-    // ✅ デフォルトセッション（またはファシリテーター側の現在のセッション）から transit-data をコピー
+    // ✅ コピー元セッション: URL から取得、または default_session
+    // ※ アップロードされたデータは通常 default_session に保存されている
     const currentSessionId = new URLSearchParams(window.location.search).get('sessionId') || 'default_session';
+
+    console.log(`📋 コピー元セッション: ${currentSessionId}`);
 
     try {
       console.log(`📋 transit-data をコピー中: ${currentSessionId} → ${newSessionId}`);

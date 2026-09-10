@@ -117,15 +117,30 @@ export default async function handler(req, res) {
       // ✅ ケース2: transit-data をコピー（sourceSessionId → sessionId）
       if (sourceSessionId && !transitData) {
         try {
-          const sourceKey = `transit-data:${sourceSessionId}`;
-          const sourceData = await client.get(sourceKey);
+          let sourceData = null;
+          let actualSourceSessionId = sourceSessionId;
 
+          // ✅ ステップ1: 指定されたセッションを探す
+          let sourceKey = `transit-data:${sourceSessionId}`;
+          sourceData = await client.get(sourceKey);
+
+          // ✅ ステップ2: なければ 'default_session' を探す
+          if (!sourceData && sourceSessionId !== 'default_session') {
+            console.log(`ℹ️ ${sourceSessionId} にデータがないため、default_session を探します`);
+            sourceKey = `transit-data:default_session`;
+            sourceData = await client.get(sourceKey);
+            actualSourceSessionId = 'default_session';
+          }
+
+          // ✅ ステップ3: それでもなければエラー
           if (!sourceData) {
             return res.status(400).json({
               error: 'Bad Request',
-              message: `ソースセッション ${sourceSessionId} に transit-data がありません`,
+              message: `transit-data が見つかりません（${sourceSessionId}, default_session とも確認済）`,
             });
           }
+
+          console.log(`✅ transit-data を発見: ${actualSourceSessionId}`);
 
           // ✅ コピー先にコピー
           const targetKey = `transit-data:${sessionId}`;
