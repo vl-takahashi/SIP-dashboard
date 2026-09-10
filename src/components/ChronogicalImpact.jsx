@@ -123,12 +123,11 @@ const [agencyOptions, setAgencyOptions] = useState([]);
     let data_existed = [];
     console.log(routingvalue);
 
-    // AWS API Gateway 経由（HTTPS → ECS）
-    const baseUrl = 'http://52.62.35.205:5000';
+    // Vercel API ルート経由（HTTPS → HTTP プロキシ）
     const endpoint = routingvalue === "frequency"
       ? "frequency_impact_to_destination_on_route"
       : "chronogical_impact";
-    const url = `${baseUrl}/${endpoint}`;
+    const url = `/api/diagnostic?endpoint=${endpoint}`;
 
     setLoading(true);
     setErrorMessage(null);
