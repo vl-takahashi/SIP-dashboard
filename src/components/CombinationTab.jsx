@@ -94,11 +94,19 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
         }),
       });
 
+      // ✅ API レスポンス全体をログ（デバッグ用）
+      const responseText = await copyResponse.text();
+      console.log('API Response:', { status: copyResponse.status, body: responseText });
+
       if (!copyResponse.ok) {
-        console.warn('⚠️ transit-data コピーに失敗（続行します）:', copyResponse.status);
+        console.warn('⚠️ transit-data コピーに失敗（続行します）:', copyResponse.status, responseText);
       } else {
-        const copyResult = await copyResponse.json();
-        console.log('✅ transit-data をコピーしました:', copyResult);
+        try {
+          const copyResult = JSON.parse(responseText);
+          console.log('✅ transit-data をコピーしました:', copyResult);
+        } catch (e) {
+          console.log('✅ transit-data をコピーしました（JSON パース失敗）');
+        }
       }
     } catch (error) {
       console.warn('⚠️ transit-data コピーエラー（続行します）:', error.message);
@@ -107,7 +115,10 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
     // ✅ ファシリテーター用 URL（同じセッションで同期）
     const facilitatorUrl = `?sessionId=${newSessionId}`;
 
+    console.log(`✅ セッション遷移: ${facilitatorUrl}`);
+
     // ✅ ファシリテーター自身を新しいセッションページに遷移
+    // ※ API コール完了後に遷移
     window.location.href = facilitatorUrl;
   };
 
