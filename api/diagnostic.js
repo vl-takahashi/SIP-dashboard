@@ -1,17 +1,13 @@
 /**
- * ダッシュボード Vercel Serverless Function: 診断モジュール呼び出し
- * FormData をストリームから読み込み、ECS に転送
+ * Vercel API ルート: 診断モジュール呼び出し
+ * formdata をそのまま ECS に転送（シンプル版）
  */
 
 export default async (req, res) => {
-  // CORS 設定
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -19,26 +15,25 @@ export default async (req, res) => {
   }
 
   try {
-    // ECS バックエンド URL（HTTP）
-    const ecsBaseUrl = process.env.ECS_BACKEND_URL || 'http://52.62.35.205:5000';
+    const ecsBaseUrl = 'http://52.62.35.205:5000';
     const endpoint = req.query.endpoint || 'chronogical_impact';
     const url = `${ecsBaseUrl}/${endpoint}`;
 
-    console.log(`[Diagnostic Proxy] Forwarding to: ${url}`);
-    console.log(`[Diagnostic Proxy] Content-Type: ${req.headers['content-type']}`);
+    console.log(`[Diagnostic] Forwarding to: ${url}`);
+    console.log(`[Diagnostic] Method: ${req.method}`);
+    console.log(`[Diagnostic] Content-Type: ${req.headers['content-type']}`);
 
-    // リクエストボディをそのまま ECS に転送（formData/JSON 両対応）
+    // リクエスト本体をそのまま ECS に転送
     const ecsResponse = await fetch(url, {
-      method: 'POST',
+      method: req.method,
       headers: {
-        // Content-Type をそのまま転送
         'Content-Type': req.headers['content-type'] || 'application/octet-stream',
       },
-      body: req.body, // Node.js Buffer または Stream をそのまま送信
+      body: req.body,
     });
 
     if (!ecsResponse.ok) {
-      console.error(`[Diagnostic Proxy] ECS Error: ${ecsResponse.status}`);
+      console.error(`[Diagnostic] ECS Error: ${ecsResponse.status}`);
       const errorText = await ecsResponse.text();
       return res.status(ecsResponse.status).json({
         error: `ECS returned ${ecsResponse.status}`,
@@ -46,18 +41,14 @@ export default async (req, res) => {
       });
     }
 
-    // ECS からの応答を取得
     const result = await ecsResponse.json();
+    console.log(`[Diagnostic] Success`);
 
-    console.log(`[Diagnostic Proxy] Success, received diagnostic results`);
-
-    // クライアント（ダッシュボード）へ返す
     return res.status(200).json(result);
   } catch (error) {
-    console.error('[Diagnostic Proxy] Error:', error.message);
-    console.error('[Diagnostic Proxy] Stack:', error.stack);
+    console.error('[Diagnostic] Error:', error.message);
     return res.status(500).json({
-      error: 'Diagnostic proxy failed',
+      error: 'Diagnostic failed',
       message: error.message,
     });
   }
