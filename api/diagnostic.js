@@ -23,13 +23,41 @@ export default async (req, res) => {
     console.log(`[Diagnostic] Method: ${req.method}`);
     console.log(`[Diagnostic] Content-Type: ${req.headers['content-type']}`);
 
-    // リクエスト本体をバッファとして読む
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
+    // リクエスト本体をバッファとして読む（Vercel 互換性版）
+    let bodyBuffer = null;
+
+    // 1. req.body が既にバッファの場合
+    if (req.body instanceof Buffer) {
+      bodyBuffer = req.body;
+      console.log(`[Diagnostic] Body is Buffer: ${bodyBuffer.length} bytes`);
     }
-    const bodyBuffer = Buffer.concat(chunks);
-    console.log(`[Diagnostic] Body size: ${bodyBuffer.length} bytes`);
+    // 2. req.body が文字列の場合
+    else if (typeof req.body === 'string') {
+      bodyBuffer = Buffer.from(req.body);
+      console.log(`[Diagnostic] Body is string: ${bodyBuffer.length} bytes`);
+    }
+    // 3. req.body が undefined の場合、ストリームから読む
+    else if (!req.body) {
+      console.log(`[Diagnostic] Reading body stream...`);
+      const chunks = [];
+      for await (const chunk of req) {
+        chunks.push(chunk);
+      }
+      bodyBuffer = Buffer.concat(chunks);
+      console.log(`[Diagnostic] Body stream: ${bodyBuffer.length} bytes`);
+    }
+
+    console.log(`[Diagnostic] Final Body size: ${bodyBuffer ? bodyBuffer.length : 0} bytes`);
+    console.log(`[Diagnostic] Content-Type header: ${req.headers['content-type']}`);
+
+    // formdata の boundary を確認
+    const contentType = req.headers['content-type'] || '';
+    if (contentType.includes('multipart/form-data')) {
+      const boundaryMatch = contentType.match(/boundary=([^;]+)/);
+      if (boundaryMatch) {
+        console.log(`[Diagnostic] Boundary: ${boundaryMatch[1]}`);
+      }
+    }
 
     // バッファをそのまま ECS に転送
     const ecsResponse = await fetch(url, {

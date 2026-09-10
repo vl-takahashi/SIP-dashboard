@@ -298,7 +298,18 @@ const [agencyOptions, setAgencyOptions] = useState([]);
         type: "FeatureCollection",
         features: allFeatures
       };
+
+      console.log('🔍 meshGeoJSON:', {
+        featuresCount: allFeatures.length,
+        popmeshCount: popmesh.length,
+        meshGeoJSON
+      });
+
       const metadataBlob1 = new Blob([JSON.stringify(meshGeoJSON)], { type: 'application/json' });
+      console.log('🔍 metadataBlob1:', {
+        size: metadataBlob1.size,
+        type: metadataBlob1.type
+      });
       formData.append('meshdf', metadataBlob1);
 
 
