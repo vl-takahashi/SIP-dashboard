@@ -208,22 +208,28 @@ const SpatialImpact = () => {
                   const popmesh = dataStore.data["popmesh"] || [];
 
                   // 全表示メッシュの features を統合
-                  const allFeatures = [];
+
+                  // メッシュID を抽出
+                  const meshIds = [];
                   for (const [name, visible, geojson] of popmesh) {
                     if (!visible) continue;
                     if (geojson?.features) {
-                      allFeatures.push(...geojson.features);
+                      for (const feature of geojson.features) {
+                        const meshId = feature.properties?.MESH_ID || feature.properties?.KEY_CODE;
+                        if (meshId) {
+                          meshIds.push(meshId);
+                        }
+                      }
                     }
                   }
 
-                  // 統合されたGeoJSONを作成
-                  const meshGeoJSON = {
-                    type: "FeatureCollection",
-                    features: allFeatures
-                  };
-                  const metadataBlob1 = new Blob([JSON.stringify(meshGeoJSON)], { type: 'application/json' });
+                  console.log('✅ メッシュID 抽出:', {
+                    meshIdCount: meshIds.length,
+                    sampleIds: meshIds.slice(0, 5)
+                  });
 
-                  formData.append('meshdf', metadataBlob1);
+                  // メッシュID を元のキー名で送信
+                  formData.append('meshdf', JSON.stringify(meshIds));
                   console.log(`✓ 表示メッシュを統合: ${allFeatures.length} 個のFeature`);
 
                   formData.append('agency', agency); 

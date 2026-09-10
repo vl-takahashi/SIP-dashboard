@@ -123,11 +123,11 @@ const [agencyOptions, setAgencyOptions] = useState([]);
     let data_existed = [];
     console.log(routingvalue);
 
-    // Vercel API ルート経由（HTTPS → HTTP プロキシ、バッファ転送）
+    // ✅ ECS に直接アクセス（30分処理対応）
     const endpoint = routingvalue === "frequency"
       ? "frequency_impact_to_destination_on_route"
       : "chronogical_impact";
-    const url = `/api/diagnostic?endpoint=${endpoint}`;
+    const url = `http://52.62.35.205:5000/${endpoint}`;
 
     setLoading(true);
     setErrorMessage(null);
