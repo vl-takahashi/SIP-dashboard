@@ -123,10 +123,12 @@ const [agencyOptions, setAgencyOptions] = useState([]);
     let data_existed = [];
     console.log(routingvalue);
 
-    // ECS 直接アクセス（HTTPS）
-    const url = routingvalue === "frequency"
-      ? `https://sip-module-d4128eb5aa00f063.elb.ap-southeast-2.amazonaws.com/frequency_impact_to_destination_on_route`
-      : `https://sip-module-d4128eb5aa00f063.elb.ap-southeast-2.amazonaws.com/chronogical_impact`;
+    // AWS API Gateway 経由（HTTPS → ECS）
+    const baseUrl = 'http://52.62.35.205:5000';
+    const endpoint = routingvalue === "frequency"
+      ? "frequency_impact_to_destination_on_route"
+      : "chronogical_impact";
+    const url = `${baseUrl}/${endpoint}`;
 
     setLoading(true);
     setErrorMessage(null);
