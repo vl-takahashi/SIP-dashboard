@@ -3,6 +3,15 @@
  * formdata をそのまま ECS に転送（バッファ読み込み版）
  */
 
+// ✅ 巨大ペイロード対応
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '100mb',
+    },
+  },
+};
+
 export default async (req, res) => {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
