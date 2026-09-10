@@ -297,7 +297,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
         if (!visible) continue;
         if (geojson?.features) {
           for (const feature of geojson.features) {
-            const meshId = feature.properties?.mesh_id || feature.properties?.meshid;
+            const meshId = feature.properties?.MESH_ID || feature.properties?.KEY_CODE;
             if (meshId) {
               meshIds.push(meshId);
             }
