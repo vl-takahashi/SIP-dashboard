@@ -123,8 +123,8 @@ const [agencyOptions, setAgencyOptions] = useState([]);
     let data_existed = [];
     console.log(routingvalue);
     const url = routingvalue === "frequency"
-      ? `http://52.62.35.205:5000/frequency_impact_to_destination_on_route`
-      : `http://52.62.35.205:5000/chronogical_impact`;
+      ? `https://sip-module-d4128eb5aa00f063.elb.ap-southeast-2.amazonaws.com/frequency_impact_to_destination_on_route`
+      : `https://sip-module-d4128eb5aa00f063.elb.ap-southeast-2.amazonaws.com/chronogical_impact`;
 
     setLoading(true);
     setErrorMessage(null);
