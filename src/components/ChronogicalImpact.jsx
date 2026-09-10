@@ -118,13 +118,16 @@ const [agencyOptions, setAgencyOptions] = useState([]);
         setAgencyOptions([]);
       }
     };
-  // ★ 修正：非同期API呼び出し関数
+  // ★ 修正：Vercel API ルート経由で診断モジュールを呼び出し
   const fetchChronogicalImpactAsync = async (formData, routingvalue) => {
     let data_existed = [];
     console.log(routingvalue);
-    const url = routingvalue === "frequency"
-      ? `https://sip-module-d4128eb5aa00f063.elb.ap-southeast-2.amazonaws.com/frequency_impact_to_destination_on_route`
-      : `https://sip-module-d4128eb5aa00f063.elb.ap-southeast-2.amazonaws.com/chronogical_impact`;
+
+    // Vercel API ルートを経由（HTTPS → HTTP の変換）
+    const endpoint = routingvalue === "frequency"
+      ? "frequency_impact_to_destination_on_route"
+      : "chronogical_impact";
+    const url = `/api/diagnostic?endpoint=${endpoint}`;
 
     setLoading(true);
     setErrorMessage(null);
