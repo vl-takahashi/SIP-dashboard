@@ -15,29 +15,29 @@ const ExistedData=()=>{
   const fetch = async (n) => {
       const dirHandle = await window.showDirectoryPicker();
       n+=1;
-      const sessionId = getSessionIdFromURL();
-      console.log(`📌 sessionId from URL: ${sessionId}`);
+
+      // ✅ シンプル設計：アップロード時に新しい sessionId を生成
+      const newSessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem('sessionId', newSessionId); // sessionStorage に保存
+
+      console.log(`📌 新しいセッション ID を生成: ${newSessionId}`);
 
       if (n==0){
-        // 📌 元々の機能：すべてのレイヤーを読む
+        // 📌 元々の機能：すべてのレイヤーを読む + transit-data を新しいセッションに保存
         console.log('📂 すべてのレイヤーを読み込み中...');
         await refreshJsonData(dirHandle, null, null);
 
-        // 📌 新機能：transit-data を KV に保存
-        if (sessionId) {
-          console.log(`🔄 transit-data を Vercel KV に保存中 (sessionId=${sessionId})...`);
-          await refreshJsonData(dirHandle, sessionId, "ridingtime_direct_dest");
-        }
+        // ✅ シンプル設計：新しいセッションに直接保存
+        console.log(`🔄 transit-data を新しいセッションに保存中 (sessionId=${newSessionId})...`);
+        await refreshJsonData(dirHandle, newSessionId, "ridingtime_direct_dest");
       } else {
-        // 📌 元々の機能：すべてのレイヤーを読む
+        // 📌 元々の機能：すべてのレイヤーを読む + transit-data を新しいセッションに保存
         console.log('📂 すべてのレイヤーを読み込み中...');
         await nextJsonData(dirHandle, null, null);
 
-        // 📌 新機能：transit-data を KV に保存
-        if (sessionId) {
-          console.log(`🔄 transit-data を Vercel KV に保存中 (sessionId=${sessionId})...`);
-          await nextJsonData(dirHandle, sessionId, "ridingtime_direct_dest");
-        }
+        // ✅ シンプル設計：新しいセッションに直接保存
+        console.log(`🔄 transit-data を新しいセッションに保存中 (sessionId=${newSessionId})...`);
+        await nextJsonData(dirHandle, newSessionId, "ridingtime_direct_dest");
       };
     }
   return (

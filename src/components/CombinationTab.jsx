@@ -45,83 +45,47 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const dataStore = useDataStore((state) => state.data); // ✅ データアップロード状態を監視
   const isDataUploaded = !!dataStore && Object.keys(dataStore).length > 0; // ✅ データがアップロード済みか
 
-  // ✅ セッション生成ハンドラー（URL プレビュー表示）
+  // ✅ セッション生成ハンドラー（シンプル設計）
   const handleGenerateSession = () => {
     if (!isDataUploaded) {
       alert('❌ データがアップロードされていません');
       return;
     }
 
-    const newSessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // ✅ sessionStorage からアップロード時に生成された sessionId を取得
+    const sessionId = sessionStorage.getItem('sessionId');
+    if (!sessionId) {
+      alert('❌ セッション ID が見つかりません。先にデータをアップロードしてください。');
+      return;
+    }
+
     const targetDateCalc = new Date();
     if (selectedSessionDate === 'yesterday') {
       targetDateCalc.setDate(targetDateCalc.getDate() - 1);
     }
     const dateString = targetDateCalc.toISOString().split('T')[0];
 
-    // ✅ 住民用 URL を生成（まだセッション遷移しない）
+    // ✅ 住民用 URL を生成
     const baseUrl = 'https://sip-chatbot-ten.vercel.app/';
-    const residentUrl = `${baseUrl}?sessionId=${newSessionId}&targetDate=${dateString}`;
+    const residentUrl = `${baseUrl}?sessionId=${sessionId}&targetDate=${dateString}`;
 
-    // ✅ URL をプレビュー表示（セッション情報を state に保管）
+    // ✅ URL をプレビュー表示
     setGeneratedSessionUrl(residentUrl);
-    sessionStorage.setItem('pendingSessionId', newSessionId); // 確定待ちの sessionId を保管
-    sessionStorage.setItem('pendingTargetDate', dateString);
+    console.log(`✅ 住民用 URL 生成: ${residentUrl}`);
   };
 
-  // ✅ セッション確定ハンドラー（実際にセッション遷移 + データコピー）
-  const handleConfirmSession = async () => {
-    const newSessionId = sessionStorage.getItem('pendingSessionId');
-    if (!newSessionId) {
+  // ✅ セッション確定ハンドラー（シンプル設計）
+  const handleConfirmSession = () => {
+    const sessionId = sessionStorage.getItem('sessionId');
+    if (!sessionId) {
       alert('❌ セッション ID が見つかりません');
       return;
     }
 
-    // ✅ コピー元セッション: URL から取得、または default_session
-    // ※ アップロードされたデータは通常 default_session に保存されている
-    const currentSessionId = new URLSearchParams(window.location.search).get('sessionId') || 'default_session';
+    // ✅ ダッシュボード側も同じセッションページに遷移
+    const facilitatorUrl = `?sessionId=${sessionId}`;
+    console.log(`✅ セッション確定・遷移: ${facilitatorUrl}`);
 
-    console.log(`📋 コピー元セッション: ${currentSessionId}`);
-
-    try {
-      console.log(`📋 transit-data をコピー中: ${currentSessionId} → ${newSessionId}`);
-      const copyResponse = await fetch('/api/transit-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Session-ID': newSessionId,
-        },
-        body: JSON.stringify({
-          sessionId: newSessionId,
-          sourceSessionId: currentSessionId, // ✅ ソースセッションを指定
-        }),
-      });
-
-      // ✅ API レスポンス全体をログ（デバッグ用）
-      const responseText = await copyResponse.text();
-      console.log('API Response:', { status: copyResponse.status, body: responseText });
-
-      if (!copyResponse.ok) {
-        console.warn('⚠️ transit-data コピーに失敗（続行します）:', copyResponse.status, responseText);
-      } else {
-        try {
-          const copyResult = JSON.parse(responseText);
-          console.log('✅ transit-data をコピーしました:', copyResult);
-        } catch (e) {
-          console.log('✅ transit-data をコピーしました（JSON パース失敗）');
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ transit-data コピーエラー（続行します）:', error.message);
-    }
-
-    // ✅ ファシリテーター用 URL（同じセッションで同期）
-    const facilitatorUrl = `?sessionId=${newSessionId}`;
-
-    console.log(`✅ セッション遷移: ${facilitatorUrl}`);
-
-    // ✅ ファシリテーター自身を新しいセッションページに遷移
-    // ※ API コール完了後に遷移
     window.location.href = facilitatorUrl;
   };
 
@@ -683,11 +647,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               ✅ セッション確定
                             </button>
                             <button
-                              onClick={() => {
-                                setGeneratedSessionUrl(null);
-                                sessionStorage.removeItem('pendingSessionId');
-                                sessionStorage.removeItem('pendingTargetDate');
-                              }}
+                              onClick={() => setGeneratedSessionUrl(null)}
                               style={{
                                 width: '100%',
                                 padding: '8px 12px',
