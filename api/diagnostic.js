@@ -20,8 +20,22 @@ export default async (req, res) => {
   }
 
   try {
-    // リクエスト本体を取得（チャットボットから送信された回答データ）
-    const payload = req.body;
+    // リクエスト本体を取得（FormData または JSON）
+    let payload = req.body;
+
+    // req.body が文字列の場合、JSON パース
+    if (typeof payload === 'string') {
+      payload = JSON.parse(payload);
+    }
+
+    // FormData の場合、オブジェクトに変換
+    if (payload instanceof FormData) {
+      const formDataObj = {};
+      for (const [key, value] of payload.entries()) {
+        formDataObj[key] = value;
+      }
+      payload = formDataObj;
+    }
 
     console.log('[Diagnostic Module] Received payload:', {
       destination: payload.destination,
