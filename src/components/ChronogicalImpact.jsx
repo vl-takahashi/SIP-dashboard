@@ -118,16 +118,16 @@ const [agencyOptions, setAgencyOptions] = useState([]);
         setAgencyOptions([]);
       }
     };
-  // ★ 修正：Vercel API ルート経由で診断モジュールを呼び出し
+  // ★ 修正：ECS に直接アクセス
   const fetchChronogicalImpactAsync = async (formData, routingvalue) => {
     let data_existed = [];
     console.log(routingvalue);
 
-    // Vercel API ルート経由（HTTPS → HTTP プロキシ）
+    // ECS に直接アクセス（Mixed Content 警告は無視）
     const endpoint = routingvalue === "frequency"
       ? "frequency_impact_to_destination_on_route"
       : "chronogical_impact";
-    const url = `/api/diagnostic?endpoint=${endpoint}`;
+    const url = `http://52.62.35.205:5000/${endpoint}`;
 
     setLoading(true);
     setErrorMessage(null);
