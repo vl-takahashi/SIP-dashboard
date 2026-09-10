@@ -123,11 +123,12 @@ const [agencyOptions, setAgencyOptions] = useState([]);
     let data_existed = [];
     console.log(routingvalue);
 
-    // Vercel API ルートを経由（HTTPS → HTTP の変換）
+    // AWS API Gateway 経由（HTTPS → ECS）
+    const baseUrl = 'https://v7eb2nvlnd.execute-api.ap-southeast-2.amazonaws.com';
     const endpoint = routingvalue === "frequency"
       ? "frequency_impact_to_destination_on_route"
       : "chronogical_impact";
-    const url = `/api/diagnostic?endpoint=${endpoint}`;
+    const url = `${baseUrl}/${endpoint}`;
 
     setLoading(true);
     setErrorMessage(null);
