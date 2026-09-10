@@ -288,36 +288,30 @@ const [agencyOptions, setAgencyOptions] = useState([]);
       formData.append('kind', submit);
       formData.append('inner', inner);
 
-      // ★ 表示メッシュをGeoJSONで統合して送信
+      // ✅ メッシュID だけ抽出して送信（ペイロード削減）
       const popmesh = dataStore.data["popmesh"] || [];
 
-      // 全表示メッシュの features を統合
-      const allFeatures = [];
+      // メッシュID を抽出
+      const meshIds = [];
       for (const [name, visible, geojson] of popmesh) {
         if (!visible) continue;
         if (geojson?.features) {
-          allFeatures.push(...geojson.features);
+          for (const feature of geojson.features) {
+            const meshId = feature.properties?.mesh_id || feature.properties?.meshid;
+            if (meshId) {
+              meshIds.push(meshId);
+            }
+          }
         }
       }
 
-      // 統合されたGeoJSONを作成
-      const meshGeoJSON = {
-        type: "FeatureCollection",
-        features: allFeatures
-      };
-
-      console.log('🔍 meshGeoJSON:', {
-        featuresCount: allFeatures.length,
-        popmeshCount: popmesh.length,
-        meshGeoJSON
+      console.log('✅ メッシュID 抽出:', {
+        meshIdCount: meshIds.length,
+        sampleIds: meshIds.slice(0, 5)
       });
 
-      const metadataBlob1 = new Blob([JSON.stringify(meshGeoJSON)], { type: 'application/json' });
-      console.log('🔍 metadataBlob1:', {
-        size: metadataBlob1.size,
-        type: metadataBlob1.type
-      });
-      formData.append('meshdf', metadataBlob1);
+      // メッシュID を元のキー名で送信
+      formData.append('meshdf', JSON.stringify(meshIds));
 
 
       // 乗り継ぎ関連パラメータ
