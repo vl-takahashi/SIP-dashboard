@@ -45,8 +45,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const dataStore = useDataStore((state) => state.data); // ✅ データアップロード状態を監視
   const isDataUploaded = !!dataStore && Object.keys(dataStore).length > 0; // ✅ データがアップロード済みか
 
-  // ✅ セッション生成ハンドラー
-  const handleGenerateSession = async () => {
+  // ✅ セッション生成ハンドラー（URL プレビュー表示）
+  const handleGenerateSession = () => {
     if (!isDataUploaded) {
       alert('❌ データがアップロードされていません');
       return;
@@ -58,6 +58,24 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
       targetDateCalc.setDate(targetDateCalc.getDate() - 1);
     }
     const dateString = targetDateCalc.toISOString().split('T')[0];
+
+    // ✅ 住民用 URL を生成（まだセッション遷移しない）
+    const baseUrl = 'https://sip-chatbot-ten.vercel.app/';
+    const residentUrl = `${baseUrl}?sessionId=${newSessionId}&targetDate=${dateString}`;
+
+    // ✅ URL をプレビュー表示（セッション情報を state に保管）
+    setGeneratedSessionUrl(residentUrl);
+    sessionStorage.setItem('pendingSessionId', newSessionId); // 確定待ちの sessionId を保管
+    sessionStorage.setItem('pendingTargetDate', dateString);
+  };
+
+  // ✅ セッション確定ハンドラー（実際にセッション遷移 + データコピー）
+  const handleConfirmSession = async () => {
+    const newSessionId = sessionStorage.getItem('pendingSessionId');
+    if (!newSessionId) {
+      alert('❌ セッション ID が見つかりません');
+      return;
+    }
 
     // ✅ デフォルトセッション（またはファシリテーター側の現在のセッション）から transit-data をコピー
     const currentSessionId = new URLSearchParams(window.location.search).get('sessionId') || 'default_session';
@@ -86,15 +104,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
       console.warn('⚠️ transit-data コピーエラー（続行します）:', error.message);
     }
 
-    // ✅ 住民用 URL
-    const baseUrl = 'https://sip-chatbot-ten.vercel.app/';
-    const residentUrl = `${baseUrl}?sessionId=${newSessionId}&targetDate=${dateString}`;
-
     // ✅ ファシリテーター用 URL（同じセッションで同期）
     const facilitatorUrl = `?sessionId=${newSessionId}`;
-
-    // ✅ 住民用 URL を表示
-    setGeneratedSessionUrl(residentUrl);
 
     // ✅ ファシリテーター自身を新しいセッションページに遷移
     window.location.href = facilitatorUrl;
@@ -605,7 +616,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                         {/* ✅ 右上：生成されたURL表示 */}
                         {generatedSessionUrl && (
                           <div style={floatingStyle({ top: isTablet ? 8 : 100, right: isTablet ? 8 : 16, minWidth: 280, maxWidth: 400 })}>
-                            <h3 style={{ fontSize: 14, fontWeight: 'bold', margin: '0 0 12px 0' }}>✅ 住民用URL生成完了</h3>
+                            <h3 style={{ fontSize: 14, fontWeight: 'bold', margin: '0 0 12px 0' }}>📋 住民用URL</h3>
                             <div style={{
                               background: '#f0fdf4',
                               padding: 10,
@@ -641,10 +652,27 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               📋 URL をコピー
                             </button>
                             <button
+                              onClick={handleConfirmSession}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                background: '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 6,
+                                fontSize: 13,
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                marginBottom: 8,
+                              }}
+                            >
+                              ✅ セッション確定
+                            </button>
+                            <button
                               onClick={() => {
                                 setGeneratedSessionUrl(null);
-                                // ✅ ダッシュボード全体をリセット（セッションなしの状態に戻る）
-                                window.location.href = '?';
+                                sessionStorage.removeItem('pendingSessionId');
+                                sessionStorage.removeItem('pendingTargetDate');
                               }}
                               style={{
                                 width: '100%',
@@ -658,7 +686,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                 cursor: 'pointer',
                               }}
                             >
-                              リセット
+                              キャンセル
                             </button>
                           </div>
                         )}
