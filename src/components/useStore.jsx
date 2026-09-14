@@ -467,7 +467,7 @@ export const useDataStore = create((set)=>({
 
 // フォルダ内のJSON群を読み込んでuseDataStoreに反映する。
 // path: ディレクトリハンドル（Tauriのファイル選択などから渡される）
-export async function nextJsonData(path, sessionId = null, propertyFilter = null) {
+export async function nextJsonData(path, sessionId, propertyFilter) {
   // sl: 「時刻・曜日情報を別途useDestStore/useWeekdayStoreにも登録する」対象のレイヤー種別
   const sl=["ridingtime_direct_dest","ridingtime_transit_dest","fare","frequency"];
   // sa: 「区域名(area)を別途useAreaStoreにも登録する」対象のレイヤー種別
@@ -518,8 +518,6 @@ let filteredTransitData = null; // sessionId指定時のフィルタリング結
           }
           useWeekdayStore.getState().setWeekday(json.weekday);
           useDataStore.getState().setRidingtime(json.data);
-          // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[props].push([json.dest, true, json.data, json.agency || "",json.dimention]);
         } else if (sa.includes(props)) {
           // geometryを消してデータ量を減らす（元のロジックを維持）。
           // json.data.featuresが無いケースでも落ちないようoptional chainingで保護。
@@ -567,7 +565,7 @@ let filteredTransitData = null; // sessionId指定時のフィルタリング結
 }
 // フォルダ内のJSON群を読み込んでuseDataStoreに反映する。
 // path: ディレクトリハンドル（Tauriのファイル選択などから渡される）
-export async function refreshJsonData(path, sessionId = null, propertyFilter = null) {
+export async function refreshJsonData(path, sessionId, propertyFilter) {
   // sl: 「時刻・曜日情報を別途useDestStore/useWeekdayStoreにも登録する」対象のレイヤー種別
   const sl=["ridingtime_direct_dest","ridingtime_transit_dest","fare","frequency"];
   // sa: 「区域名(area)を別途useAreaStoreにも登録する」対象のレイヤー種別
@@ -608,6 +606,7 @@ export async function refreshJsonData(path, sessionId = null, propertyFilter = n
 
         if (sl.includes(props)) {
           freshRegistry[props].push([json.detail, true, json.data, json.agency || "","",json.point])
+          console.log("11")
           // 曜日・目的地情報を別storeにも反映。ここが失敗してもファイル自体の読み込みは続ける。
           if (props.includes("direct_dest")){
             useDestStore.getState().setDirectdest(json.dest);
@@ -619,9 +618,6 @@ export async function refreshJsonData(path, sessionId = null, propertyFilter = n
             useDestStore.getState().setTransitorig(json.dest);
           }
           useWeekdayStore.getState().setWeekday(json.weekday);
-          useDataStore.getState().setRidingtime(json.data);
-          // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[props].push([json.dest, true, json.data, json.agency || "",json.dimention]);
           console.log("1")
         } else if (sa.includes(props)) {
           // geometryを消してデータ量を減らす（元のロジックを維持）。
@@ -629,7 +625,6 @@ export async function refreshJsonData(path, sessionId = null, propertyFilter = n
           if (json.data?.features) json.data.features.geometry = null;
           useAreaStore.getState().setArea(json.area);
           // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[props].push([json.detail, true, json.data, json.agency || "",json.dimention]);
           freshRegistry[props].push([json.detail, true, json.data, json.agency || "","","",json.address]);
         } else if (sp.includes(props)) {
           // ✅ freshRegistry に直接保存（usePopmeshStore は使わない）
@@ -690,8 +685,6 @@ export async function refreshJsonData(path, sessionId = null, propertyFilter = n
     });
     console.log(`✅ 抽出した agency: ${JSON.stringify(uniqueAgencies)}`);
 
-    // ここで初めてstoreへ反映する（＝新しく作ったfreshRegistryをそのまま渡す）
-    useDataStore.getState().setDatafirst(freshRegistry);
     useBarchartStore.getState().setBar(true);
   }
 

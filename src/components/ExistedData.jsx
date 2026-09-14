@@ -23,17 +23,11 @@ const ExistedData=()=>{
       console.log(`📌 新しいセッション ID を生成: ${newSessionId}`);
 
       if (n==0){
-        // 📌 元々の機能：すべてのレイヤーを読む + transit-data を新しいセッションに保存
-        console.log('📂 すべてのレイヤーを読み込み中...');
-        await refreshJsonData(dirHandle, null, null);
 
         // ✅ シンプル設計：新しいセッションに直接保存
         console.log(`🔄 transit-data を新しいセッションに保存中 (sessionId=${newSessionId})...`);
         await refreshJsonData(dirHandle, newSessionId, "ridingtime_direct_dest");
       } else {
-        // 📌 元々の機能：すべてのレイヤーを読む + transit-data を新しいセッションに保存
-        console.log('📂 すべてのレイヤーを読み込み中...');
-        await nextJsonData(dirHandle, null, null);
 
         // ✅ シンプル設計：新しいセッションに直接保存
         console.log(`🔄 transit-data を新しいセッションに保存中 (sessionId=${newSessionId})...`);

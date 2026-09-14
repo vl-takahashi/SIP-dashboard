@@ -11,7 +11,6 @@ const UpdateLayers = (props) => {
   const [selected, setSelected] = useState(false)
   const color_l=[];
   const {layerflag,setlayerflag}=useLayerflagStore.getState()
-  const popmesh = usePopmeshStore.getState().popmesh;
   const setArea_list = useColorareaStore((state) => state.setColorarea);
   const viewAccessibility=useViewAccesibilityStore((state) => state.select);
   const setviewAccessibility=useViewAccesibilityStore((state) => state.selectView);
@@ -28,6 +27,7 @@ const UpdateLayers = (props) => {
   const area = useAreaStore((state)=>state.area);
   const kind = useKindStore((state)=>state.select);
   const data = useDataStore.getState().data;
+  const popmesh = useDataStore.getState().data.popmesh;
   const flag = useFlagStore((state) => state.flag);
 
   let nw=[132.590317,34.618206];
@@ -58,7 +58,7 @@ const UpdateLayers = (props) => {
   const setBoundary = useGetboundaryStore((state) => state.setBoundary);
   const setClicknearestrailline=useClicknearestraillineStore((state) => state.setClicknearestrailline);
   const { edit, setEdit } = useEditStore.getState();
-  let flagall=[]
+  
   const mergeGeoJSON = (geoJsonArray) => ({
     type: "FeatureCollection",
     features: geoJsonArray.flatMap(gj => gj.features)
@@ -133,7 +133,7 @@ const UpdateLayers = (props) => {
     // 例: check配列の中にこのレイヤー名が含まれているか確認
     // 都市計画では「表示/非表示」の切り替えが頻繁なのでここで制御
     //const isVisible = check.includes(d.property.name); 
-    
+    let flagall=[]
     for(const d3 of origdest0){
       let d=`ridingtime_direct_${d3}`
       if (data[d]!=null&&time!=""&&dest!=""&&weekday!=""){
@@ -201,8 +201,8 @@ const UpdateLayers = (props) => {
             // 使用時：配列から全データを取得
             return result.features
               .map((e) => {;
-                let key0=key;
-                const flagDataArray = flagMap[key0];  // 配列
+                  let key0=key;
+                  const flagDataArray = flagMap[key0];  // 配列
                 // プロパティ初期化
                 e.properties["to"] = null;
                 e.properties["weekday"] = null;
@@ -228,7 +228,6 @@ const UpdateLayers = (props) => {
                      idx= flagData.meshIdMap[e.properties["MESH_ID"]];
 
                     }
-                    
                     if (idx !== undefined) {
                     const item = flagData.data[idx];
                     e.properties["to"] = flagData.condition["to"];
@@ -253,10 +252,9 @@ const UpdateLayers = (props) => {
                 return e;
               })
               .filter((e) => {
-                return e.properties["hour"] == parseInt(s1) && 
-                      e.properties["directridingtime"] >= 60;
+                return e.properties["hour"] == parseInt(s1);
               });
-          })();
+            })();
             console.log(data1r);
               
               //&&bounds[0] <= x1 && x2 <= bounds[2] && bounds[1] <= y1 && y2 <= bounds[3]
@@ -363,8 +361,8 @@ const UpdateLayers = (props) => {
             }
           }catch{
           
-        }
-        } 
+      }
+    } 
     for(const d3 of origdest0){
       let d=`ridingtime_transit_${d3}`
       if (data[d]!=null&&time!=""&&dest!=""&&weekday!=""){
@@ -814,7 +812,7 @@ const UpdateLayers = (props) => {
       // 都市計画では「表示/非表示」の切り替えが頻繁なのでここで制御
       //const isVisible = check.includes(d.property.name); 
       if (Object.entries(data[d]).length>0){
-          console.log(d)
+          console.log(data[d])
         
           //console.log(data[d]);
           for (const [key, d1] of Object.entries(data[d])){
@@ -1731,7 +1729,6 @@ const UpdateLayers = (props) => {
               console.log(layer);
               layers_row.push(layer);
             } else if (d === "area") {
-              console.log(d1);
               const l1 =d1.hasOwnProperty(d)?d1[d]:d1[0];
               if (l1==="chiku"){
                 //console.log(d1[2]);

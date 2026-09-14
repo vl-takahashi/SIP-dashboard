@@ -159,13 +159,6 @@ const [agencyOptions, setAgencyOptions] = useState([]);
         originRef.current.value=="dest"?setTransitDest(dest_name):setTransitOrig(dest_name);
       }
       setData(data_existed, dp0);
-
-      // ✅ 同時に meshGeoJSON を "popmesh" キーでも保存（後で ChronogicalImpact で取得できるように）
-      if (allFeatures.length > 0) {
-        const popmeshData = [`${dest_name}着_${routingvalue}_mesh`, true, meshGeoJSON, ""];
-        setData(popmeshData, "popmesh");
-        console.log(`✅ popmesh を保存: ${popmeshData[0]}`);
-      }
       setWeekday(data.weekday);
       setPooledweekday(data.weekday);
       // ファイルダウンロード（JSON + GeoJSON）
