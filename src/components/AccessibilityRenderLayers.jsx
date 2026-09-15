@@ -826,9 +826,11 @@ const UpdateLayers = (props) => {
                   type: 'circle',
                   sourceData: d02,
                   paint: {
-                    'circle-radius': 5,
+                    'circle-radius': 2,
                     'circle-color': '#ff0000',
-                    'circle-opacity': 0.8
+                    'circle-opacity': 1.0,
+                    'circle-stroke-width': 0,
+                    'circle-blur': 0
                   },
                   layout: {},
                   visible: d01,
@@ -1680,9 +1682,11 @@ const UpdateLayers = (props) => {
                 type: 'circle',
                 sourceData: d02,
                 paint: {
-                  'circle-radius': 7,
+                  'circle-radius': 2,
                   'circle-color': '#ff0000',
-                  'circle-opacity': 0.8
+                  'circle-opacity': 1.0,
+                  'circle-stroke-width': 0,
+                  'circle-blur': 0
                 },
                 layout: {},
                 visible: d01,
@@ -1710,9 +1714,11 @@ const UpdateLayers = (props) => {
                 type: 'circle',
                 sourceData: d02,
                 paint: {
-                  'circle-radius': 7,
+                  'circle-radius': 2,
                   'circle-color': '#ff0000',
-                  'circle-opacity': 0.8
+                  'circle-opacity': 1.0,
+                  'circle-stroke-width': 0,
+                  'circle-blur': 0
                 },
                 layout: {},
                 visible: d01,
