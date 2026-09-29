@@ -152,7 +152,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
 
       console.log("API レスポンス:", data);
 
-      data_existed = [`${dest_name}着_${routingvalue}`, true, data, ""];
+      data_existed = {"detail":`${dest_name}着_${routingvalue}`, "checked":true, "data":data};
       if (transit==="direct"){
         originRef.current.value=="dest"?setDirectDest(dest_name):setDirectOrig(dest_name);
       } else {
@@ -189,7 +189,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
 
       const metadataBlob1 = new Blob([d001], { type: 'application/json' });
       metadataLink1.href = URL.createObjectURL(metadataBlob1);
-      metadataLink1.download = `chronogical_${routingvalue}_${transit}_${data.orig}_${dest_name}.json`;
+      metadataLink1.download = originRef.current.value=="dest"?`chronogical_${routingvalue}_${transit}_${dest_name}.json`:`chronogical_${routingvalue}_${transit}_${dest_name}.json`;
       metadataLink1.click();
       console.log("JSON ファイルをダウンロード:", metadataLink1.download);
 
@@ -352,7 +352,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
                         <FieldLabel>Step0. 目的地までですか、出発地からですか？</FieldLabel>
                         <SelectField selectRef={originRef} onChange={(e) =>originSetcurrent(e.target.value)}>
                         <option value="dest" selected>目的地まで</option>
-                        <option value="origin">出発地から</option>
+                        <option value="orig">出発地から</option>
                         </SelectField>
                       </div>
                     </div>
@@ -410,7 +410,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
                     <option value="transit">到着便への乗り継ぎ便にアクセス可能なエリア</option>
                     
                     </SelectField>}
-                    {origincurrent=="origin"&&<SelectField label="Step4. 入力地点出発便→乗り継ぎ便も考慮しますか？" selectRef={transitRef} inline onChange={(e) =>setdirectcurrent(e.target.value)}>
+                    {origincurrent=="orig"&&<SelectField label="Step4. 入力地点出発便→乗り継ぎ便も考慮しますか？" selectRef={transitRef} inline onChange={(e) =>setdirectcurrent(e.target.value)}>
                       <option value="direct">出発便にアクセス可能なエリア</option>
                     <option value="transit">出発便からの乗り継ぎ便にアクセス可能なエリア</option>
                     
@@ -427,6 +427,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
 
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap',justifyContent: 'center'}}>
                     <PrimaryButton value="ridingtime" onClick={(e)=>submitbutton(e.target.value)}>所要時間算出</PrimaryButton>
+                    <PrimaryButton value="staytime" onClick={(e)=>submitbutton(e.target.value)}>滞在時間算出</PrimaryButton>
                     <PrimaryButton value="fare" onClick={(e)=>submitbutton(e.target.value)}>運賃帯算出</PrimaryButton>
                     <PrimaryButton value="frequency" onClick={(e)=>submitbutton(e.target.value)}>運行本数算出</PrimaryButton>
                   </div>

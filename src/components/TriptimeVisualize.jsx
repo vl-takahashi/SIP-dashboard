@@ -41,7 +41,7 @@ const TriptimeVisualize = () => {
                             let dp0=`odtime_visual`;
                             let dp1=`odtime_visual_${meter0}_${text}.json`;
                             console.log(dp0);
-                            data_existed[dp0]=[destlonRef.current.value,true,data.data];
+                            data_existed[dp0]={"detail":destlonRef.current.value,"checked":true,"data":data};
                             console.log(data_existed);
                             let d001=JSON.stringify({"property":"odtime_visual","detail":`${meter0}_${destlatRef.current.value}`,"data":data.data,"kind":dp0});
                             let blob1 = new Blob([d001], { type: "application/json" });

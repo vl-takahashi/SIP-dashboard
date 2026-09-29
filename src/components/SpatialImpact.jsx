@@ -154,7 +154,7 @@ const SpatialImpact = () => {
                             let agency=agencyRef.current.value
                             const files = popmeshfilesRef.current?.files[0].name.split('.').slice(0, -1);
                             console.log(dp0);
-                            data_existed=[`${city}_${dimentionRef.current.value}_${agencyValue}`,true,data.data];
+                            data_existed={"detail":`${city}_${dimentionRef.current.value}_${agencyValue}`,"checked":true,"data":data.data};
                             console.log(data_existed);
                             let d001=JSON.stringify({"property":"spatialbuffer","detail":`${city}_${dimentionRef.current.value}_${agencyValue}`,"data":data.data,"kind":dp0,"agency":agencyValue}, null, 2);
                             // ★ZIP にファイル追加

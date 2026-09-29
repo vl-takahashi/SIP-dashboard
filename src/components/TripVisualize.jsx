@@ -41,7 +41,7 @@ const TripVisualize = () => {
                             let name=legendRef.current.value;
                             let dp1=`${submit}_${name}.json`;
                             console.log(data_existed[dp0]);
-                            data_existed[dp0]=[`${name}`,true,data];
+                            data_existed[dp0]={"detail":`${name}`,"checked":true,"data":data};
                             console.log(data_existed);
                             let d001=JSON.stringify({"property":dp0,"detail":`${name}`,"data":data});
                             let blob1 = new Blob([d001], { type: "application/json" });

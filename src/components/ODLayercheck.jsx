@@ -229,8 +229,8 @@ const ODLayercheck = () => {
                       console.log(`✅ 親チェックボックス [${agency}] が ${e.target.checked ? "ON" : "OFF"}`);
                     } else {
                       // ★子チェックボックスの場合：setCheck を実行
-                      const kind = e.target.dataset.kind;
-                      const detail = JSON.parse(e.target.dataset.detail);
+                      const kind = e.target.detail;
+                      const detail = JSON.parse(e.target.detail);
                       console.log("🔍 子チェックボックス:", kind, detail, "checked:", e.target.checked);
                       setCheck(kind, detail);
                       setFlag(kind, detail);

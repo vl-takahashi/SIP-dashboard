@@ -41,7 +41,7 @@ const TriptimeasMeshVisualize = () => {
                             let dp0=`odtime_${submit}_mesh`;
                             let dp1=`odtime_${submit}_${name}_mesh.json`;
                             console.log(dp0);
-                            data_existed[dp0]=[destlonRef.current.value,true,data];
+                            data_existed[dp0]={"detail":destlonRef.current.value,"checked":true,"data":data};
                             console.log(data_existed);
                             let d001=JSON.stringify({"property":`odtime_${submit}_mesh`,"detail":`${name}`,"data":data,"kind":dp0});
                             let blob1 = new Blob([d001], { type: "application/json" });

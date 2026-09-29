@@ -48,7 +48,7 @@ const RenderLine = () => {
                               // ★GeoJSON に property フィールドを追加
                               d0.property = dp0;
 
-                              let data_existed=[dp1,true,d0,""];
+                              let data_existed={"detail":dp1,"checked":true,"data":d0};
                               console.log(data_existed,dp0);
                               let d01=JSON.stringify({"property":dp0,"data":d0,"detail":data.property[d],"agency":""}, null, 2);
 

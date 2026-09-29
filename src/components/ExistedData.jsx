@@ -1,10 +1,12 @@
 import {refreshJsonData,nextJsonData} from "./useStore";
 import React,{useRef,useState} from 'react';
+import { useNumStore} from "./useStore";
 // import FolderUpload from "./Folderupload.jpg"; // File not found
 
 const ExistedData=()=>{
     const dirRef=useRef();
-    let n=0
+  const n=useNumStore((state) => state.num);
+  const sn=useNumStore((state) => state.setNum);
 
   // 📌 sessionId を URL クエリから取得（テナント隔離）
   const getSessionIdFromURL = () => {
@@ -12,9 +14,9 @@ const ExistedData=()=>{
     return params.get('sessionId');
   };
 
-  const fetch = async (n) => {
+  const fetch = async () => {
       const dirHandle = await window.showDirectoryPicker();
-      n+=1;
+      
 
       // ✅ シンプル設計：アップロード時に新しい sessionId を生成
       const newSessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -25,14 +27,15 @@ const ExistedData=()=>{
       if (n==0){
 
         // ✅ シンプル設計：新しいセッションに直接保存
-        console.log(`🔄 transit-data を新しいセッションに保存中 (sessionId=${newSessionId})...`);
+        console.log(`🔄 transit-data0を新しいセッションに保存中 (sessionId=${newSessionId})...`);
         await refreshJsonData(dirHandle, newSessionId, "ridingtime_direct_dest");
       } else {
-
+        
         // ✅ シンプル設計：新しいセッションに直接保存
         console.log(`🔄 transit-data を新しいセッションに保存中 (sessionId=${newSessionId})...`);
         await nextJsonData(dirHandle, newSessionId, "ridingtime_direct_dest");
       };
+      sn(1);
     }
   return (
     <div>

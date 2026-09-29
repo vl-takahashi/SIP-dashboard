@@ -3,8 +3,11 @@ import React, {useReducer,useStatem,createElement} from 'react'
 import { useContext,useMemo,useRef,useEffect,useState} from "react";
 
 import { initialCheck,pop } from "./Globalvariable";
-import { useDataStore,useCheckStore,usePopStore} from "./useStore";
-const spatiallayerchecked = () => {
+import { useDataStore,useCheckStore,usePopStore,useDatacheckedStore,useFlagStore} from "./useStore";
+const spatiallayercheck = () => {
+
+  const setflagcheck=useFlagStore((state)=> state.setflagcheck);
+  const flagcheck=useFlagStore((state)=> state.flagcheck);
   const [popcurrent,setpopcurrent]=useState("下記より選択");
   const selectpopRef =useRef();
   const selectpop = (selectedKeyName) => {
@@ -16,7 +19,7 @@ const spatiallayerchecked = () => {
       // フィルタリングと色設定を実行
     }, 0);
   };
-  const [mesh,setMesh]=useState("250")
+  const [ch,setCh]=useState("")
   const areaRef =useRef();
   const landuseRef =useRef();
   const planningareaRef =useRef();
@@ -44,11 +47,14 @@ const spatiallayerchecked = () => {
     railstopRef,buslineRef,busstopRef,popmeshRef,facilityRef,spatialbufferRef,
     frequencyRef,liptRef,faredirectRef,traveltimedirectRef,faretransitRef,transfertransitRef,traveltimetransitRef
   ]
+  const datacheck=useDatacheckedStore((state)=> state.setChecked);
+  const datachecked=useDatacheckedStore((state)=> state.checked);
   const check = useCheckStore((state) => state.Checklist);
   const setCheck = useDataStore((state) => state.setCheck);
   const flag = useDataStore((state) => state.flag);
   const data = useDataStore((state) => state.data);
   const agencyValue = useDataStore((state) => state.agencyValue);
+  const flagspatial=useFlagStore.getState().flagspatial;
   useEffect(() => {
     // ★全 summary のフォントサイズを統一
     if (!window._summaryStyleAdded) {
@@ -61,7 +67,7 @@ const spatiallayerchecked = () => {
     const ip=document.getElementById("layer");
     let data0={}
     console.log(data);
-    for (let v in data){
+    for (const [v, d1] of Object.entries(data)){
       // 1. JSON文字列に変換してSetに入れ、重複を除去
       const uniqueSet = new Set(data[v].map(arr => JSON.stringify(arr)));
 
@@ -98,12 +104,12 @@ const spatiallayerchecked = () => {
               ? Object.fromEntries(
                   agencyValue.map(agency => [
                     agency,
-                    data0[v].filter(item => item[3] === agency)
+                    data0[v].filter(item => item.agency === agency)
                   ])
                 )
               : {};
             const ungroupedItems = agencyValue.length > 0
-              ? data0[v].filter(item => !agencyValue.includes(item[3]))
+              ? data0[v].filter(item => !agencyValue.includes(item.agency))
               : data0[v];
 
             console.log(`📊 [${v}] agencyValue: ${JSON.stringify(agencyValue)}, グループ: ${Object.keys(groupedByAgency).length}, グループなし: ${ungroupedItems.length}`);
@@ -156,14 +162,14 @@ const spatiallayerchecked = () => {
                 let label;
                 try{
                   // GeoJSON の detail フィールドから取得
-                  const geojson = k1[2];
+                  const geojson = k1.data;
                   if (geojson && geojson.features && geojson.features.length > 0) {
-                    label = geojson.features[0].properties?.detail || k1[0].split("_")[0];
+                    label = geojson.features[0].properties?.detail || k1.detail.split("_")[0];
                   } else {
-                    label = k1[0].split("_").length>0?k1[0].split("_")[0]:k1[0];
+                    label = k1.detail.split("_").length>0?k1.detail.split("_")[0]:k1.detail;
                   }
                 } catch {
-                  label = k1[0].split("_").length>0&&k1[0] != null ? k1[0].split("_")[0] : null;
+                  label = k1.detail.split("_").length>0&&k1.detail != null ? k1.detail.split("_")[0] : null;
                 }
                 if (existingLabels.has(label)) {
                   continue;
@@ -180,12 +186,12 @@ const spatiallayerchecked = () => {
                 ip_child_label.style.marginRight = "10px";
                 ip_child_label.style.cursor = "pointer";
                 ip_child_label.style.fontSize = "14px";
-                ip_child.checked = k1[1];
+                ip_child.checked = k1.checked;
                 ip_child_label.textContent = label;
 
                 // ★イベント委譲用：data属性にkind, detail, agencyを保存
                 ip_child.dataset.kind = v;
-                ip_child.dataset.detail = JSON.stringify(k1[0]);
+                ip_child.dataset.detail = JSON.stringify(k1.detail);
                 ip_child.dataset.agency = agencyName;
 
                 // ★子チェックボックスをコンテナに追加
@@ -205,19 +211,7 @@ const spatiallayerchecked = () => {
             // ★グルーピングなしのアイテム：子チェックボックスのみ作成（親なし）
             for (const k1 of ungroupedItems) {
               console.log(k1);
-              let label;
-              try{
-                // GeoJSON の detail フィールドから取得
-                const geojson = k1[2];
-                if (geojson && geojson.features && geojson.features.length > 0) {
-                  label = geojson.features[0].properties?.detail || k1[0];
-                } else {
-                  label = k1[0].split("_").length>0?k1[0].split("_")[0]:k1[0];
-                }
-              } catch {
-                label = k1[0].split("_").length>0&&k1[0] != null ? k1[0].split("_")[0] : null;
-              }
-
+              let label = k1.detail;
               if (existingLabels.has(label)) {
                 continue;
               }
@@ -231,11 +225,11 @@ const spatiallayerchecked = () => {
               ip_child.style.marginRight = "5px";
               ip_child_label.style.marginRight = "10px";
               ip_child_label.style.cursor = "pointer";
-              ip_child.checked = k1[1];
+              ip_child.checked = k1.checked;
               ip_child_label.textContent = label;
 
               ip_child.dataset.kind = v;
-              ip_child.dataset.detail = JSON.stringify(k1[0]);
+              ip_child.dataset.detail = JSON.stringify(k1.detail);
 
               ip_parent.appendChild(ip_child);
               ip_parent.appendChild(ip_child_label);
@@ -288,11 +282,8 @@ const spatiallayerchecked = () => {
 
 
     }
-    // コンポーネントがマウント（DOMに配置）された後に実行
-    console.log("DOM is ready!");
-
     // 必要であればここでDOM操作や初期化を行う
-  }, [data,flag,agencyValue]); // agencyValue が変わったときにも実行
+  }, [flagspatial]); // agencyValue が変わったときにも実行
   // 動的ストア作成関数
   return (
         <div name="layer" style={{backgroundColor:"white",maxHeight:"500px",overflowY:"auto",padding:"10px"}}>
@@ -362,4 +353,4 @@ const spatiallayerchecked = () => {
         </div>
            )
           }
-export default spatiallayerchecked;
+export default spatiallayercheck;

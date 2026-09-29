@@ -110,7 +110,7 @@ const RenderRoute = () => {
                               // ★GeoJSON に property フィールドを追加
                               value.property = kindValue;
 
-                              let data_existed = [key.split("_")[0], true, value,agencyRef.current.value];
+                              let data_existed ={"detail":key.split("_")[0],"checked":true,"data":value,"agency":agencyRef.current.value};
                               setData(data_existed, kindValue);
 
                               // ZIP に追加

@@ -4,15 +4,16 @@ import mapboxgl from 'mapbox-gl';
 import Map from 'react-map-gl/mapbox';
 import EditLine from './EditLine';
 import { mapboxAccessToken, mapstyle,initialCheck,vividColors } from "./Globalvariable";
-import {useHoverStore,useLegendStore,useFlagStore,useDirectStore,useLayerflagStore,usePopStore,usePopmeshStore,useEditStore,useAreaStore,useViewAccesibilityStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
-const UpdateLayers = (props) => {
+import {useHoverStore,useLegendStore,useStaycheckStore,useFlagStore,useOrigDestStore,useDirectStore,useLayerflagStore,usePopStore,usePopmeshStore,useEditStore,useAreaStore,useViewAccesibilityStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
+const UpdateLayers = () => {
+  const flagcheck=useFlagStore((state) => state.flagcheck);
   const setLegends = useLegendStore((state) => state.setLegends);
   const origdest=useDirectStore((state)=> state.sorig)
   const [selected, setSelected] = useState(false)
   const color_l=[];
-  const {layerflag,setlayerflag}=useLayerflagStore.getState()
   const setArea_list = useColorareaStore((state) => state.setColorarea);
   const viewAccessibility=useViewAccesibilityStore((state) => state.select);
+  const staycheck=useStaycheckStore((state) => state.staycheck);
   const setviewAccessibility=useViewAccesibilityStore((state) => state.selectView);
   //const bounds = viewport.getBounds()
   // → [西経, 南緯, 東経, 北緯]  [minLng, minLat, maxLng, maxLat]
@@ -26,14 +27,9 @@ const UpdateLayers = (props) => {
   const time = useTimesliderStore((state)=>state.time);
   const area = useAreaStore((state)=>state.area);
   const kind = useKindStore((state)=>state.select);
-  const data = useDataStore.getState().data;
-  const popmesh = useDataStore.getState().data.popmesh;
+  const data = useDataStore((state)=>state.data);
+  const popmesh = usePopmeshStore((state)=>state.popmesh);
   const flag = useFlagStore((state) => state.flag);
-
-  let nw=[132.590317,34.618206];
-  let ne=[132.94325324146035,34.61707537902578];
-  let sw=[132.56834478273046,34.27392753449381];
-  let se=[132.90480109184705,34.292082779796985];
   const [address,setAddress]=useState("None");
   const layercheck=useLayercheckStore((state)=> state.select);
   const setFare = useFareStore((state) => state.setFare);
@@ -57,23 +53,23 @@ const UpdateLayers = (props) => {
   const setClicknearestgetofftime = useClicknearestgetofftimeStore((state) => state.setClicknearestgetofftime);
   const setBoundary = useGetboundaryStore((state) => state.setBoundary);
   const setClicknearestrailline=useClicknearestraillineStore((state) => state.setClicknearestrailline);
-  const { edit, setEdit } = useEditStore.getState();
   
+  const origdestR=useOrigDestStore(state => state.origdest)
   const mergeGeoJSON = (geoJsonArray) => ({
     type: "FeatureCollection",
     features: geoJsonArray.flatMap(gj => gj.features)
   });
   let allFeatures =[];
   for (let j in popmesh){
-    allFeatures.push(popmesh[j][2])
+    allFeatures.push(popmesh[j]["data"])
 
   }
       // AccessibilityRenderLayers.jsxの最初の方に追加
 
-    const generateLegendData = (kind) => {
+    const generateLegendData = (kind,staycheck) => {
       const legendData = [];
 
-      if (kind === "所要時間") {
+      if (staycheck === "nostay"&&kind === "所要時間") {
         // 0-60分は10分刻み
         [0, 10, 20, 30, 40, 50, 60].forEach(minutes => {
           const seconds = minutes * 60;
@@ -90,7 +86,7 @@ const UpdateLayers = (props) => {
           const b = Math.max(0, Math.min(255, seconds / 10));
           legendData.push([[Math.round(r), Math.round(g), Math.round(b)], minutes]);
         });
-      } else if (kind === "運賃") {
+      } else if (staycheck === "nostay"&&kind === "運賃") {
         // 運賃：0～1200円を200円刻み
         [0, 200, 400, 600, 800, 1000, 1200].forEach(fare => {
           const r = Math.max(0, Math.min(255, Math.floor((fare / 1000) * 135)));
@@ -98,7 +94,7 @@ const UpdateLayers = (props) => {
           const b = 255;
           legendData.push([[r, g, b], fare]);
         });
-      } else if (kind === "運行本数") {
+      } else if (staycheck === "nostay"&&kind === "運行本数") {
         // 運行本数：0～20本を5本刻み
         [0, 5, 10, 15, 20].forEach(freq => {
           const r = 0;
@@ -106,18 +102,26 @@ const UpdateLayers = (props) => {
           const b = Math.max(0, Math.min(204, 204 - Math.floor((freq * 204) / 5)));
           legendData.push([[r, g, b], freq]);
         });
+      } else if (staycheck === "stay") {
+      [3600, 3600*1, 3600*2, 3600*3, 3600*4, 3600*5, 3600*6, 3600*7, 3600*8, 3600*9, 3600*10, 3600*11, 3600*12, 3600*13,, 3600*14, 3600*15, 3600*16].forEach(minutes => {
+        const seconds = minutes;
+        console.log(seconds);
+        const r = Math.max(0, Math.min(255, (seconds / 43200) * 255));
+        const g = 0;
+        const b = Math.max(0, Math.min(255, 255 - (seconds / 43200) * 255));
+        legendData.push([[Math.round(r), Math.round(g), Math.round(b)], minutes]);
+      });
       }
-
       return legendData;
     };
 
     // kindが変わったときに呼ぶ
     useEffect(() => {
-      if (kind) {
-        const legendData = generateLegendData(kind);
+      if (kind||staycheck) {
+        const legendData = generateLegendData(kind,staycheck);
         setLegends(legendData);
       }
-    }, [kind, setLegends]);
+    }, [kind, setLegends,staycheck]);
   const result = mergeGeoJSON(allFeatures);
   const ridingtimerow = useMemo(()=>{
     let layers_ridingrow=[]
@@ -133,40 +137,48 @@ const UpdateLayers = (props) => {
     // 例: check配列の中にこのレイヤー名が含まれているか確認
     // 都市計画では「表示/非表示」の切り替えが頻繁なのでここで制御
     //const isVisible = check.includes(d.property.name); 
-    let flagall=[]
-    for(const d3 of origdest0){
-      let d=`ridingtime_direct_${d3}`
-      if (data[d]!=null&&time!=""&&dest!=""&&weekday!=""){
-        
-        try{
-          for (const [key, d1] of Object.entries(data[d])){
-            console.log(data[d])
-            i+=1
-              const Area =area;
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
-              let flag=[];
-              if(layercheck!="複数レイヤー表示"){
-              d1.hasOwnProperty(d)?flagall.push(d1[d][2]):flagall.push(d1[2]);
+  let flagall=[]
+  console.log(origdestR);
+  let d=`ridingtime_direct_${origdestR}`
+  console.log(data,dest)
+  
+  if (data[d]!=null&&time!=""&&dest!=""&&weekday!=""){
+    if (staycheck==="nostay"){
+      if (direct=="direct"){
+        for (const [key, d1] of Object.entries(data[d])){
+          i+=1
+          if(d1["detail"].includes(dest)){
+            console.log(d1)
+            
+            const Area =area;
+            const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i}`;
+            let flag=[];
+            if(layercheck!="複数レイヤー表示"){
+              d1.hasOwnProperty(d)?flagall.push(d1[d]["data"]):flagall.push(d1["data"]);
 
             
               for (const k of flagall){
                 console.log(dest)
                 if (k.length>=1)
                 {
-                  if (k[0]["condition"]["to"]==dest){
+                  if (origdestR=="dest"&&k[0]["condition"].hasOwnProperty("to")&&k[0]["condition"]["to"]==dest){
+                    flag=k;
+                  } else if (origdestR=="orig"&&k[0]["condition"].hasOwnProperty("from")&&k[0]["condition"]["from"]==dest){
                     flag=k;
                   }
 
                 } else{
-                    if (k["condition"]["to"]==dest){
+                    
+                  if (origdestR=="dest"&&k["condition"].hasOwnProperty("to")&&k["condition"]["to"]==dest){
+                    flag=k;
+                  } else if (origdestR=="orig"&&k["condition"].hasOwnProperty("from")&&k["condition"]["from"]==dest){
                     flag=k;
                   }
                 }
               }
             } else{
-              d1.hasOwnProperty(d)?flag=d1[d][2]:flag=d1[2];
+              d1.hasOwnProperty(d)?flag=d1[d]["data"]:flag=d1["data"];
             }
-            console.log(direct)
             const data1r = (() => {
             // ステップ1: flagデータをオブジェクトで事前処理
             let flagMap = {};
@@ -175,8 +187,8 @@ const UpdateLayers = (props) => {
               if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
                   i["condition"]["direct"] === "direct") {
                 
-                key = `${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`;
-                
+                key = origdestR=="dest"?`${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`:`${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["from"]}`;
+                console.log(key)
                 // meshIdMap を作成
                 const meshIdMap = {};
                 i["data"].forEach((item, idx) => {
@@ -204,7 +216,7 @@ const UpdateLayers = (props) => {
                   let key0=key;
                   const flagDataArray = flagMap[key0];  // 配列
                 // プロパティ初期化
-                e.properties["to"] = null;
+                origdestR=="dest"?e.properties["to"] = null:e.properties["from"] = null;
                 e.properties["weekday"] = null;
                 e.properties["hour"] = null;
                 e.properties["direct"] = null;
@@ -222,15 +234,19 @@ const UpdateLayers = (props) => {
                   for (const flagData of flagDataArray) {
                     let idx=null
                     if ("KEY_CODE" in e.properties){
-                     idx= flagData.meshIdMap[e.properties["KEY_CODE"]];
+                      idx= flagData.meshIdMap[e.properties["KEY_CODE"]];
 
                     } else {
-                     idx= flagData.meshIdMap[e.properties["MESH_ID"]];
+                      idx= flagData.meshIdMap[e.properties["MESH_ID"]];
 
                     }
                     if (idx !== undefined) {
                     const item = flagData.data[idx];
-                    e.properties["to"] = flagData.condition["to"];
+                    if (origdestR=="dest"){
+                      e.properties["to"] = flagData.condition["to"];
+                    } else {
+                      e.properties["from"] = flagData.condition["from"];
+                    }
                     e.properties["weekday"] = flagData.condition["weekday"];
                     e.properties["hour"] = flagData.condition["hour"];
                     e.properties["direct"] = flagData.condition["direct"];
@@ -264,119 +280,119 @@ const UpdateLayers = (props) => {
             };
             setRidingtime(data1r);
             //setRidingtimeall(data2r);
-              let datav=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
-              const isActive =layercheck === "タイムスライダー"?true:datav;
-              const dest00=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
-              let ratiolist=[];
-              let valuelist=[];
-              const layer={
-                id: ly,
-                type: 'fill',
-                sourceData: filteredGeoJSON,
-                paint: {
-                'fill-color': [
-                  'rgb',
-                  ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]],
-                  255,
-                  ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]
-                ],
-                  'fill-opacity': 1
-                },
-                layout: {},
-                visible: isActive,
-                hoverType: "所要時間",
-                clickHandler: (feature) => {
-                  try{
-                    console.log('Clicked:',feature.properties[s0]);
-                    setClicknearestridetime(feature.properties[s0]);
-                    setClicknearestgetofftime(feature.properties[s1]);
-                    setClickneareststop(feature.properties[stop]);
-                    setClicknearestbusline(feature.properties["route"]);
-                    console.log('Clicked:',feature.properties[Area]);
-                    setClickpopmeshaddress(feature.properties[Area]);
-                  } catch(e){
-                    console.log(e.message);
-                  }
+            let datav=d1["checked"];
+            const isActive =layercheck === "タイムスライダー"?true:datav;
+            const dest00=d1.hasOwnProperty(d)?d1[d]["point"]:d1["point"];
+            let ratiolist=[];
+            let valuelist=[];
+            const layer={
+              id: ly,
+              type: 'fill',
+              sourceData: filteredGeoJSON,
+              paint: {
+              'fill-color': [
+                'rgb',
+                ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]],
+                255,
+                ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]
+              ],
+                'fill-opacity': 1
+              },
+              layout: {},
+              visible: isActive,
+              hoverType: "所要時間",
+              clickHandler: (feature) => {
+                try{
+                  console.log('Clicked:',feature.properties[s0]);
+                  setClicknearestridetime(feature.properties[s0]);
+                  setClicknearestgetofftime(feature.properties[s1]);
+                  setClickneareststop(feature.properties[stop]);
+                  setClicknearestbusline(feature.properties["route"]);
+                  console.log('Clicked:',feature.properties[Area]);
+                  setClickpopmeshaddress(feature.properties[Area]);
+                } catch(e){
+                  console.log(e.message);
                 }
-              };
-              layers_ridingrow.push(layer);
-              
-              console.log(d1)
-              let point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
-              let data1p=[];
-              for (const k of point){
-                data1p.push({"name":k["stopname"],"coordinates":[k["stoplon"],k["stoplat"]]})
               }
-              console.log(data1p);
-              const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i+5}`;
-              const dest0=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
-              const layerpoint={
-                id: ly1,
-                type: 'symbol',
-                sourceData: {
-                  type: 'FeatureCollection',
-                  features: data1p.map((d, idx) => ({
-                    type: 'Feature',
-                    properties: { name: d.name },
-                    geometry: { type: 'Point', coordinates: d.coordinates }
-                  }))
-                },
-                layout: {
-                  'icon-image': 'marker',
-                  'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.1, 24, 0.1]
-                },
-                paint: {},
-                visible: layercheck === "タイムスライダー"&&dest0==dest?true:false,
-                hoverType: "所要時間",
-                clickHandler: (feature) => {}
-              };
-              layers_ridingrow.push(layerpoint);
-              const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i*5+100}`;
-              const dest01=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
-              const layertextpoint={
-                id: ly2,
-                type: 'symbol',
-                sourceData: {
-                  type: 'FeatureCollection',
-                  features: data1p.map((d, idx) => ({
-                    type: 'Feature',
-                    properties: { name: d.name },
-                    geometry: { type: 'Point', coordinates: d.coordinates }
-                  }))
-                },
-                layout: {
-                  'text-field': ['get', 'name'],
-                  'text-size': 25,
-                  'text-anchor': 'center',
-                  'text-offset': [0, -2.2]
-                },
-                paint: {
-                  'text-color': '#010166'
-                },
-                visible: layercheck === "タイムスライダー"&&dest01==dest?true:false,
-                hoverType: "所要時間",
-                clickHandler: (feature) => {}
-              };
-              layers_ridingrow.push(layertextpoint);
+            };
+            layers_ridingrow.push(layer);
+            
+            console.log(d1)
+            let point=d1.hasOwnProperty(d)?d1[d]["point"]:d1["point"];
+            let data1p=[];
+            for (const k of point){
+              data1p.push({"name":k["stopname"],"coordinates":[k["stoplon"],k["stoplat"]]})
             }
-          }catch{
+            console.log(data1p);
+            const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i+5}`;
+            const dest0=d1.hasOwnProperty(d)?d1[d]["point"]:d1["point"];
+            const layerpoint={
+              id: ly1,
+              type: 'symbol',
+              sourceData: {
+                type: 'FeatureCollection',
+                features: data1p.map((d, idx) => ({
+                  type: 'Feature',
+                  properties: { name: d.name },
+                  geometry: { type: 'Point', coordinates: d.coordinates }
+                }))
+              },
+              layout: {
+                'icon-image': 'marker',
+                'icon-size': ['interpolate', ['linear'], ['zoom'], 0, 0.1, 24, 0.1]
+              },
+              paint: {},
+              visible: layercheck === "タイムスライダー"&&dest0==dest?true:false,
+              hoverType: "所要時間",
+              clickHandler: (feature) => {}
+            };
+            layers_ridingrow.push(layerpoint);
+            const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i*5+100}`;
+            const dest01=d1.hasOwnProperty(d)?d1[d]["point"]:d1["point"];
+            const layertextpoint={
+              id: ly2,
+              type: 'symbol',
+              sourceData: {
+                type: 'FeatureCollection',
+                features: data1p.map((d, idx) => ({
+                  type: 'Feature',
+                  properties: { name: d.name },
+                  geometry: { type: 'Point', coordinates: d.coordinates }
+                }))
+              },
+              layout: {
+                'text-field': ['get', 'name'],
+                'text-size': 25,
+                'text-anchor': 'center',
+                'text-offset': [0, -2.2]
+              },
+              paint: {
+                'text-color': '#010166'
+              },
+              visible: layercheck === "タイムスライダー"&&dest01==dest?true:false,
+              hoverType: "所要時間",
+              clickHandler: (feature) => {}
+            };
+            layers_ridingrow.push(layertextpoint);
           
-      }
-    } 
-    for(const d3 of origdest0){
-      let d=`ridingtime_transit_${d3}`
-      if (data[d]!=null&&time!=""&&dest!=""&&weekday!=""){
-          for (const [key, d1] of Object.entries(data[d])){
+          } 
+        
+        }
+      } else {
+        for(const d3 of origdest0){
+          let d=`ridingtime_transit_${d3}`
+          if (data[d]!=null&&time!=""&&dest!=""&&weekday!=""){
+            for (const [key, d1] of Object.entries(data[d])){
               const Area =area;
               let s = dest;
               let s0 = weekday;
               let s1 = parseInt(Math.round(time*100000000)+10);
               let s02=parseInt(weekdayflag)-1;
-              const lyd=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}1`:`layer-${d}-${d1[0]}-${i}1`;
-              const lyb=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}b`:`layer-${d}-${d1[0]}-${i}b`;
+              const lyd=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}1`:`layer-${d}-${d1["detail"]}-${i}1`;
+              const lyb=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}b`:`layer-${d}-${d1["detail"]}-${i}b`;
               let flag=[];
               if(layercheck!="複数レイヤー表示"){
-              d1.hasOwnProperty(d)?flagall.push(d1[d][2]):flagall.push(d1[2]);
+              d1.hasOwnProperty(d)?flagall.push(d1[d]["data"]):flagall.push(d1["data"]);
 
               
               for (const k of flagall){
@@ -393,7 +409,7 @@ const UpdateLayers = (props) => {
                 }
               }
             } else{
-              flag=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
+              flag=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
             }
             const data1b= (() => {
               // ステップ1: flagデータをオブジェクトで事前処理
@@ -403,99 +419,16 @@ const UpdateLayers = (props) => {
                 if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
                     i["condition"]["direct"] === "before") {
                   
-                  key = `${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`;
+                  key = i["condition"].hasOwnProperty("to")?`${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`:`${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["from"]}`;
                   
                   // meshIdMap を作成
                   const meshIdMap = {};
                   i["data"].forEach((item, idx) => {
-                    if (item.beforemeshid && Array.isArray(item.beforemeshid)) {
+                    if (origdest==="dest"&&item.beforemeshid && Array.isArray(item.beforemeshid)) {
                       item.beforemeshid.forEach(meshId => {
                         meshIdMap[meshId] = idx;
                       });
-                    }
-                  });
-                  // 複数データに対応：配列にする
-                  if (!flagMap[key]) {
-                    flagMap[key] = [];
-                  }
-                  flagMap[key].push({
-                    condition: i["condition"],
-                    data: i["data"],
-                    meshIdMap: meshIdMap
-                  });
-                }
-              }
-              // ステップ2: result.features を処理
-              // 使用時：配列から全データを取得
-              return result.features
-                .map((e) => {;
-                  let key0=key;
-                  const flagDataArray = flagMap[key0];  // 配列
-                  // プロパティ初期化
-                  e.properties["to"] = null;
-                  e.properties["weekday"] = null;
-                  e.properties["hour"] = null;
-                  e.properties["before"] = null;
-                  e.properties["beforerideonstop"] = null;
-                  e.properties["beforegetoffstop"] = null;
-                  e.properties["beforeridingtime"] = null;
-                  e.properties["beforerideontime"] = null;
-                  e.properties["beforegetofftime"] =[];
-                  e.properties["beforeexceptionserviceday"] = null;
-                  e.properties["beforeroute"] = null;
-                  e.properties["beforeagency"] = null;
-                  e.properties["beforedimention"] = null;
-                  if (flagDataArray) {
-                    // 配列の全データを検索
-                    for (const flagData of flagDataArray) {
-                      const idx = flagData.meshIdMap[e.properties["KEY_CODE"]];
-                      
-                      if (idx !== undefined) {
-                      const item = flagData.data[idx];
-                      e.properties["to"] = flagData.condition["to"];
-                      e.properties["weekday"] = flagData.condition["weekday"];
-                      e.properties["hour"] = flagData.condition["hour"];
-                      e.properties["before"] = flagData.condition["before"];
-                      e.properties["dimention"] = flagData.condition["dimention"];
-                      e.properties["beforerideonstop"] = item.beforerideonstop;
-                      e.properties["beforegetoffstop"] = item.beforegetoffstop;
-                      e.properties["beforeridingtime"] = item.beforeridingtime;
-                      e.properties["beforerideontime"] = item.beforerideontime;
-                      e.properties["beforegetofftime"] = item.beforegetofftime;
-                      e.properties["beforeexceptionserviceday"] = item.beforeexceptionserviceday;
-                      e.properties["beforeroute"] = item.beforeroute;
-                      e.properties["beforeagency"] = item.beforeagency;
-                        // ... その他のプロパティ
-                        break;  // 最初にマッチしたら終了
-                      }
-                    }
-                  }
-
-                  return e;
-                })
-                .filter((e) => {
-                  return e.properties["hour"] == parseInt(s1) && 
-                        e.properties["beforeridingtime"] >= 60;
-                });
-            })();
-            const beforeGeoJSON = {
-              type: "FeatureCollection",
-              features: data1b
-            };
-            const data1a= (() => {
-              // ステップ1: flagデータをオブジェクトで事前処理
-              let flagMap = {};
-              let key="";
-              for (const i of flag) {
-                if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
-                    i["condition"]["direct"] === "after") {
-                  
-                  key = `${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`;
-                  
-                  // meshIdMap を作成
-                  const meshIdMap = {};
-                  i["data"].forEach((item, idx) => {
-                    if (item.aftermeshid && Array.isArray(item.aftermeshid)) {
+                    } else if (origdest==="orig"&&item.aftermeshid && Array.isArray(item.aftermeshid)) {
                       item.aftermeshid.forEach(meshId => {
                         meshIdMap[meshId] = idx;
                       });
@@ -522,7 +455,16 @@ const UpdateLayers = (props) => {
                   e.properties["to"] = null;
                   e.properties["weekday"] = null;
                   e.properties["hour"] = null;
-                  e.properties["after"] = null;
+                  e.properties["beforerideonstop"] = null;
+                  e.properties["beforegetoffstop"] = null;
+                  e.properties["beforeridingtime"] = null;
+                  e.properties["beforerideontime"] = null;
+                  e.properties["beforegetofftime"] =[];
+                  e.properties["beforeexceptionserviceday"] = null;
+                  e.properties["beforeroute"] = null;
+                  e.properties["beforeagency"] = null;
+                  e.properties["beforedimention"] = null;
+
                   e.properties["afterrideonstop"] = null;
                   e.properties["aftergetoffstop"] = null;
                   e.properties["afterridingtime"] = null;
@@ -542,16 +484,16 @@ const UpdateLayers = (props) => {
                       e.properties["to"] = flagData.condition["to"];
                       e.properties["weekday"] = flagData.condition["weekday"];
                       e.properties["hour"] = flagData.condition["hour"];
-                      e.properties["after"] = flagData.condition["after"];
+                      e.properties["before"] = flagData.condition["before"];
                       e.properties["dimention"] = flagData.condition["dimention"];
-                      e.properties["afterrideonstop"] = item.afterrideonstop;
-                      e.properties["aftergetoffstop"] = item.aftergetoffstop;
-                      e.properties["afterridingtime"] = item.afterridingtime;
-                      e.properties["afterrideontime"] = item.afterrideontime;
-                      e.properties["aftergetofftime"] = item.aftergetofftime;
-                      e.properties["afterexceptionserviceday"] = item.afterexceptionserviceday;
-                      e.properties["afterroute"] = item.afterroute;
-                      e.properties["afteragency"] = item.afteragency;
+                      origdest==="dest"?e.properties["beforerideonstop"] = item.beforerideonstop:e.properties["afterrideonstop"] = item.afterrideonstop;
+                      origdest==="dest"?e.properties["beforegetoffstop"] = item.beforegetoffstop:e.properties["aftergetoffstop"] = item.aftergetoffstop;
+                      origdest==="dest"?e.properties["beforeridingtime"] = item.beforeridingtime:e.properties["afterridingtime"] = item.afterridingtime;
+                      origdest==="dest"?e.properties["beforerideontime"] = item.beforerideontime:e.properties["afterrideontime"] = item.afterrideontime;
+                      origdest==="dest"?e.properties["beforegetofftime"] = item.beforegetofftime:e.properties["aftergetofftime"] = item.aftergetofftime;
+                      origdest==="dest"?e.properties["beforeexceptionserviceday"] = item.beforeexceptionserviceday:e.properties["afterexceptionserviceday"] = item.afterexceptionserviceday;
+                      origdest==="dest"?e.properties["beforeroute"] = item.beforeroute:e.properties["afterroute"] = item.afterroute;
+                      origdest==="dest"?e.properties["beforeagency"] = item.beforeagency:e.properties["afteragency"] = item.afteragency;
                         // ... その他のプロパティ
                         break;  // 最初にマッチしたら終了
                       }
@@ -562,16 +504,16 @@ const UpdateLayers = (props) => {
                 })
                 .filter((e) => {
                   return e.properties["hour"] == parseInt(s1) && 
-                        e.properties["afterridingtime"] >= 60;
+                        e.properties["beforeridingtime"] >= 60;
                 });
             })();
-            //&&bounds[0] <= x1 && x2 <= bounds[2] && bounds[1] <= y1 && y2 <= bounds[3]
-            const afterGeoJSON = {
+            
+            const beforeGeoJSON = {
               type: "FeatureCollection",
-              features: data1a
+              features: data1b
             };
             //setRidingtime(directGeoJSON);
-              const bisv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
+              const bisv=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
               const bisLayer = layercheck === "複数レイヤー表示"?true:false;
               const bisActive = kind === "所要時間"?true:false;
               
@@ -580,9 +522,9 @@ const UpdateLayers = (props) => {
               const blayer={
                 id: lyb,
                 type: 'fill',
-                sourceData: origdest==="dest"?beforeGeoJSON:afterGeoJSON,
+                sourceData: beforeGeoJSON,
                 paint: {
-                  'fill-color': [
+                  'fill-color':origdest==="dest"? [
                     'case',
                     ['>=', ['get', 'beforeridingtime'], 60],
                     [
@@ -592,27 +534,25 @@ const UpdateLayers = (props) => {
                       ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'beforeridingtime']], 10]]]
                     ],
                     'rgba(0, 0, 0, 0)'
+                  ]:[
+                    'case',
+                    ['>=', ['get', 'afterridingtime'], 60],
+                    [
+                      'rgb',
+                      ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'afterridingtime']], 10]]]],
+                      255,
+                      ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'afterridingtime']], 10]]]
+                    ],
+                    'rgba(0, 0, 0, 0)'
                   ],
-                  'fill-opacity': 1
+                  'fill-opacity': 1,
+                  'fill-outline-color': '#170d0d'  // 白い枠線
                 },
                 layout: {},
                 visible: layercheck === "複数レイヤー表示"?bisv:false,
-                hoverType: "所要時間",
-                clickHandler: (feature) => {
-                  try{
-                    console.log('Clicked:',feature.properties[s0]);
-                    setClicknearestridetime(feature.properties[s0]);
-                    setClicknearestgetofftime(feature.properties[s1]);
-                    setClickneareststop(feature.properties[stop]);
-                    setClicknearestbusline(feature.properties["route"]);
-                    console.log('Clicked:',feature.properties[Area]);
-                    setClickpopmeshaddress(feature.properties[Area]);
-                  } catch(e){
-                    console.log(e.message);
-                  }
-                }
+                hoverType: "所要時間"
               };
-              //layers_ridingrow.push(blayer);
+            layers_ridingrow.push(blayer);
             const data1d = result.features
             .map((e) => {
               // プロパティ初期化
@@ -681,7 +621,7 @@ const UpdateLayers = (props) => {
               features: [...directGeoJSON.features, ...beforeGeoJSON.features]
             };
             setRidingtime(mergedGeoJSON);
-              const isv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
+              const isv=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
               const isLayer = layercheck === "複数レイヤー表示"?true:false;
               const isActive = kind === "所要時間"?true:false;
               
@@ -717,16 +657,15 @@ const UpdateLayers = (props) => {
                   }
                 }
               };
-              //layers_ridingrow.push(layer);
 
 
-              const point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
+              const point=d1.hasOwnProperty(d)?d1[d]["point"]:d1["point"];
               let data1p=[];
               for (let k in point){
                 data1p.push({"name":point[k]["stopname"],"coordinates":[point[k]["stoplon"],point[k]["stoplat"]]})
               }
-              const isv0=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
-              const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i+5}`;
+              const isv0=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
+              const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i+5}`;
               const layerpoint={
                 id: ly1,
                 type: 'symbol',
@@ -749,8 +688,8 @@ const UpdateLayers = (props) => {
               };
               console.log(layerpoint);
               layers_ridingrow.push(layerpoint);
-              const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i*5+100}`;
-              const isv1=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
+              const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i*5+100}`;
+              const isv1=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
               const layertextpoint={
                 id: ly2,
                 type: 'symbol',
@@ -778,10 +717,403 @@ const UpdateLayers = (props) => {
               console.log(layertextpoint);
               //layers_ridingrow.push(layertextpoint);
             }
-      }
+          }
+          }
+        }    
+    } else {
+      if(direct==="direct"){
+
+        let origdestpare=[];
+        for (const [key, d0] of Object.entries(data["ridingtime_direct_staytime"])){
+          const Area =area;
+          let s = dest;
+          let s0 = weekday;
+          let s1 = parseInt(Math.round(time*100000000)+10);
+          let s02=parseInt(weekdayflag)-1;
+          console.log(result)
+        const datastay = (() => {
+          
+          // ステップ1: flagデータをオブジェクトで事前処理
+          let flagMap = {};
+          let key="";
+          for (const i of d0.data) {
+            if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
+                i["condition"]["direct"] === "direct") {
+              
+              key = i["condition"].hasOwnProperty("to")?`${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`:`${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["from"]}`;
+              console.log(key)
+              // meshIdMap を作成
+              const meshIdMap = {};
+              i["data"].forEach((item, idx) => {
+                if (item.directmeshid && Array.isArray(item.directmeshid)) {
+                  item.directmeshid.forEach(meshId => {
+                    meshIdMap[meshId] = idx;
+                  });
+                }
+              });
+              // 複数データに対応：配列にする
+              if (!flagMap[key]) {
+                flagMap[key] = [];
+              }
+              flagMap[key].push({
+                condition: i["condition"],
+                data: i["data"],
+                meshIdMap: meshIdMap
+              });
+                    console.log(flagMap[key])
+            }
+          }
+          // ステップ2: result.features を処理
+          // 使用時：配列から全データを取得
+          return result.features
+            .map((e) => {;
+                let key0=key;
+                    
+                const flagDataArray = flagMap[key0];  // 配列
+              // プロパティ初期化
+              origdestR=="dest"?e.properties["to"] = null:e.properties["from"] = null;
+              e.properties["weekday"] = null;
+              e.properties["hour"] = null;
+              e.properties["direct"] = null;
+              e.properties["directrideonstop"] = null;
+              e.properties["directgetoffstop"] = null;
+              e.properties["directridingtime"] = null;
+              e.properties["directrideontime"] = null;
+              e.properties["directgetofftime"] =[];
+              e.properties["directexceptionserviceday"] = null;
+              e.properties["directroute"] = null;
+              e.properties["directagency"] = null;
+              e.properties["directdimention"] = null;
+              e.properties["maxstaytime"] = null;
+              e.properties["minstaytime"] = null;
+              if (flagDataArray) {
+                // 配列の全データを検索
+                for (const flagData of flagDataArray) {
+                  let idx=null
+                  if ("KEY_CODE" in e.properties){
+                    idx= flagData.meshIdMap[e.properties["KEY_CODE"]];
+
+                  } else {
+                    idx= flagData.meshIdMap[e.properties["MESH_ID"]];
+
+                  }
+                  if (idx !== undefined) {
+                  const item = flagData.data[idx];
+                  if (origdestR=="dest"){
+                    e.properties["to"] = flagData.condition["to"];
+                  } else {
+                    e.properties["from"] = flagData.condition["from"];
+                  }
+                  e.properties["weekday"] = flagData.condition["weekday"];
+                  e.properties["hour"] = flagData.condition["hour"];
+                  e.properties["direct"] = flagData.condition["direct"];
+                  e.properties["dimention"] = flagData.condition["dimention"];
+                  e.properties["directrideonstop"] = item.directrideonstop;
+                  e.properties["directgetoffstop"] = item.directgetoffstop;
+                  e.properties["directridingtime"] = item.directridingtime;
+                  e.properties["directrideontime"] = item.directrideontime;
+                  e.properties["directgetofftime"] = item.directgetofftime;
+                  e.properties["directexceptionserviceday"] = item.directexceptionserviceday;
+                  e.properties["directroute"] = item.directroute;
+                  e.properties["directagency"] = item.directagency;
+                  e.properties["maxstaytime"] = Math.max(...item.staytime);
+                  e.properties["minstaytime"] = Math.min(...item.staytime);
+                  console.log(e.properties["minstaytime"])
+                    // ... その他のプロパティ
+                    break;  // 最初にマッチしたら終了
+                  }
+                }
+              }
+
+              return e;
+            })
+            .filter((e) => {
+              return e.properties["hour"] == parseInt(s1);
+            });
+          })();
+          console.log(datastay);
+            
+                const ly=`layer-${i}`;
+            //&&bounds[0] <= x1 && x2 <= bounds[2] && bounds[1] <= y1 && y2 <= bounds[3]
+          const stayGeoJSON = {
+            type: "FeatureCollection",
+            features: datastay
+          };
+          i+=1
+            const layer={
+              id: ly,
+              type: 'fill',
+              sourceData: stayGeoJSON,
+              paint: {
+                'fill-color': [
+                  'case',
+                  staycheck === "stay"?['<', ['get', 'maxstaytime'], 1800]:['<', ['get', 'directridingtime'], 600],
+                  'rgba(0, 0, 0, 0)',
+                  staycheck === "stay"?['>=', ['get', 'maxstaytime'], 1800]:['>=', ['get', 'directridingtime'], 600],
+                  [
+                    'rgb',
+
+                  staycheck === "stay"?['max', 0, ['min', 255, ['*', ['/', ['to-number', ['get', 'maxstaytime']], 43200], 255]]]:['max', 0, ['min', 255, ['*', ['/', ['to-number', ['get', 'directridingtime']], 60], 255]]],
+                  0,
+                  staycheck === "stay"?['max', 0, ['min', 255, ['-', 255, ['*', ['/', ['to-number', ['get', 'maxstaytime']], 43200], 255]]]]:['max', 0, ['min', 255, ['-', 255, ['*', ['/', ['to-number', ['get', 'directridingtime']], 60], 255]]]]
+                  ],
+                  'rgba(0, 0, 0, 0)'
+                ],
+                'fill-opacity': staycheck === "stay"?['case', ['<', ['get', 'maxstaytime'], 2100], 0, 1]:['case', ['<', ['get', 'directridingtime'], 600], 0, 1]
+              },
+              layout: {},
+              visible: true,
+              hoverType: "滞在時間",
+            };
+            layers_ridingrow.push(layer);
+            if (direct==="transit"){
+             
+              const data1b= (() => {
+              // ステップ1: flagデータをオブジェクトで事前処理
+              let flagMap = {};
+              let key="";
+              for (const i of origdestpare[0]) {
+                if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
+                    i["condition"]["direct"] === "transit") {
+                  
+                  key = `${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`;
+              
+                  // meshIdMap を作成
+                  const meshIdMap = {};
+                  i["data"].forEach((item, idx) => {
+                    if (item.beforemeshid && Array.isArray(item.beforemeshid)) {
+                      item.beforemeshid.forEach(meshId => {
+                        meshIdMap[meshId] = idx;
+                      });
+                    }
+                  });
+                  // 複数データに対応：配列にする
+                  if (!flagMap[key]) {
+                    flagMap[key] = [];
+                  }
+                  flagMap[key].push({
+                    condition: i["condition"],
+                    data: i["data"],
+                    meshIdMap: meshIdMap
+                  });
+                }
+              }
+              // ステップ2: result.features を処理
+              // 使用時：配列から全データを取得
+              return result.features
+                .map((e) => {;
+                  let key0=key;
+                  const flagDataArray = flagMap[key0];  // 配列
+                  // プロパティ初期化
+                  e.properties["to"] = null;
+                  e.properties["weekday"] = null;
+                  e.properties["hour"] = null;
+                  e.properties["beforerideonstop"] = null;
+                  e.properties["beforegetoffstop"] = null;
+                  e.properties["beforeridingtime"] = null;
+                  e.properties["beforerideontime"] = null;
+                  e.properties["beforegetofftime"] =[];
+                  e.properties["beforeexceptionserviceday"] = null;
+                  e.properties["beforeroute"] = null;
+                  e.properties["beforeagency"] = null;
+                  e.properties["beforedimention"] = null;
+                  if (flagDataArray) {
+                    // 配列の全データを検索
+                    for (const flagData of flagDataArray) {
+                      const idx = flagData.meshIdMap[e.properties["KEY_CODE"]];
+                      
+                      if (idx !== undefined) {
+                      const item = flagData.data[idx];
+                      e.properties["to"] = flagData.condition["to"];
+                      e.properties["weekday"] = flagData.condition["weekday"];
+                      e.properties["hour"] = flagData.condition["hour"];
+                      e.properties["before"] = flagData.condition["before"];
+                      e.properties["dimention"] = flagData.condition["dimention"];
+                      e.properties["beforerideonstop"] = item.beforerideonstop;
+                      e.properties["beforegetoffstop"] = item.beforegetoffstop;
+                      e.properties["beforeridingtime"] = item.beforeridingtime;
+                      e.properties["beforerideontime"] = item.beforerideontime;
+                      e.properties["beforeexceptionserviceday"] = item.beforeexceptionserviceday;
+                      e.properties["beforeroute"] = item.beforeroute;
+                      e.properties["beforeagency"] = item.beforeagency;
+                        // ... その他のプロパティ
+                        break;  // 最初にマッチしたら終了
+                      }
+                    }
+                  }
+
+                  return e;
+                })
+                .filter((e) => {
+                  return e.properties["hour"] == parseInt(s1) && 
+                        e.properties["beforeridingtime"] >= 60;
+                });
+            })();
+            const beforeGeoJSON = {
+              type: "FeatureCollection",
+              features: data1b
+            };
+            //setRidingtime(directGeoJSON);
+              const bisv=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
+              const bisLayer = layercheck === "複数レイヤー表示"?true:false;
+              const bisActive = kind === "所要時間"?true:false;
+              
+              let bratiolist=[];
+              let bvaluelist=[];
+              const blayer={
+                id: lyb,
+                type: 'fill',
+                sourceData: beforeGeoJSON,
+                paint: {
+                  'fill-color':origdest==="dest"? [
+                    'case',
+                    ['>=', ['get', 'beforeridingtime'], 60],
+                    [
+                      'rgb',
+                      ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'beforeridingtime']], 10]]]],
+                      255,
+                      ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'beforeridingtime']], 10]]]
+                    ],
+                    'rgba(0, 0, 0, 0)'
+                  ]:[
+                    'case',
+                    ['>=', ['get', 'afterridingtime'], 60],
+                    [
+                      'rgb',
+                      ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'afterridingtime']], 10]]]],
+                      255,
+                      ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'afterridingtime']], 10]]]
+                    ],
+                    'rgba(0, 0, 0, 0)'
+                  ],
+                  'fill-opacity': 1,
+                  'fill-outline-color': '#170d0d'  // 白い枠線
+                },
+                layout: {},
+                visible: layercheck === "複数レイヤー表示"?bisv:false,
+                hoverType: "所要時間"
+              };
+            layers_ridingrow.push(blayer);
+            const data1a= (() => {
+            for (const i of origdestpare[0]) {
+                if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
+                    i["condition"]["direct"] === "transit") {
+                  
+                  key = `${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["from"]}`;
+              
+                  // meshIdMap を作成
+                  const meshIdMap = {};
+                  i["data"].forEach((item, idx) => {
+                    if (item.aftermeshid && Array.isArray(item.aftermeshid)) {
+                      item.aftermeshid.forEach(meshId => {
+                        meshIdMap[meshId] = idx;
+                      });
+                    }
+                  });
+                  // 複数データに対応：配列にする
+                  if (!flagMap[key]) {
+                    flagMap[key] = [];
+                  }
+                  flagMap[key].push({
+                    condition: i["condition"],
+                    data: i["data"],
+                    meshIdMap: meshIdMap
+                  });
+                }
+              }
+              // ステップ2: result.features を処理
+              // 使用時：配列から全データを取得
+              return result.features
+                .map((e) => {;
+                  let key0=key;
+                  const flagDataArray = flagMap[key0];  // 配列
+                  // プロパティ初期化
+                  e.properties["to"] = null;
+                  e.properties["weekday"] = null;
+                  e.properties["hour"] = null;
+                  e.properties["afterrideonstop"] = null;
+                  e.properties["aftergetoffstop"] = null;
+                  e.properties["afterridingtime"] = null;
+                  e.properties["afterrideontime"] = null;
+                  e.properties["aftergetofftime"] =[];
+                  e.properties["afterexceptionserviceday"] = null;
+                  e.properties["afterroute"] = null;
+                  e.properties["afteragency"] = null;
+                  e.properties["afterdimention"] = null;
+                  if (flagDataArray) {
+                    // 配列の全データを検索
+                    for (const flagData of flagDataArray) {
+                      const idx = flagData.meshIdMap[e.properties["KEY_CODE"]];
+                      
+                      if (idx !== undefined) {
+                      const item = flagData.data[idx];
+                      e.properties["to"] = flagData.condition["to"];
+                      e.properties["weekday"] = flagData.condition["weekday"];
+                      e.properties["hour"] = flagData.condition["hour"];
+                      e.properties["dimention"] = flagData.condition["dimention"];
+                      e.properties["afterrideonstop"] = item.afterrideonstop;
+                      e.properties["aftergetoffstop"] = item.aftergetoffstop;
+                      e.properties["afterridingtime"] = item.afterridingtime;
+                      e.properties["afterrideontime"] = item.afterrideontime;
+                      e.properties["afterexceptionserviceday"] = item.afterexceptionserviceday;
+                      e.properties["afterroute"] = item.afterroute;
+                      e.properties["afteragency"] = item.afteragency;
+                        // ... その他のプロパティ
+                        break;  // 最初にマッチしたら終了
+                      }
+                    }
+                  }
+
+                  return e;
+                })
+                .filter((e) => {
+                  return e.properties["hour"] == parseInt(s1) && 
+                        e.properties["afterridingtime"] >= 60;
+                });
+            })();
+            const afterGeoJSON = {
+              type: "FeatureCollection",
+              features: data1a
+            };
+            //setRidingtime(directGeoJSON);
+              const aisv=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
+              const aisLayer = layercheck === "複数レイヤー表示"?true:false;
+              const aisActive = kind === "所要時間"?true:false;
+              
+              let aratiolist=[];
+              let avaluelist=[];
+              const alayer={
+                id: lyb,
+                type: 'fill',
+                sourceData: afterGeoJSON,
+                paint: {
+                  'fill-color':[
+                    'case',
+                    ['>=', ['get', 'afterridingtime'], 60],
+                    [
+                      'rgb',
+                      ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'afterridingtime']], 10]]]],
+                      255,
+                      ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'afterridingtime']], 10]]]
+                    ],
+                    'rgba(0, 0, 0, 0)'
+                  ],
+                  'fill-opacity': 1,
+                  'fill-outline-color': '#170d0d'  // 白い枠線
+                },
+                layout: {},
+                visible: layercheck === "複数レイヤー表示"?aisv:false,
+                hoverType: "所要時間"
+              };
+            layers_ridingrow.push(alayer);
+            } 
+            }
+          }
       }
     }
-    return layers_ridingrow},[layercheck,time,dest,weekday,direct,weekdayflag])
+    
+    
+    return layers_ridingrow},[layercheck,time,dest,weekday,direct,weekdayflag,staycheck])
   
   const getMinMax = (values) => {
     if (values.length === 0) return { max: null, min: null };
@@ -800,7 +1132,6 @@ const UpdateLayers = (props) => {
   
   let popmeshkey=[];
   const layers = useMemo(() => {
-    console.log(pop);
       if (!data) return [];
       const layers_row = [];
       console.log("🔄 useMemo re-running, data updated:", data);
@@ -818,9 +1149,9 @@ const UpdateLayers = (props) => {
           for (const [key, d1] of Object.entries(data[d])){
             i+=1;
             if (d === "facility"){
-                const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
-                const d02=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
-                const d01=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
+                const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i}`;
+                const d02=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
+                const d01=d1["checked"];
                 const layer={
                   id: ly,
                   type: 'circle',
@@ -844,11 +1175,11 @@ const UpdateLayers = (props) => {
                 layers_row.push(layer);
               
             } else if (d === "road") {
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
+              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i}`;
               const layer={
                 id: ly,
                 type: 'line',
-                sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
                 paint: {
                   'line-color': '#ff0000',
                   'line-width': 3
@@ -857,7 +1188,7 @@ const UpdateLayers = (props) => {
                   'line-join': 'round',
                   'line-cap': 'round'
                 },
-                visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                visible: d1["checked"],
                 hoverType: "道路",
                 clickHandler: (feature) => {
                   try{
@@ -867,11 +1198,12 @@ const UpdateLayers = (props) => {
               };
               layers_row.push(layer);
             } else if (d === "popmesh") {
-              const data1=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
+              const data1=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
               const data1r=pop!=""?data1.features.filter((e)=>{return e.properties[pop]>0}):data1;
 
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
-              const isv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
+              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i}`;
+              const isv=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
+              console.log(isv)
               const Area =area;
               const layer={
                 id: ly,
@@ -904,9 +1236,9 @@ const UpdateLayers = (props) => {
               const Area =area;
               const isLayer = layercheck === "複数レイヤー表示";
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-              const data1=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
+              const data1=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
               const data1r=data1;
-              let datav=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
+              let datav=d1["checked"];
 
               const layer={
                 id: ly,
@@ -937,10 +1269,10 @@ const UpdateLayers = (props) => {
           let s1 = parseInt(Math.round(time*100000000)+10);
           let s2="direct";
           let s02=parseInt(weekdayflag)-1;
-          const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i}`;
+          const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i}`;
           let flag=[];
           if(layercheck!="複数レイヤー表示"){
-          d1.hasOwnProperty(d)?flagall.push(d1[d][2]):flagall.push(d1[2]);
+          d1.hasOwnProperty(d)?flagall.push(d1[d]["data"]):flagall.push(d1["data"]);
 
           
           for (const k of flagall){
@@ -957,7 +1289,7 @@ const UpdateLayers = (props) => {
             }
           }
         } else{
-          d1.hasOwnProperty(d)?flag=d1[d][2]:flag=d1[2];
+          d1.hasOwnProperty(d)?flag=d1[d]["data"]:flag=d1["data"];
         }
           const data1r = result.features
           .map((e) => {
@@ -1000,7 +1332,7 @@ const UpdateLayers = (props) => {
           features: data1r
         };
         setRidingtime(filteredGeoJSON);
-          const isv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
+          const isv=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
           const isLayer = layercheck === "複数レイヤー表示"?true:false;
           const isActive = kind === "所要時間"?true:false;
           
@@ -1044,13 +1376,13 @@ const UpdateLayers = (props) => {
             }
           };
           layers_row.push(layer);
-          const point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
+          const point=d1.hasOwnProperty(d)?d1[d]["point"]:d1["point"];
           let data1p=[];
           for (let k in point){
             data1p.push({"name":point[k]["stopname"],"coordinates":[point[k]["stoplon"],point[k]["stoplat"]]})
           }
-          const isv0=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
-          const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i+5}`;
+          const isv0=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
+          const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i+5}`;
           const layerpoint={
             id: ly1,
             type: 'symbol',
@@ -1073,8 +1405,8 @@ const UpdateLayers = (props) => {
           };
           console.log(layerpoint);
           layers_row.push(layerpoint);
-          const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i*5+100}`;
-          const isv1=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
+          const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i*5+100}`;
+          const isv1=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
           const layertextpoint={
             id: ly2,
             type: 'symbol',
@@ -1104,10 +1436,10 @@ const UpdateLayers = (props) => {
 
         }  else if (d === "frequency_on_routes") {
               const Area =area;
-              //console.log(d1[2]);
+              //console.log(d1["data"]);
               let s = `JR西条駅_${weekday}_${Math.round(time*100000000)+5}_frequency_direct`;
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-              const data1=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
+              const data1=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
               //const data1r=data1.features.filter((e)=>{return bounds[0]<=e.geometry.coordinates[0][0][0]||e.geometry.coordinates[0][2][0]<=bounds[2]||bounds[1]<=e.geometry.coordinates[0][0][1]||e.geometry.coordinates[0][2][1]<=bounds[3]});
               const data1r=data1;
               console.log(data1r.length);
@@ -1139,7 +1471,7 @@ const UpdateLayers = (props) => {
                   'fill-opacity': 1
                 },
                 layout: {},
-                visible: kind=="運行本数"&&layercheck=="タイムスライダー"?true:Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                visible: kind=="運行本数"&&layercheck=="タイムスライダー"?true:d1["checked"],
                 hoverType: "運行本数",
                 clickHandler: (feature) => {
                   try{
@@ -1160,11 +1492,11 @@ const UpdateLayers = (props) => {
               let s1 = parseInt(Math.round(time*100000000)+10);
               let s2="direct";
               let s02=parseInt(weekdayflag)-1;
-              const lyd=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}1`:`layer-${d}-${d1[0]}-${i}1`;
-              const lyb=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}b`:`layer-${d}-${d1[0]}-${i}b`;
+              const lyd=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}1`:`layer-${d}-${d1["detail"]}-${i}1`;
+              const lyb=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}b`:`layer-${d}-${d1["detail"]}-${i}b`;
               let flag=[];
               if(layercheck!="複数レイヤー表示"){
-              d1.hasOwnProperty(d)?flagall.push(d1[d][2]):flagall.push(d1[2]);
+              d1.hasOwnProperty(d)?flagall.push(d1[d]["data"]):flagall.push(d1["data"]);
 
               
               for (const k of flagall){
@@ -1181,7 +1513,7 @@ const UpdateLayers = (props) => {
                 }
               }
             } else{
-              flag=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
+              flag=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
             }
             console.log(flag);
              const data1b = result.features
@@ -1232,7 +1564,7 @@ const UpdateLayers = (props) => {
             };
             console.log(beforeGeoJSON);
             //setRidingtime(directGeoJSON);
-              const bisv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
+              const bisv=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
               const bisLayer = layercheck === "複数レイヤー表示"?true:false;
               const bisActive = kind === "所要時間"?true:false;
               
@@ -1311,7 +1643,7 @@ const UpdateLayers = (props) => {
               features: data1d
             };
             setRidingtime(directGeoJSON);
-              const isv=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
+              const isv=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
               const isLayer = layercheck === "複数レイヤー表示"?true:false;
               const isActive = kind === "所要時間"?true:false;
               
@@ -1350,13 +1682,13 @@ const UpdateLayers = (props) => {
               layers_row.push(layer);
 
 
-              const point=d1.hasOwnProperty(d)?d1[d][5]:d1[5];
+              const point=d1.hasOwnProperty(d)?d1[d]["point"]:d1["point"];
               let data1p=[];
               for (let k in point){
                 data1p.push({"name":point[k]["stopname"],"coordinates":[point[k]["stoplon"],point[k]["stoplat"]]})
               }
-              const isv0=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
-              const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i+5}`;
+              const isv0=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
+              const ly1=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i+5}`;
               const layerpoint={
                 id: ly1,
                 type: 'symbol',
@@ -1379,8 +1711,8 @@ const UpdateLayers = (props) => {
               };
               console.log(layerpoint);
               layers_row.push(layerpoint);
-              const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d][0]}-${i}`:`layer-${d}-${d1[0]}-${i*5+100}`;
-              const isv1=d1.hasOwnProperty(d)?d1[d][1]:d1[1];
+              const ly2=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i*5+100}`;
+              const isv1=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
               const layertextpoint={
                 id: ly2,
                 type: 'symbol',
@@ -1414,10 +1746,10 @@ const UpdateLayers = (props) => {
               //console.log(dest,weekday,Math.round(time*100000000)+5);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
               console.log(kind);
-              let datav=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
+              let datav=d1["checked"];
               const isLayer = layercheck === "複数レイヤー表示";
               const isActive = kind === "運賃" && layercheck === "タイムスライダー"?true:false;
-              let data1=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
+              let data1=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
               //const data1r=data1.features.filter((e)=>{return bounds[0]<=e.geometry.coordinates[0][0][0]||e.geometry.coordinates[0][2][0]<=bounds[2]||bounds[1]<=e.geometry.coordinates[0][0][1]||e.geometry.coordinates[0][2][1]<=bounds[3]});
               const data1r=data1;
               console.log(isActive,data1,datav);
@@ -1459,13 +1791,13 @@ const UpdateLayers = (props) => {
               const layer={
                 id: ly,
                 type: 'fill',
-                sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
                 paint: {
                   'fill-color': '#00ff00',
                   'fill-opacity': 0.6
                 },
                 layout: {},
-                visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                visible: d1["checked"],
                 hoverType: "lipt"
               }
               layers_row.push(layer);
@@ -1506,16 +1838,16 @@ const UpdateLayers = (props) => {
               let d1r=d1.hasOwnProperty(d)?d1[d]:d1;
               let d1r2;
               try{
-                console.log(d1r[2]);
-                d1r2=d1r[2];
-                for (const d2 of d1r[2].features){
+                console.log(d1r.data);
+                d1r2=d1r.data;
+                for (const d2 of d1r.data.features){
                   colorl.push(d2.properties.name);
                 }
 
               } catch{
-                console.log(d1r[0][2]);
-                d1r2=d1r[0][2];
-                for (const d2 of d1r[0][2].features){
+                console.log(d1r[0].data);
+                d1r2=d1r[0].data;
+                for (const d2 of d1r[0].data.features){
                   colorl.push(d2.properties.name);
                 }
                 
@@ -1547,10 +1879,10 @@ const UpdateLayers = (props) => {
               };
               layers_row.push(layer);
             } else if (d === "railline") {
-              const isVisible = Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
-              console.log("🎯 railline layer:", d1[0], "visible should be:", d1[1]);
+              const isVisible = d1["checked"];
+              console.log("🎯 railline layer:", d1["detail"], "visible should be:", d1["checked"]);
               let colorl=[];
-              console.log(d1[2]);
+              console.log(d1["data"]);
               let d1r=d1.hasOwnProperty(d)?d1[d]:d1;
               let newcol= [...new Set(colorl)];
 
@@ -1558,7 +1890,7 @@ const UpdateLayers = (props) => {
               const layer={
                 id: ly,
                 type: 'line',
-                sourceData: d1[2],
+                sourceData: d1["data"],
                 paint: {
                   'line-color': '#ff0000',
                   'line-width': 3
@@ -1577,10 +1909,10 @@ const UpdateLayers = (props) => {
                 }
               };
               if (isVisible) {
-                  console.log("✅ 追加:", d1[0]);
+                  console.log("✅ 追加:", d1["detail"]);
                   layers_row.push(layer);
                 } else {
-                  console.log("❌ スキップ:", d1[0]);
+                  console.log("❌ スキップ:", d1["detail"]);
                 }
             } else if (d === "rosenbus") {
               let colorl=[];
@@ -1588,15 +1920,15 @@ const UpdateLayers = (props) => {
               let d1r=d1.hasOwnProperty(d)?d1[d]:d1;
               let d1r2;
               try{
-                console.log(d1r[2]);
-                d1r2=d1r[2];
-                for (const d2 of d1r[2].features){
+                console.log(d1r.data);
+                d1r2=d1r.data;
+                for (const d2 of d1r.data.features){
                   colorl.push(d2.properties.name);
                 }
               } catch{
-                console.log(d1r[0][2]);
-                d1r2=d1r[0][2];
-                for (const d2 of d1r[0][2].features){
+                console.log(d1r[0].data);
+                d1r2=d1r[0].data;
+                for (const d2 of d1r[0].data.features){
                   colorl.push(d2.properties.name);
                 }
               }
@@ -1616,7 +1948,7 @@ const UpdateLayers = (props) => {
                   'line-join': 'round',
                   'line-cap': 'round'
                 },
-                visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                visible: d1["checked"],
                 hoverType: "路線バス",
                 clickHandler: (feature) => {
                   try{
@@ -1632,15 +1964,15 @@ const UpdateLayers = (props) => {
               let d1r=d1.hasOwnProperty(d)?d1[d]:d1;
               let d1r2;
               try{
-                console.log(d1r[2]);
-                d1r2=d1r[2];
-                for (const d2 of d1r[2].features){
+                console.log(d1r.data);
+                d1r2=d1r.data;
+                for (const d2 of d1r.data.features){
                   colorl.push(d2.properties.name);
                 }
               } catch{
-                console.log(d1r[0][2]);
-                d1r2=d1r[0][2];
-                for (const d2 of d1r[0][2].features){
+                console.log(d1r[0].data);
+                d1r2=d1r[0].data;
+                for (const d2 of d1r[0].data.features){
                   colorl.push(d2.properties.name);
                 }
               }
@@ -1660,7 +1992,7 @@ const UpdateLayers = (props) => {
                   'line-join': 'round',
                   'line-cap': 'round'
                 },
-                visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                visible: d1["checked"],
                 hoverType: "高速バス",
                 clickHandler: (feature) => {
                   try{
@@ -1671,11 +2003,11 @@ const UpdateLayers = (props) => {
               };
               layers_row.push(layer);
             } else if (d === "busstop"){
-              //console.log(d1[2]);
+              //console.log(d1["data"]);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-              console.log(d1);
-              const d02=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
-              const d01=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
+              console.log(d1["checked"]);
+              const d02=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
+              const d01=d1["checked"];
               console.log(d01);
               const layer={
                 id: ly,
@@ -1703,11 +2035,11 @@ const UpdateLayers = (props) => {
               console.log(layer);
               layers_row.push(layer);
             } else if (d === "station"){
-              //console.log(d1[2]);
+              //console.log(d1["data"]);
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
               console.log(d1);
-              const d02=d1.hasOwnProperty(d)?d1[d][2]:d1[2];
-              const d01=Array.isArray(d1) && d1.length > 1 ? d1[1] : true;
+              const d02=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
+              const d01=d1["checked"];
               console.log(d01);
               const layer={
                 id: ly,
@@ -1735,13 +2067,13 @@ const UpdateLayers = (props) => {
               console.log(layer);
               layers_row.push(layer);
             } else if (d === "area") {
-              const l1 =d1.hasOwnProperty(d)?d1[d]:d1[0];
+              const l1 =d1.hasOwnProperty(d)?d1[d]:d1["detail"];
               if (l1==="chiku"){
-                //console.log(d1[2]);
-                const l =d1.hasOwnProperty(d)?d1[d][2].features.length:d1[2].features.length;
+                //console.log(d1["data"]);
+                const l =d1.hasOwnProperty(d)?d1[d]["data"].features.length:d1["data"].features.length;
                 //console.log(l);
                 for (let i1=0;i1<l;i1++){
-                  color_l.push([d1.hasOwnProperty(d)?d1[d][2].features[i1].properties.市区町村:d1[2].features[i1].properties.市区町村,vividColors[i1*2].rgba])
+                  color_l.push([d1.hasOwnProperty(d)?d1[d]["data"].features[i1].properties.市区町村:d1["data"].features[i1].properties.市区町村,vividColors[i1*2].rgba])
                 }
                 //console.log(color_l);
                 ///Setcolor(data);
@@ -1752,13 +2084,13 @@ const UpdateLayers = (props) => {
                 const layer={
                   id: ly,
                   type: 'fill',
-                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
                   paint: {
                     'fill-color': '#5fa8a0',
                     'fill-opacity': 0.3
                   },
                   layout: {},
-                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  visible: d1["checked"],
                   hoverType: "地区",
                   clickHandler: (feature) => {
                     try{
@@ -1769,20 +2101,20 @@ const UpdateLayers = (props) => {
                 };
                 layers_row.push(layer);
               } else if (l1 === "administrative") {
-                //console.log(d1[1]);
+                //console.log(d1["checked"]);
 
                 const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
                 console.log(d1);
                 const layer={
                   id: ly,
                   type: 'fill',
-                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
                   paint: {
                     'fill-color': '#5fa8a0',
                     'fill-opacity': 0.2
                   },
                   layout: {},
-                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  visible: d1["checked"],
                   hoverType: "行政区域",
                   clickHandler: (feature) => {
                     try{
@@ -1799,7 +2131,7 @@ const UpdateLayers = (props) => {
                 const layer={
                   id: ly,
                   type: 'line',
-                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
                   paint: {
                     'line-color': '#000000',
                     'line-width': 1
@@ -1808,7 +2140,7 @@ const UpdateLayers = (props) => {
                     'line-join': 'round',
                     'line-cap': 'round'
                   },
-                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  visible: d1["checked"],
                   hoverType: "住所",
                   clickHandler: (feature) => {
                     try{
@@ -1829,7 +2161,7 @@ const UpdateLayers = (props) => {
                 const layer={
                   id: ly,
                   type: 'line',
-                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
                   paint: {
                     'line-color': '#000000',
                     'line-width': 2
@@ -1838,7 +2170,7 @@ const UpdateLayers = (props) => {
                     'line-join': 'round',
                     'line-cap': 'round'
                   },
-                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  visible: d1["checked"],
                   hoverType: d1,
                   clickHandler: (feature) => {
                     try{
@@ -1854,7 +2186,7 @@ const UpdateLayers = (props) => {
                 const layer={
                   id: ly,
                   type: 'line',
-                  sourceData: d1.hasOwnProperty(d)?d1[d][2]:d1[2],
+                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
                   paint: {
                     'line-color': '#000000',
                     'line-width': 1
@@ -1863,7 +2195,7 @@ const UpdateLayers = (props) => {
                     'line-join': 'round',
                     'line-cap': 'round'
                   },
-                  visible: Array.isArray(d1) && d1.length > 1 ? d1[1] : true,
+                  visible: d1["checked"],
                   hoverType: d1,
                   clickHandler: (feature) => {
                     try{
@@ -1881,11 +2213,11 @@ const UpdateLayers = (props) => {
     }
     console.log("🎬 layers_row count:", layers_row.length, "railline layers:", layers_row.filter(l => l.id && l.id.includes('railline')).length);
     return layers_row;
-  }, [data,kind,hover,address,area,layercheck,pop,dimention,flag]);
+  }, [data,kind,hover,address,area,layercheck,pop,dimention,flagcheck]);
   // 追加：layers_row が更新されたことを確認
   useEffect(() => {
     console.log("🎬 layers_row count: ? railline layers: ?");
-  }, [layers]);
+  }, [data,layers,flagcheck]);
   // Map reference for Mapbox GL JS
   const mapRef = useRef(null);
   const loadedSourcesRef = useRef(new Set());
@@ -1903,7 +2235,7 @@ const UpdateLayers = (props) => {
 
     allLayers.forEach((layerConfig, index) => {
       if (!layerConfig || !layerConfig.id || !layerConfig.sourceData) return;
-
+      
       const sourceId = layerConfig.source || layerConfig.id;
 
       // Add/update source
@@ -1975,7 +2307,7 @@ const UpdateLayers = (props) => {
         }
       }
     });
-  }, [layers, ridingtimerow, hover,data,pop]);
+  }, [layers, ridingtimerow, hover, data, pop, flag]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>

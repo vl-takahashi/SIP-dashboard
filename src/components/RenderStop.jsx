@@ -110,7 +110,7 @@ const RenderStop = () => {
                               // ★GeoJSON に property フィールドを追加
                               value.property = kindOptions0[kindValue];
 
-                              let data_existed = [filename, true, value, agencyValue];
+                              let data_existed = {"detail":filename,"checked":true,"data":value,"agency":agencyValue};
                               setData(data_existed, kindValue);
                               console.log(kindValue)
                               // ZIP に追加

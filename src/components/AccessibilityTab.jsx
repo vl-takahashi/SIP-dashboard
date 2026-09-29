@@ -20,7 +20,7 @@ import RenderLine from './RenderLine';
 import MouseOver1 from './MouseOver1';
 import Mousearea from "./MouseArea";
 import FileValidated from './FileValidated';
-import { useClickareaStore,useOrigStore,useLayerflagStore,useDirectStore,useEditStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore,useViewAccesibilityStore} from "./useStore";
+import { useClickareaStore,useStaycheckStore,useOrigStore,useOrigDestStore,useLayerflagStore,useDirectStore,useEditStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore,useViewAccesibilityStore} from "./useStore";
 import FetchTest from './FetchTest';
 import SpatialLayercheck from './SpatialLayercheck';
 import ChronogicalLayercheck from './ChronogicalLayercheck';
@@ -40,6 +40,8 @@ const AccessibilityTab = () => {
 // ✅ hookで取る
 const time = useTimesliderStore(state => state.time)
 const clicktime = useTimesliderStore(state => state.clicktime)
+const staycheck = useStaycheckStore(state => state.staycheck)
+const setStaycheck = useStaycheckStore(state => state.setStaycheck)
 const [data, setData] = useState('');
 const [showAddressChart, setShowAddressChart] = useState(false);  // 📌 BarChart 表示/非表示
 const [showBarChart, setShowBarChart] = useState(false);  // 📌 BarChart 表示/非表示
@@ -62,6 +64,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const directorig=useOrigStore((state)=> state.directorig);
   const transitorig=useOrigStore((state)=> state.transitorig);
   const weekday=useWeekdayStore((state)=> state.weekday);
+  const stay={"単路":"nonstay","滞在時間":"stay"};
   const direct={"直通":"direct","乗継":"transit"};
   const selectDirect=useDirectStore((state)=> state.selectDirect);
   const layercheck=useLayercheckStore((state)=> state.layercheck);
@@ -88,6 +91,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
     setClickareahousehold,
     setClickareapopdensity
   } = useClickareaStore.getState()
+  const setorigdest=useOrigDestStore(state => state.setorigdest)
+  const origdest=useOrigDestStore(state => state.origdest)
   const edit = useEditStore(state => state.edit)
   const setEdit = useEditStore(state => state.setEdit)
   const [check,setLayerchecked] = useState(initialCheck);
@@ -95,6 +100,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const [value, setValue] = useState(time);
     const dest=useDestStore((state)=> state.dest);
   const selectdestref = useRef();
+  const selectstayref=useRef();
   const selectweekdayref = useRef();
   const selectkindref = useRef();
   const selectarearef=useRef();
@@ -106,6 +112,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const [destcurrent,setdestcurrent]=useState("未選択");
   const [origcurrent,setorigcurrent]=useState("未選択");
   const [origdestcurrent,selectorigdestcurrent]=useState("dest");
+  const [staycurrent,setstaycurrent]=useState("nostay");
   const [directcurrent,setdirectcurrent]=useState("直通");
   const [weekdaycurrent,setweekdaycurrent]=useState("未選択");
   const [layercheckcurrent,setlayercheckcurrent]=useState("複数レイヤー表示");
@@ -519,6 +526,21 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                         >
                           <br />
                           <div style={{"display": "flex"}}>
+                            <select
+                                value={staycurrent}
+                                onChange={(e) => {setStaycheck(e.target.value);setstaycurrent(e.target.value)}}
+                                ref={selectstayref}
+                                style={{width:'100px',height:'40px'}}
+                              >
+                                <option>単路/滞在</option>
+
+                                {Object.keys(stay).map((item) => (
+                                  <option key={item} value={stay[item]}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </select>
+                              
                             <div className="select">
 
                               <select
@@ -538,13 +560,13 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               <br />
                               <fieldset>
                                 <input type="radio" value="dest" ref={origselectref}
-                                onChange={(e) => {selectorigdestcurrent(e.target.value),setorigdestcurrent(e.target.value),origselectref.current.checked?!origselectref.current.checked:!origselectref.current.checked,origselectref.current.checked?destselectref.current.checked=false:destselectref.current.checked=true}}/>
+                                onChange={(e) => {setorigdest(e.target.value),setorigdestcurrent(e.target.value),origselectref.current.checked?!origselectref.current.checked:!origselectref.current.checked,origselectref.current.checked?destselectref.current.checked=false:destselectref.current.checked=true}}/>
                                 <label>目的地</label>
                                 <br></br>
                                 <input type="radio" value="orig" ref={destselectref}
-                                onChange={(e) => {selectorigdestcurrent(e.target.value),setorigdestcurrent(e.target.value),destselectref.current.checked?!destselectref.current.checked:!destselectref.current.checked,destselectref.current.checked?origselectref.current.checked=false:origselectref.current.checked=true}}/>
+                                onChange={(e) => {setorigdest(e.target.value),setorigdestcurrent(e.target.value),destselectref.current.checked?!destselectref.current.checked:!destselectref.current.checked,destselectref.current.checked?origselectref.current.checked=false:origselectref.current.checked=true}}/>
                                 <label>出発地</label>
-                              {origdestcurrent==="dest"&&directcurrent=="direct"&&<div><select
+                              {origdest==="dest"&&directcurrent=="direct"&&<div><select
                                 value={destcurrent}
                                 onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
                                 ref={selectdestref}
@@ -560,7 +582,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                 ))}
                               </select>
                               <br /></div>}
-                              {origdestcurrent==="dest"&&directcurrent=="transit"&&<div><select
+                              {origdest==="dest"&&directcurrent=="transit"&&<div><select
                                 value={destcurrent}
                                 onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
                                 ref={selectdestref}
@@ -576,10 +598,10 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                 ))}
                               </select>
                               <br /></div>}
-                              {origdestcurrent==="orig"&&directcurrent=="direct"&&<div>
+                              {origdest==="orig"&&directcurrent=="direct"&&<div>
                               <select
                                 value={origcurrent}
-                                onChange={(e) => {selectOrig(e.target.value);setorigcurrent(e.target.value)}}
+                                onChange={(e) => {selectDest(e.target.value);setorigcurrent(e.target.value)}}
                                 ref={selectorigref}
                                 style={{width:'100px',height:'40px'}}
 
@@ -594,7 +616,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               </select>
                               <br />
                                 </div>}
-                              {origdestcurrent==="orig"&&directcurrent=="transit"&&<div><select
+                              {origdest==="orig"&&directcurrent=="transit"&&<div><select
                                 value={destcurrent}
                                 onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
                                 ref={selectdestref}

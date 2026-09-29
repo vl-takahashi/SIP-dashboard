@@ -1,9 +1,10 @@
 import React from "react";
-import { useTimesliderStore, useLegendStore } from "./useStore";
+import { useTimesliderStore, useStaycheckStore,useLegendStore } from "./useStore";
 
 export default function Legends(props) {
   const { tabName } = props;
   const time = useTimesliderStore((state) => state.time);
+  const staycheck = useStaycheckStore((state) => state.staycheck);
   const legends = useLegendStore((state) => state.legends);
   const isUnselected = time === -7/100000000;
 
@@ -27,6 +28,13 @@ export default function Legends(props) {
           { color: '#f59e0b', label: `${q3_hour}時着の便に乗りたいのに乗れない。` },
           { color: '#ef4444', label: 'どの時間帯にも乗れない' },
         ];
+  } else if (staycheck=="stay") {
+    // ✅ AccessibilityTab：useStore の legend データを使用（四角アイコン）
+    isCircle = false;
+    legendItems = legends.map((item) => ({
+      color: `rgb(${item[0][0]}, ${item[0][1]}, ${item[0][2]})`,
+      label: `${item[1]/3600}-${legends.indexOf(item) < legends.length - 1 ? legends[legends.indexOf(item) + 1][1]/3600 : '∞'}時間`,
+    })) || [];
   } else {
     // ✅ AccessibilityTab：useStore の legend データを使用（四角アイコン）
     isCircle = false;
@@ -42,7 +50,7 @@ export default function Legends(props) {
         ...props.style,
         width: '100%',
         maxWidth: 280,
-        maxHeight: 300,
+        maxHeight: 600,
         overflowY: 'auto',
         overflowX: 'hidden',
         boxSizing: 'border-box',
