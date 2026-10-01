@@ -36,7 +36,6 @@
     "@types/mapbox-gl": "^3.4.1",
     "chart.js": "^4.5.1",
     "chartjs-plugin-datalabels": "^2.2.0",
-    "deck.gl": "^8.9.36",
     "japanese-holidays": "^1.0.10",
     "jszip": "^3.10.1",
     "lucide-react": "^1.7.0",
