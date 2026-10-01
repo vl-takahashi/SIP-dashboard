@@ -1,5 +1,5 @@
 import { useContext, useMemo,useState,useRef,useEffect,ClickareaCount,useCallback} from 'react';
-import { DeckGL } from '@deck.gl/react';
+
 import { GeoJsonLayer,TextLayer, ScatterplotLayer,IconLayer } from '@deck.gl/layers';
 import Map from 'react-map-gl/mapbox';
 import React from 'react';
