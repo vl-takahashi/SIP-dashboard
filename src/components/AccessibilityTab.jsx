@@ -64,7 +64,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const directorig=useOrigStore((state)=> state.directorig);
   const transitorig=useOrigStore((state)=> state.transitorig);
   const weekday=useWeekdayStore((state)=> state.weekday);
-  const stay={"単路":"nonstay","滞在時間":"stay"};
+  const stay={"単路":"nostay","滞在時間":"stay"};
   const direct={"直通":"direct","乗継":"transit"};
   const selectDirect=useDirectStore((state)=> state.selectDirect);
   const layercheck=useLayercheckStore((state)=> state.layercheck);
@@ -526,7 +526,10 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                         >
                           <br />
                           <div style={{"display": "flex"}}>
-                            <select
+                            
+                              
+                            <div className="select">
+                              <select
                                 value={staycurrent}
                                 onChange={(e) => {setStaycheck(e.target.value);setstaycurrent(e.target.value)}}
                                 ref={selectstayref}
@@ -540,9 +543,6 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                   </option>
                                 ))}
                               </select>
-                              
-                            <div className="select">
-
                               <select
                                 value={directcurrent}
                                 onChange={(e) => {selectDirect(e.target.value);setdirectcurrent(e.target.value)}}
@@ -688,9 +688,6 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             }}
                             aria-label="Volume"  ref={volumeRef} />
 
-                          <div>
-                            <p style={{fontSize:'13px'}}>地図データ © Google</p>
-                          </div>
 
                         </Box>}
                       </div>

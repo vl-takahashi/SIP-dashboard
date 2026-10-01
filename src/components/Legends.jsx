@@ -6,6 +6,7 @@ export default function Legends(props) {
   const time = useTimesliderStore((state) => state.time);
   const staycheck = useStaycheckStore((state) => state.staycheck);
   const legends = useLegendStore((state) => state.legends);
+  console.log(tabName,staycheck);
   const isUnselected = time === -7/100000000;
 
   // ✅ q3_hour を計算（選択時間帯）
@@ -28,19 +29,12 @@ export default function Legends(props) {
           { color: '#f59e0b', label: `${q3_hour}時着の便に乗りたいのに乗れない。` },
           { color: '#ef4444', label: 'どの時間帯にも乗れない' },
         ];
-  } else if (staycheck=="stay") {
+  } else if (tabName === 'AccessibilityTab') {
     // ✅ AccessibilityTab：useStore の legend データを使用（四角アイコン）
     isCircle = false;
     legendItems = legends.map((item) => ({
       color: `rgb(${item[0][0]}, ${item[0][1]}, ${item[0][2]})`,
-      label: `${item[1]/3600}-${legends.indexOf(item) < legends.length - 1 ? legends[legends.indexOf(item) + 1][1]/3600 : '∞'}時間`,
-    })) || [];
-  } else {
-    // ✅ AccessibilityTab：useStore の legend データを使用（四角アイコン）
-    isCircle = false;
-    legendItems = legends.map((item) => ({
-      color: `rgb(${item[0][0]}, ${item[0][1]}, ${item[0][2]})`,
-      label: `${item[1]}-${legends.indexOf(item) < legends.length - 1 ? legends[legends.indexOf(item) + 1][1] : '∞'}分`,
+      label: staycheck=="stay"?`${item[1]/3600}-${legends.indexOf(item) < legends.length - 1 ? legends[legends.indexOf(item) + 1][1]/3600 : ''}時間`:`${item[1]}-${legends.indexOf(item) < legends.length - 1 ? legends[legends.indexOf(item) + 1][1] : ''}分`,
     })) || [];
   }
 

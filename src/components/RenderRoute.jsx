@@ -91,7 +91,7 @@ const RenderRoute = () => {
 
   const fetchExisted= async(formData)=>{
       setLoading(true); // ★ここから応答待ち
-      await fetch(`http://52.62.35.205:5000/gtfs_route`,{
+      await fetch(`https://sip-diagnosis-663815372380.asia-northeast1.run.app/gtfs_route`,{
                       
                         method: 'POST',
                         body: formData}) // data.json ファイルを非同期で取得

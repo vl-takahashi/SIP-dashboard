@@ -21,7 +21,7 @@ const PolygonRender = ({Polygon}) => {
     formData.append('parameter_file',blob);
     let data_l=[];
       const fetchDataAsync = async () => {
-      await fetch("https://sip-api-temporal.onrender.com/polygon",{
+      await fetch("https://sip-diagnosis-663815372380.asia-northeast1.run.app/polygon",{
                                 
                                 method: 'POST',
                                 headers:{

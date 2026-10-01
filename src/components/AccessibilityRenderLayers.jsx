@@ -6,6 +6,9 @@ import EditLine from './EditLine';
 import { mapboxAccessToken, mapstyle,initialCheck,vividColors } from "./Globalvariable";
 import {useHoverStore,useLegendStore,useStaycheckStore,useFlagStore,useOrigDestStore,useDirectStore,useLayerflagStore,usePopStore,usePopmeshStore,useEditStore,useAreaStore,useViewAccesibilityStore,useLayercheckStore,useClickmeshStore,useDestStore,useWeekdayStore,useKindStore,useFareStore,useClickareaStore,useTimesliderStore,useGetboundaryStore,useClicklanduseStore,useClickplanningareaStore,useDataStore,useColorareaStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestraillineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore} from "./useStore";
 const UpdateLayers = () => {
+  const pointkind=["facility","railstop","busstop","elevation"];
+  const linekind=["od_visual","frequency_on_routes","editline","road","railline","tram","highwaybus","area"];
+  const meshkind=["popmesh","lipt"];
   const flagcheck=useFlagStore((state) => state.flagcheck);
   const setLegends = useLegendStore((state) => state.setLegends);
   const origdest=useDirectStore((state)=> state.sorig)
@@ -299,7 +302,7 @@ const UpdateLayers = () => {
                 'fill-opacity': 1
               },
               layout: {},
-              visible: isActive,
+              visible: layercheck === "タイムスライダー"&&staycheck==="nostay"?true:false,
               hoverType: "所要時間",
               clickHandler: (feature) => {
                 try{
@@ -862,7 +865,7 @@ const UpdateLayers = () => {
                 'fill-opacity': staycheck === "stay"?['case', ['<', ['get', 'maxstaytime'], 2100], 0, 1]:['case', ['<', ['get', 'directridingtime'], 600], 0, 1]
               },
               layout: {},
-              visible: true,
+              visible: layercheck === "タイムスライダー"&&staycheck==="stay"?true:false,
               hoverType: "滞在時間",
             };
             layers_ridingrow.push(layer);
@@ -1143,12 +1146,13 @@ const UpdateLayers = () => {
       // 都市計画では「表示/非表示」の切り替えが頻繁なのでここで制御
       //const isVisible = check.includes(d.property.name); 
       if (Object.entries(data[d]).length>0){
-          console.log(data[d])
+          console.log(d)
         
           //console.log(data[d]);
           for (const [key, d1] of Object.entries(data[d])){
             i+=1;
-            if (d === "facility"){
+
+            if (pointkind.includes(d)){
                 const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i}`;
                 const d02=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
                 const d01=d1["checked"];
@@ -1174,15 +1178,16 @@ const UpdateLayers = () => {
                 };
                 layers_row.push(layer);
               
-            } else if (d === "road") {
+            } else if (linekind.includes(d)) {
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i}`;
+              console.log(d1["detail"],d1["checked"])
               const layer={
                 id: ly,
                 type: 'line',
                 sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
                 paint: {
-                  'line-color': '#ff0000',
-                  'line-width': 3
+                  'line-color': d==="area"?'#090808':'#ff0000',
+                  'line-width':d==="area"?1: 3
                 },
                 layout: {
                   'line-join': 'round',
@@ -1197,9 +1202,10 @@ const UpdateLayers = () => {
                 }
               };
               layers_row.push(layer);
-            } else if (d === "popmesh") {
+            } else if (meshkind.includes(d)) {
+              console.log(d)
               const data1=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
-              const data1r=pop!=""?data1.features.filter((e)=>{return e.properties[pop]>0}):data1;
+              const data1r=pop!=""&&d==="popmesh"?data1.features.filter((e)=>{return e.properties[pop]>0}):data1;
 
               const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i}`;
               const isv=d1.hasOwnProperty(d)?d1[d]["checked"]:d1["checked"];
@@ -1232,36 +1238,8 @@ const UpdateLayers = () => {
               };
               layers_row.push(layer);
   
-            } else if (d === "spatialbuffer") {
-              const Area =area;
-              const isLayer = layercheck === "複数レイヤー表示";
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-              const data1=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
-              const data1r=data1;
-              let datav=d1["checked"];
-
-              const layer={
-                id: ly,
-                type: 'fill',
-                sourceData: data1r,
-                paint: {
-                  'fill-color': '#0000ff',
-                  'fill-opacity': 0.4
-                },
-                layout: {},
-                visible: !isLayer?false:datav,
-                hoverType: "最寄バス停",
-                clickHandler: (feature) => {
-                  try{
-                    setClickneareststop(feature.properties.stop_name);
-                    setClickpopmeshaddress(feature.properties[Area]);
-                  } catch(e){
-                    console.log(e.message);
-                  }
-                }
-              };
-              layers_row.push(layer);
-            } else if (d === "ridingtime_direct") {
+            
+            } else if (d === "ridingtime_direct"|| d==="fare") {
               
           const Area =area;
           let s = dest;
@@ -1271,61 +1249,123 @@ const UpdateLayers = () => {
           let s02=parseInt(weekdayflag)-1;
           const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]["detail"]}-${i}`:`layer-${d}-${d1["detail"]}-${i}`;
           let flag=[];
-          if(layercheck!="複数レイヤー表示"){
-          d1.hasOwnProperty(d)?flagall.push(d1[d]["data"]):flagall.push(d1["data"]);
+            if(layercheck!="複数レイヤー表示"){
+              d1.hasOwnProperty(d)?flagall.push(d1[d]["data"]):flagall.push(d1["data"]);
 
-          
-          for (const k of flagall){
-            if (k.length>=1)
-            {
-              if (k[0]["condition"]["to"]==dest){
-                flag=k;
+            
+              for (const k of flagall){
+                console.log(dest)
+                if (k.length>=1)
+                {
+                  if (origdestR=="dest"&&k[0]["condition"].hasOwnProperty("to")&&k[0]["condition"]["to"]==dest){
+                    flag=k;
+                  } else if (origdestR=="orig"&&k[0]["condition"].hasOwnProperty("from")&&k[0]["condition"]["from"]==dest){
+                    flag=k;
+                  }
+
+                } else{
+                    
+                  if (origdestR=="dest"&&k["condition"].hasOwnProperty("to")&&k["condition"]["to"]==dest){
+                    flag=k;
+                  } else if (origdestR=="orig"&&k["condition"].hasOwnProperty("from")&&k["condition"]["from"]==dest){
+                    flag=k;
+                  }
+                }
               }
-
             } else{
-                if (k["condition"]["to"]==dest){
-                flag=k;
+              d1.hasOwnProperty(d)?flag=d1[d]["data"]:flag=d1["data"];
+            }
+            const data1r = (() => {
+            // ステップ1: flagデータをオブジェクトで事前処理
+            let flagMap = {};
+            let key="";
+            for (const i of flag) {
+              if (i["condition"]["weekday"][s02] === "1" && i["condition"]["hour"]==s1&&
+                  i["condition"]["direct"] === "direct") {
+                
+                key = origdestR=="dest"?`${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["to"]}`:`${i["condition"]["weekday"]}_${i["condition"]["hour"]}_${i["condition"]["from"]}`;
+                console.log(key)
+                // meshIdMap を作成
+                const meshIdMap = {};
+                i["data"].forEach((item, idx) => {
+                  if (item.directmeshid && Array.isArray(item.directmeshid)) {
+                    item.directmeshid.forEach(meshId => {
+                      meshIdMap[meshId] = idx;
+                    });
+                  }
+                });
+                // 複数データに対応：配列にする
+                if (!flagMap[key]) {
+                  flagMap[key] = [];
+                }
+                flagMap[key].push({
+                  condition: i["condition"],
+                  data: i["data"],
+                  meshIdMap: meshIdMap
+                });
               }
             }
-          }
-        } else{
-          d1.hasOwnProperty(d)?flag=d1[d]["data"]:flag=d1["data"];
-        }
-          const data1r = result.features
-          .map((e) => {
-            // プロパティ初期化
-            e.properties["to"] = null;
-            e.properties["weekday"] = null;
-            e.properties["hour"] = null;
-            e.properties["direct"] = null;
-            e.properties["rideonstop"] = [];
-            e.properties["getoffstop"] = [];
-            e.properties["ridingtime"] = [];
-            e.properties["rideontime"] = [];
-            e.properties["getofftime"] =[];
-            e.properties["exceptionserviceday"] = [];
-            e.properties["route"] = [];
-            e.properties["agency"] = [];
-            e.properties["dimention"] = [];
-            // データをマッチさせて更新
-            
-            for (const i of flag) {
-              let flagr=i["data"].flatMap(u=>u.directmeshid);
-              let flag0=new Set(flagr);
-                if(layercheck==="複数レイヤー表示"){
-                  if (flag0.has(e.properties["MESH_ID"])) {
-                    e.properties["dimention"] = i["condition"]["dimention"];
-                    e.properties["to"] = i["condition"]["to"];
-                    e.properties["weekday"] = i["condition"]["weekday"];
-                    e.properties["hour"] = i["condition"]["hour"];
-                    e.properties["direct"] = i["condition"]["direct"];
-                    break; // マッチしたら終了
+            // ステップ2: result.features を処理
+            // 使用時：配列から全データを取得
+            return result.features
+              .map((e) => {;
+                  let key0=key;
+                  const flagDataArray = flagMap[key0];  // 配列
+                // プロパティ初期化
+                origdestR=="dest"?e.properties["to"] = null:e.properties["from"] = null;
+                e.properties["weekday"] = null;
+                e.properties["hour"] = null;
+                e.properties["direct"] = null;
+                e.properties["directrideonstop"] = null;
+                e.properties["directgetoffstop"] = null;
+                e.properties["directridingtime"] = null;
+                e.properties["directrideontime"] = null;
+                e.properties["directgetofftime"] =[];
+                e.properties["directexceptionserviceday"] = null;
+                e.properties["directroute"] = null;
+                e.properties["directagency"] = null;
+                e.properties["directdimention"] = null;
+                e.properties["directgetofffare"] = null;
+                if (flagDataArray) {
+                  // 配列の全データを検索
+                  for (const flagData of flagDataArray) {
+                    let idx=null
+                    if ("KEY_CODE" in e.properties){
+                      idx= flagData.meshIdMap[e.properties["KEY_CODE"]];
+
+                    } else {
+                      idx= flagData.meshIdMap[e.properties["MESH_ID"]];
+
+                    }
+                    if (idx !== undefined) {
+                    const item = flagData.data[idx];
+                    if (origdestR=="dest"){
+                      e.properties["to"] = flagData.condition["to"];
+                    } else {
+                      e.properties["from"] = flagData.condition["from"];
+                    }
+                    e.properties["weekday"] = flagData.condition["weekday"];
+                    e.properties["hour"] = flagData.condition["hour"];
+                    e.properties["direct"] = flagData.condition["direct"];
+                    e.properties["dimention"] = flagData.condition["dimention"];
+                    e.properties["directrideonstop"] = item.directrideonstop;
+                    e.properties["directgetoffstop"] = item.directgetoffstop;
+                    e.properties["directridingtime"] = item.directridingtime;
+                    e.properties["directrideontime"] = item.directrideontime;
+                    e.properties["directgetofftime"] = item.directgetofftime;
+                    e.properties["directexceptionserviceday"] = item.directexceptionserviceday;
+                    e.properties["directroute"] = item.directroute;
+                    e.properties["directagency"] = item.directagency;
+                    e.properties["directgetofffare"] = item.getofffare;
+                      // ... その他のプロパティ
+                      break;  // 最初にマッチしたら終了
+                    }
                   }
-                } 
-                  
-              }
-            return e;
-          })
+                }
+
+                return e;
+              });
+            })();
           //&&bounds[0] <= x1 && x2 <= bounds[2] && bounds[1] <= y1 && y2 <= bounds[3]
         const filteredGeoJSON = {
           type: "FeatureCollection",
@@ -1345,22 +1385,22 @@ const UpdateLayers = () => {
             paint: {
               'fill-color': [
                 'case',
-                ['<', ['get', 'directridingtime'], 60],
+                d==="fare"?['<', ['get', 'directgetofffare'], 60]:['<', ['get', 'directridingtime'], 60],
                 'rgba(0, 0, 0, 0)',
                 ['>=', ['get', 'directridingtime'], 60],
                 [
                   'rgb',
-                  ['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]],
+                  d==="fare"?['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'directgetofffare']], 10]]]]:['max', 0, ['min', 255, ['-', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]],
                   255,
-                  ['max', 0, ['min', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]
+                  d==="fare"?['max', 0, ['min', 255, ['/', ['to-number', ['get', 'directgetofffare']], 10]]]:['max', 0, ['min', 255, ['/', ['to-number', ['get', 'directridingtime']], 10]]]
                 ],
                 'rgba(0, 0, 0, 0)'
               ],
-              'fill-opacity': ['case', ['<', ['get', 'directridingtime'], 60], 0, 1]
+              'fill-opacity': ['case', d==="fare"?['<', ['get', 'directgetofffare'], 100]:['<', ['get', 'directridingtime'], 60], 0, 1]
             },
             layout: {},
             visible: layercheck === "複数レイヤー表示"?isv:false,
-            hoverType: "所要時間",
+            hoverType: d==="fare"?"運賃":"所要時間",
             clickHandler: (feature) => {
               try{
                 console.log('Clicked:', feature.properties[s0]);
@@ -1740,472 +1780,6 @@ const UpdateLayers = () => {
               console.log(layertextpoint);
               layers_row.push(layertextpoint);
 
-            } else if (d === "fare") {
-              let e=parseInt(Math.round(time*100000000)+11);
-              let s = `${dest}_${weekday}_${e}_getofffare_direct`;
-              //console.log(dest,weekday,Math.round(time*100000000)+5);
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-              console.log(kind);
-              let datav=d1["checked"];
-              const isLayer = layercheck === "複数レイヤー表示";
-              const isActive = kind === "運賃" && layercheck === "タイムスライダー"?true:false;
-              let data1=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
-              //const data1r=data1.features.filter((e)=>{return bounds[0]<=e.geometry.coordinates[0][0][0]||e.geometry.coordinates[0][2][0]<=bounds[2]||bounds[1]<=e.geometry.coordinates[0][0][1]||e.geometry.coordinates[0][2][1]<=bounds[3]});
-              const data1r=data1;
-              console.log(isActive,data1,datav);
-              let ratiolist=[];
-              const layer={
-                id: ly,
-                type: 'fill',
-                sourceData: isActive?data1r:data1,
-                paint: {
-                  'fill-color': [
-                    'case',
-                    ['!=', ['get', s], null],
-                    [
-                      'rgb',
-                      ['max', 0, ['min', 255, ['floor', ['*', ['/', ['to-number', ['get', s]], 1000], 135]]]],
-                      ['max', 0, ['min', 255, ['floor', ['*', ['/', ['to-number', ['get', s]], 1000], 196]]]],
-                      255
-                    ],
-                    'rgba(0, 0, 0, 0)'
-                  ],
-                  'fill-opacity': 1
-                },
-                layout: {},
-                visible: isActive?true:datav,
-                hoverType: "運賃",
-                clickHandler: (feature) => {
-                  try{
-                    setFare(feature.properties[s]);
-                  } catch(e){
-                  }
-                }
-              };
-              layers_row.push(layer);
-
-            } else if (d === "lipt"){
-              console.log(d1);
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-              
-              const layer={
-                id: ly,
-                type: 'fill',
-                sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
-                paint: {
-                  'fill-color': '#00ff00',
-                  'fill-opacity': 0.6
-                },
-                layout: {},
-                visible: d1["checked"],
-                hoverType: "lipt"
-              }
-              layers_row.push(layer);
-            } else if (d === "editline") {
-              let colorl=[];
-              console.log(d1);
-              let d1r=d1.hasOwnProperty(d)?d1[d]:d1;
-              let d1r2;
-              d1r2=d1r;
-
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`editlayer-${d}-${i}`;
-              const layer={
-                id: ly,
-                type: 'line',
-                sourceData: d1r2,
-                paint: {
-                  'line-color': '#884898',
-                  'line-width': 3
-                },
-                layout: {
-                  'line-join': 'round',
-                  'line-cap': 'round'
-                },
-                visible: true,
-                hoverType: "バス路線",
-                clickHandler: (feature) => {
-                  try{
-                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
-                  } catch(e){
-                  }
-                }
-              };
-              layers_row.push(layer);
-
-            } else if (d === "tram") {
-              let colorl=[];
-              console.log(d1);
-              let d1r=d1.hasOwnProperty(d)?d1[d]:d1;
-              let d1r2;
-              try{
-                console.log(d1r.data);
-                d1r2=d1r.data;
-                for (const d2 of d1r.data.features){
-                  colorl.push(d2.properties.name);
-                }
-
-              } catch{
-                console.log(d1r[0].data);
-                d1r2=d1r[0].data;
-                for (const d2 of d1r[0].data.features){
-                  colorl.push(d2.properties.name);
-                }
-                
-              } 
-              let newcol= [...new Set(colorl)];
-
-              console.log(d1r2);
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${i}`;
-              const layer={
-                id: ly,
-                type: 'line',
-                sourceData: d1r2,
-                paint: {
-                  'line-color': '#ff0000',
-                  'line-width': 3
-                },
-                layout: {
-                  'line-join': 'round',
-                  'line-cap': 'round'
-                },
-                visible: true,
-                hoverType: "路面電車",
-                clickHandler: (feature) => {
-                  try{
-                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
-                  } catch(e){
-                  }
-                }
-              };
-              layers_row.push(layer);
-            } else if (d === "railline") {
-              const isVisible = d1["checked"];
-              console.log("🎯 railline layer:", d1["detail"], "visible should be:", d1["checked"]);
-              let colorl=[];
-              console.log(d1["data"]);
-              let d1r=d1.hasOwnProperty(d)?d1[d]:d1;
-              let newcol= [...new Set(colorl)];
-
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${i}`;
-              const layer={
-                id: ly,
-                type: 'line',
-                sourceData: d1["data"],
-                paint: {
-                  'line-color': '#ff0000',
-                  'line-width': 3
-                },
-                layout: {
-                  'line-join': 'round',
-                  'line-cap': 'round'
-                },
-                visible: isVisible,
-                hoverType: "路面電車",
-                clickHandler: (feature) => {
-                  try{
-                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
-                  } catch(e){
-                  }
-                }
-              };
-              if (isVisible) {
-                  console.log("✅ 追加:", d1["detail"]);
-                  layers_row.push(layer);
-                } else {
-                  console.log("❌ スキップ:", d1["detail"]);
-                }
-            } else if (d === "rosenbus") {
-              let colorl=[];
-              console.log(d1);
-              let d1r=d1.hasOwnProperty(d)?d1[d]:d1;
-              let d1r2;
-              try{
-                console.log(d1r.data);
-                d1r2=d1r.data;
-                for (const d2 of d1r.data.features){
-                  colorl.push(d2.properties.name);
-                }
-              } catch{
-                console.log(d1r[0].data);
-                d1r2=d1r[0].data;
-                for (const d2 of d1r[0].data.features){
-                  colorl.push(d2.properties.name);
-                }
-              }
-              let newcol= [...new Set(colorl)];
-
-              console.log(d1r2);
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${i}`;
-              const layer={
-                id: ly,
-                type: 'line',
-                sourceData: d1r2,
-                paint: {
-                  'line-color': '#ff0000',
-                  'line-width': 3
-                },
-                layout: {
-                  'line-join': 'round',
-                  'line-cap': 'round'
-                },
-                visible: d1["checked"],
-                hoverType: "路線バス",
-                clickHandler: (feature) => {
-                  try{
-                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
-                  } catch(e){
-                  }
-                }
-              };
-              layers_row.push(layer);
-            }else if (d === "highwaybus") {
-              let colorl=[];
-              console.log(d1);
-              let d1r=d1.hasOwnProperty(d)?d1[d]:d1;
-              let d1r2;
-              try{
-                console.log(d1r.data);
-                d1r2=d1r.data;
-                for (const d2 of d1r.data.features){
-                  colorl.push(d2.properties.name);
-                }
-              } catch{
-                console.log(d1r[0].data);
-                d1r2=d1r[0].data;
-                for (const d2 of d1r[0].data.features){
-                  colorl.push(d2.properties.name);
-                }
-              }
-              let newcol= [...new Set(colorl)];
-
-              console.log(d1r2);
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${i}`;
-              const layer={
-                id: ly,
-                type: 'line',
-                sourceData: d1r2,
-                paint: {
-                  'line-color': '#ff0000',
-                  'line-width': 3
-                },
-                layout: {
-                  'line-join': 'round',
-                  'line-cap': 'round'
-                },
-                visible: d1["checked"],
-                hoverType: "高速バス",
-                clickHandler: (feature) => {
-                  try{
-                    setClicknearestbusline(feature.properties.name.replace(/[^0-9]/g, ''));
-                  } catch(e){
-                  }
-                }
-              };
-              layers_row.push(layer);
-            } else if (d === "busstop"){
-              //console.log(d1["data"]);
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-              console.log(d1["checked"]);
-              const d02=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
-              const d01=d1["checked"];
-              console.log(d01);
-              const layer={
-                id: ly,
-                type: 'circle',
-                sourceData: d02,
-                paint: {
-                  'circle-radius': 2,
-                  'circle-color': '#ff0000',
-                  'circle-opacity': 1.0,
-                  'circle-stroke-width': 0,
-                  'circle-blur': 0
-                },
-                layout: {},
-                visible: d01,
-                hoverType: "バス停",
-                clickHandler: (feature) => {
-                  try{
-                    console.log(feature.properties.name);
-                    setClickstop(feature.properties.name);
-                  } catch(e){
-                    console.log(e.message);
-                  }
-                }
-              };
-              console.log(layer);
-              layers_row.push(layer);
-            } else if (d === "station"){
-              //console.log(d1["data"]);
-              const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-              console.log(d1);
-              const d02=d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"];
-              const d01=d1["checked"];
-              console.log(d01);
-              const layer={
-                id: ly,
-                type: 'circle',
-                sourceData: d02,
-                paint: {
-                  'circle-radius': 2,
-                  'circle-color': '#ff0000',
-                  'circle-opacity': 1.0,
-                  'circle-stroke-width': 0,
-                  'circle-blur': 0
-                },
-                layout: {},
-                visible: d01,
-                hoverType: "バス停",
-                clickHandler: (feature) => {
-                  try{
-                    console.log(feature.properties.name);
-                    setClickstop(feature.properties.name);
-                  } catch(e){
-                    console.log(e.message);
-                  }
-                }
-              };
-              console.log(layer);
-              layers_row.push(layer);
-            } else if (d === "area") {
-              const l1 =d1.hasOwnProperty(d)?d1[d]:d1["detail"];
-              if (l1==="chiku"){
-                //console.log(d1["data"]);
-                const l =d1.hasOwnProperty(d)?d1[d]["data"].features.length:d1["data"].features.length;
-                //console.log(l);
-                for (let i1=0;i1<l;i1++){
-                  color_l.push([d1.hasOwnProperty(d)?d1[d]["data"].features[i1].properties.市区町村:d1["data"].features[i1].properties.市区町村,vividColors[i1*2].rgba])
-                }
-                //console.log(color_l);
-                ///Setcolor(data);
-                ////console.log(e.features.filter((x)=>x.geometry.type=="Polygon"));
-
-                const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-                console.log(d1);
-                const layer={
-                  id: ly,
-                  type: 'fill',
-                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
-                  paint: {
-                    'fill-color': '#5fa8a0',
-                    'fill-opacity': 0.3
-                  },
-                  layout: {},
-                  visible: d1["checked"],
-                  hoverType: "地区",
-                  clickHandler: (feature) => {
-                    try{
-                      // handle click
-                    } catch(e){
-                    }
-                  }
-                };
-                layers_row.push(layer);
-              } else if (l1 === "administrative") {
-                //console.log(d1["checked"]);
-
-                const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-                console.log(d1);
-                const layer={
-                  id: ly,
-                  type: 'fill',
-                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
-                  paint: {
-                    'fill-color': '#5fa8a0',
-                    'fill-opacity': 0.2
-                  },
-                  layout: {},
-                  visible: d1["checked"],
-                  hoverType: "行政区域",
-                  clickHandler: (feature) => {
-                    try{
-                      // handle click
-                    } catch(e){
-                    }
-                  }
-                };
-                layers_row.push(layer);
-              } else if (l1 === "chochomoku") {
-
-                const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-                console.log(d1);
-                const layer={
-                  id: ly,
-                  type: 'line',
-                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
-                  paint: {
-                    'line-color': '#000000',
-                    'line-width': 1
-                  },
-                  layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                  },
-                  visible: d1["checked"],
-                  hoverType: "住所",
-                  clickHandler: (feature) => {
-                    try{
-                      setClickedareaaddress(feature.properties.S_NAME);
-                      setClickedareapop(feature.properties.JINKO+"人");
-                      setClickedareahousehold(feature.properties.SETAI+"世帯");
-                      setClickedareapopdensity(parseInt(feature.properties.JINKO/(feature.properties.AREA/100000))+"人/k㎡");
-                      setAddress(feature.properties.S_NAME);
-                    } catch(e){
-                      console.log(feature.properties.JINKO);
-                    }
-                  }
-                };
-                layers_row.push(layer);
-              } else if (d1 === "shochiiki") {
-                const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-                console.log(d1);
-                const layer={
-                  id: ly,
-                  type: 'line',
-                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
-                  paint: {
-                    'line-color': '#000000',
-                    'line-width': 2
-                  },
-                  layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                  },
-                  visible: d1["checked"],
-                  hoverType: d1,
-                  clickHandler: (feature) => {
-                    try{
-                      // handle click
-                    } catch(e){
-                    }
-                  }
-                };
-                layers_row.push(layer);
-              } else {
-                const ly=d1.hasOwnProperty(d)?`layer-${d}-${d1[d]}-${i}`:`layer-${d}-${d1}-${i}`;
-                console.log(d1);
-                const layer={
-                  id: ly,
-                  type: 'line',
-                  sourceData: d1.hasOwnProperty(d)?d1[d]["data"]:d1["data"],
-                  paint: {
-                    'line-color': '#000000',
-                    'line-width': 1
-                  },
-                  layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                  },
-                  visible: d1["checked"],
-                  hoverType: d1,
-                  clickHandler: (feature) => {
-                    try{
-                      // handle click
-                    } catch(e){
-                    }
-                  }
-                };
-                layers_row.push(layer);
-              }
             }
           }
         i+=1;

@@ -30,7 +30,7 @@ const TripVisualize = () => {
     let d001=[];
     let data_existed={};
     setLoading(true); // ★ここから応答待ち
-    const url =`http://52.62.35.205:5000/${submit}`;
+    const url =`https://sip-diagnosis-663815372380.asia-northeast1.run.app/${submit}`;
     await fetch(`${url}`,{
                           method:"POST",
                           body: formData}) // data.json ファイルを非同期で取得

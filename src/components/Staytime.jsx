@@ -53,7 +53,7 @@ const Staytime = () => {
   // ★ 修正：Vercel API ルート経由で診断モジュールを呼び出し（バッファ読み込み版）
   const fetchStaytimeAsync = async (formData, routingvalue) => {
     let data_existed = [];
-    const url = `http://52.62.35.205:5000/staytime`;
+    const url = `https://sip-diagnosis-663815372380.asia-northeast1.run.app/staytime`;
 
     setLoading(true);
     setErrorMessage(null);

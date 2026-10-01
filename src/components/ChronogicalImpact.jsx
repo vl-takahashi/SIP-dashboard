@@ -127,7 +127,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
     const endpoint = routingvalue === "frequency"
       ? "frequency_impact_to_destination_on_route"
       : "chronogical_impact";
-    const url = `http://52.62.35.205:5000/${endpoint}`;
+    const url = `https://sip-diagnosis-663815372380.asia-northeast1.run.app/${endpoint}`;
 
     setLoading(true);
     setErrorMessage(null);
@@ -283,13 +283,13 @@ const [agencyOptions, setAgencyOptions] = useState([]);
 
       // ✅ メッシュID だけ抽出して送信（ペイロード削減）
       const popmesh = dataStore.data["popmesh"] || [];
+      console.log(popmesh)
 
       // メッシュID を抽出
       const meshIds = [];
-      for (const [name, visible, geojson] of popmesh) {
-        if (!visible) continue;
-        if (geojson?.features) {
-          for (const feature of geojson.features) {
+      for (let d in popmesh) {
+        if (popmesh[d]["data"]?.features) {
+          for (const feature of popmesh[d]["data"].features) {
             const meshId = feature.properties?.MESH_ID || feature.properties?.KEY_CODE;
             if (meshId) {
               meshIds.push(meshId);
