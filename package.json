@@ -20,8 +20,6 @@
     "@coreui/react": "^5.10.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@loaders.gl/3d-tiles": "^3.0.14",
-    "@loaders.gl/tiles": "^4.3.4",
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
     "@mui/x-charts": "^8.27.5",
