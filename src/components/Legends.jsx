@@ -1,73 +1,98 @@
 import React from "react";
-import { useMemo } from 'react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-} from "chart.js";
-import { Bar } from "react-chartjs-2";
-import { useDestStore, useLegendStore,useDataStore, useColorareaStore, useBarchartStore } from "./useStore";
-import { vividColors } from "./Globalvariable";
-import { Joystick } from "lucide-react";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
+import { useTimesliderStore, useStaycheckStore,useLegendStore } from "./useStore";
 
 export default function Legends(props) {
-  const kind = props.selectkind;
+  const { tabName } = props;
+  const time = useTimesliderStore((state) => state.time);
+  const staycheck = useStaycheckStore((state) => state.staycheck);
   const legends = useLegendStore((state) => state.legends);
-  const legendsl = [...new Set(legends.map(JSON.stringify))].map(JSON.parse);
-  legendsl.sort((a, b) => b[0][1] - a[0][1]);
-  const m={"所要時間":"分","運賃":"円","運行本数":"本"};
-  const m1=m[kind];
-  const l01=kind==="所要時間"?[0,10,20,30,40,50,60]:kind==="運賃"?[0,200,400,600,800,1000,1200]:[5,10,15,20];
-  let n=0;
+  console.log(tabName,staycheck);
+  const isUnselected = time === -7/100000000;
+
+  // ✅ q3_hour を計算（選択時間帯）
+  const q3_hour = Math.round(time * 100000000) + 11;
+
+  // ✅ 色分けロジック凡例（タブに応じて表示内容を変更）
+  let legendItems;
+  let isCircle = true; // デフォルト：丸
+
+  if (tabName === 'CombinationTab') {
+    // ✅ CombinationTab：q3_hour を含む動的な凡例（丸アイコン）
+    isCircle = true;
+    legendItems = isUnselected
+      ? [
+          { color: '#3b82f6', label: '到着可能な時間帯はある' },
+          { color: '#ef4444', label: '到着可能な時間帯はない' },
+        ]
+      : [
+          { color: '#3b82f6', label: `${q3_hour}時着の便に希望通り乗れる` },
+          { color: '#f59e0b', label: `${q3_hour}時着の便に乗りたいのに乗れない。` },
+          { color: '#ef4444', label: 'どの時間帯にも乗れない' },
+        ];
+  } else if (tabName === 'AccessibilityTab') {
+    // ✅ AccessibilityTab：useStore の legend データを使用（四角アイコン）
+    isCircle = false;
+    legendItems = legends.map((item) => ({
+      color: `rgb(${item[0][0]}, ${item[0][1]}, ${item[0][2]})`,
+      label: staycheck=="stay"?`${item[1]/3600}-${legends.indexOf(item) < legends.length - 1 ? legends[legends.indexOf(item) + 1][1]/3600 : ''}時間`:`${item[1]}-${legends.indexOf(item) < legends.length - 1 ? legends[legends.indexOf(item) + 1][1] : ''}分`,
+    })) || [];
+  }
+
   return (
-    // ★タイムスライダー操作で行数・文字幅（分/円/本の単位や桁数）が変わっても、
-    //   親の白背景パネルの外に飛び出さないよう、幅を固定し縦はスクロールに切り出す。
     <div
       style={{
         ...props.style,
         width: '100%',
-        maxWidth: 240,
-        maxHeight: 300,
+        maxWidth: 280,
+        maxHeight: 600,
         overflowY: 'auto',
         overflowX: 'hidden',
         boxSizing: 'border-box',
         position: 'relative',
+        padding: '8px',
       }}
     >
-      <b>{kind}</b>
-      {l01.slice(0,-1).map((val,i)=>
-      { const match = legendsl.find(item=>item[1]>=l01[i]&&item[1]<l01[i+1]);
-        if (!match) return null;
-        return(
-
-        <div key={i} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minWidth: 0 }}>
-          <div style={{ backgroundColor:  `rgb(${match[0][0]}, ${match[0][1]}, ${match[0][2]})`,width:'40px', height:'22px', flexShrink: 0, padding: '2px'}}>
-
-          </div>
-          <p style={{
-            fontSize:'16px',
-            margin: '2px 0 2px 6px',
+      <b style={{ fontSize: '14px', marginBottom: '8px', display: 'block' }}>
+        {isUnselected ? 'タイムスライダー：未選択' : 'タイムスライダー：選択中'}
+      </b>
+      {legendItems.map((item, i) => (
+        <div
+          key={i}
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: '8px',
+            marginBottom: '6px',
             minWidth: 0,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}>{l01[i]}-{l01[i+1]}{m1}</p>
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: item.color,
+              width: isCircle ? '10px' : '24px',
+              height: isCircle ? '10px' : '22px',
+              flexShrink: 0,
+              borderRadius: isCircle ? '50%' : '3px',
+              marginTop: isCircle ? '4px' : '0px',
+              border: !isCircle ? '1px solid rgba(0,0,0,0.1)' : 'none',
+              padding: !isCircle ? '2px' : '0px',
+            }}
+          />
+          <p
+            style={{
+              fontSize: '13px',
+              margin: 0,
+              minWidth: 0,
+              lineHeight: '1.4',
+              wordWrap: 'break-word',
+              whiteSpace: 'normal',
+            }}
+          >
+            {item.label}
+          </p>
         </div>
-       );
-      })}
+      ))}
     </div>
   );
 }
