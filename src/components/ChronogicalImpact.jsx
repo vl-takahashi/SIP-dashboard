@@ -126,7 +126,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState(null);
     //vl-sip
-    const API_BASE = 'https://www.vl-sip/module';
+    const API_BASE = 'module';
     const API_ENDPOINT = 'chronogical_impact';
     const POLL_INTERVAL = 1000;
   
