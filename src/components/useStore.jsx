@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import {useState,useEffect} from 'react';
 import { ChevronsUp } from "lucide-react";
-import { resourceDir,join } from '@tauri-apps/api/path';
-import { readDir } from '@tauri-apps/plugin-fs';
+// import { resourceDir,join } from '@tauri-apps/api/path'; // Tauri removed
+// import { readDir } from '@tauri-apps/plugin-fs'; // Tauri removed
 import { yakuba } from "./Globalvariable";
 
 // レイヤー種別のキー一覧（読み込み対象の器）
-const REGISTRY_KEYS=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","popmesh","spatialbuffer","lipt","ridingtime_transit","ridingtime_direct_dest","fare","frequency_on_routes","addressed","rosenbus","editline","facility","elevation","road","railline","tram","highwaybus","railstop","busstop"];
+const REGISTRY_KEYS=["ridingtime_direct_staytime","od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","popmesh","spatialbuffer","lipt","ridingtime_transit_orig","ridingtime_direct_orig","ridingtime_transit_dest","ridingtime_direct_dest","fare","frequency_on_routes","addressed","rosenbus","editline","facility","elevation","road","railline","tram","highwaybus","railstop","busstop"];
 export const useLayerflagStore=create((set)=>({
   layerflag:["","",""],
   setLayerflag: (time,dest,weekday) =>
@@ -27,15 +27,25 @@ export const useStore = create((set) => ({
     receivedSessions: [],
 
   addReceivedDiagnosis: (sessionData) => {
-    set((state) => ({
-      receivedSessions: [
-        ...state.receivedSessions,
-        {
-          ...sessionData,
-          receivedAt: new Date().toISOString(),
-        },
-      ],
-    }));
+    set((state) => {
+      const userId = sessionData.userId || `user_${Date.now()}`;
+
+      // 既存の診断結果から同じ userId のデータを除外
+      const filtered = state.receivedSessions.filter(
+        (item) => (item.userId || `user_${Date.now()}`) !== userId
+      );
+
+      // 新しい診断結果を先頭に追加（最新のみを表示）
+      return {
+        receivedSessions: [
+          {
+            ...sessionData,
+            receivedAt: new Date().toISOString(),
+          },
+          ...filtered,
+        ],
+      };
+    });
   },
 
   clearReceivedSessions: () => {
@@ -127,8 +137,8 @@ export const useStore = create((set) => ({
   },
 }));
 
-const REGISTRY_ITEMIDS={"od_visual":[],"odtime_dest_mesh":[],"odtime_orig_mesh":[],"area":[],"area_addressed":[],
-  "popmesh":[],"spatialbuffer":[],"lipt":[],"ridingtime_transit":[],"ridingtime_direct_dest":[],"fare":[],
+const REGISTRY_ITEMIDS={"ridingtime_direct_staytime":[],"od_visual":[],"odtime_dest_mesh":[],"odtime_orig_mesh":[],"area":[],"area_addressed":[],
+  "popmesh":[],"spatialbuffer":[],"lipt":[],"ridingtime_transit_orig":[],"ridingtime_direct_orig":[],"ridingtime_transit_dest":[],"ridingtime_direct_dest":[],"fare":[],
   "frequency_on_routes":[],"rosenbus":[],"editline":[],"facility":[],"elevation":[],
   "road":[],"railline":[],"tram":[],"highwaybus":[],"railstop":[],"busstop":[]};
 
@@ -152,6 +162,16 @@ export const useEditStore=create((set)=>({
       pitch: 0,
       zoom: 12,
   };
+export const useOrigDestStore=create((set)=>({
+  origdest:"dest",
+  setorigdest: (newItem) =>
+    set((state) => {
+
+      return {
+        origdest: newItem,
+        }
+    }),
+}))
 export const useViewCustomerStore=create((set)=>({
   select:INITIAL_VIEW_STATE,
   selectView: (newItem) =>
@@ -172,18 +192,19 @@ export const useMeshidStore=create((set)=>({
         }
     }),
 }))
-export const useViewAccesibilityStore=create((set)=>({
-  select:INITIAL_VIEW_STATE,
+export const useViewCombinationStore=create((set)=>({
+  select:{ ...INITIAL_VIEW_STATE, pitch: 45 },
   selectView: (newItem) =>
-    set((state) => {
-
-      INITIAL_VIEW_STATE["longitude"]=newItem[0];
-      INITIAL_VIEW_STATE["latitude"]=newItem[1];
-
-      return {
-        select: newItem,
-        }
-    }),
+    set(() => ({
+      select: newItem,
+    })),
+}))
+export const useViewAccesibilityStore=create((set)=>({
+  select:{ ...INITIAL_VIEW_STATE, pitch: 0 },
+  selectView: (newItem) =>
+    set(() => ({
+      select: newItem,
+    })),
 }))
 export const useViewFutureStore=create((set)=>({
   select:INITIAL_VIEW_STATE,
@@ -202,6 +223,32 @@ export const useViewDemandStore=create((set)=>({
 
       return {
         select: newItem,
+        }
+    }),
+}))
+export const useFlagStore=create((set)=>({
+  flag:false,
+  setflag: () =>
+    set((state) => {
+
+      return {
+        flag: !state.flag,
+        }
+    }),
+  flagspatial:false,
+  setflagspatial: (newItem) =>
+    set((state) => {
+
+      return {
+        flagspatial: !state.flagspatial,
+        }
+    }),
+  flagcheck:false,
+  setflagcheck: (newItem) =>
+    set((state) => {
+
+      return {
+        flagcheck: !state.flagcheck,
         }
     }),
 }))
@@ -254,6 +301,36 @@ export const useLayercheckStore=create((set)=>({
 
       return {
         select: newItem,
+        }
+    }),
+}))
+export const useQuestionStore= create((set)=>({
+  question:false,
+  setquestion: (newItem) =>
+    set((state) => {
+
+      return {
+        question: !state.question,
+        }
+    }),
+}))
+export const useNumStore=create((set)=>({
+ num:0,
+  setNum: (newItem) =>
+    set((state) => {
+
+      return {
+        num: newItem,
+        }
+    }),
+}))
+export const useDatacheckedStore=create((set)=>({
+  checked:false,
+  setChecked: (newItem) =>
+    set((state) => {
+
+      return {
+        checked: !state.checked,
         }
     }),
 }))
@@ -379,6 +456,8 @@ export const useDataStore = create((set)=>({
       state.ridingtime_all.push(newItem);
       return {
         ridingtime_all: state.ridingtime_all,
+        // flagは「何か更新があった」ことを他コンポーネントに知らせるためのカウンタ的な値
+        flag: state.flag === 0 ? 1 : 0,
       };
     }),
   ridingtime:[],
@@ -405,23 +484,23 @@ export const useDataStore = create((set)=>({
       // ★detail に基づいてアイテムを探す（findIndex）
       const index = layerList.findIndex((item) => {
         // item[0] が detail と一致するものを探す
-        return item[0] === detail || (Array.isArray(item[0]) && item[0][0] === detail);
+        return item.detail === detail || (Array.isArray(item.detail) && item.detail === detail);
       });
 
       if (index === -1) {
         console.warn(`setCheck: detail="${detail}" は kind="${kind}" 内に見つかりません`);
         return {};
       }
-
       // ★イミュータブルな更新：新しい配列を作成して、該当アイテムの可視性を更新
       const updatedList = layerList.map((item, i) => {
         if (i === index) {
           // desiredState が undefined なら反転、それ以外なら直接設定
-          const newVisibility = desiredState !== undefined ? desiredState : !item[1];
-          return [item[0], newVisibility, item[2], item[3]];
+          const newVisibility = desiredState !== undefined ? desiredState : !item.checked;
+          return {"detail":item.detail, "checked":newVisibility, "data":item.data, "agency":item.agency};
         }
         return item;
       });
+      console.log(updatedList)
 
       return {
         data: {
@@ -436,185 +515,215 @@ export const useDataStore = create((set)=>({
 
 // フォルダ内のJSON群を読み込んでuseDataStoreに反映する。
 // path: ディレクトリハンドル（Tauriのファイル選択などから渡される）
-export async function nextJsonData(path) {
+export async function nextJsonData(path, sessionId, propertyFilter) {
   // sl: 「時刻・曜日情報を別途useDestStore/useWeekdayStoreにも登録する」対象のレイヤー種別
-  const sl=["ridingtime_direct_dest","ridingtime_transit_dest","fare","frequency"];
+  const sl=["ridingtime_direct_staytime","ridingtime_direct_orig","ridingtime_transit_orig","ridingtime_direct_dest","ridingtime_transit_dest","fare","frequency"];
   // sa: 「区域名(area)を別途useAreaStoreにも登録する」対象のレイヤー種別
   const sa=["area_addressed"];
   // folderlist: ファイル内のproperty値として受け付けるレイヤー種別の一覧
-  const folderlist=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","addressed","popmesh","rosenbus","busstop","facility","fare_direct","fare_transit","railline","railstop","spatialbuffer","ridingtime_transit","ridingtime_direct_dest","addressed","lipt","frequency_on_routes"];
+  const folderlist=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","addressed","popmesh","rosenbus","busstop","facility","fare_direct","fare_transit","railline","railstop","spatialbuffer","ridingtime_transit_orig","ridingtime_direct_orig","ridingtime_transit_dest","ridingtime_direct_dest","addressed","lipt","frequency_on_routes"];
   const sp=["popmesh"]
   // ★重要：ここで毎回「新しいregistry」を作る。
   // 以前はモジュール変数を直接pushし続けていたため、再読み込みするたびに
   // 前回分のデータが残ったまま積み上がり、最終的にメモリ膨張でクラッシュする原因になっていた。
   const freshRegistry = useDataStore.getState().data;
   let failedFileCount = 0; // 読み込みに失敗したファイル数（デバッグ・ユーザー通知用）
+let filteredTransitData = null; // sessionId指定時のフィルタリング結果
 
-  try {
+          console.log("222 - sessionId:", sessionId, "propertyFilter:", propertyFilter)
     for await (const entry of path.values()) {
       if (entry.kind !== 'file') continue;
 
       // ★重要：1ファイルの処理をここで個別にtry/catchする。
       // 以前は全体を1つのtry/catchで囲っていたため、1件でもフォーマット異常のファイルがあると
       // それ以降の正常なファイルまで一切読み込まれなくなっていた。
-      try {
         const file = await entry.getFile();
         const text = await file.text();
         const props = JSON.parse(text).property;
-
+        console.log(props);
         // propertyがfolderlistのどれにも該当しない場合は、警告だけ出してスキップする
         // （以前は何もログを出さずに黙って無視していたため、原因調査がしづらかった）
         const ls = folderlist.find((key) => key === props);
-        if (!ls) {
-          console.warn(`refreshJsonData: 未知のproperty="${props}" のファイルをスキップしました（${entry.name}）`);
-          continue;
-        }
-        console.log(props);
         const json = JSON.parse(text);
-        ls==="popmesh"?usePopmeshStore.getState().setPopmesh([json.detail, true, json.data, json.agency || "",json.dimention]):null
-
-        freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention,json.dest]);
-        try{
-          
-        ls==="ridingtime_direct_dest"?useDestStore.getState().setDirectdest(json.dest):null
-        
-        ls==="ridingtime_transit_dest"?useDestStore.getState().setTransitdest(json.dest):null
-        ls==="ridingtime_direct_orig"?useDestStore.getState().setDirectorig(json.orig):null
-        ls==="ridingtime_transit_orig"?useDestStore.getState().setTransitorig(json.orig):null
-        useWeekdayStore.getState().setWeekday(json.weekday);
-
-        } catch{
-          
+        // 📌 sessionId指定時：transit-data を一度だけ Vercel KV に送信
+        if (sessionId && props === propertyFilter) {
+          filteredTransitData = json;
+          console.log(`✅ Vercel KV 送信対象: property="${props}", sessionId="${sessionId}"`);
         }
-                            
-        ls==="area"?json.data.features.forEach((num)=>{
-                              useAreaStore.getState().setarea({selectedarea:[num[selectedarea],num.centlatlon]})
-                            }):null;
-        ls.includes("ridingtime")?freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","",json.destpoint]):null;
-        ls.includes("ridingtime")?useDataStore.getState().setRidingtime(json.data):null;
-        
-        console.log(json.area);
-      } catch (fileError) {
-        // 1ファイル分の失敗はここで握って、次のファイルの処理を継続する
-        failedFileCount += 1;
-        console.warn(`refreshJsonData: ファイルの読み込みに失敗しました（${entry.name}）`, fileError.message);
-      }
-    }
 
+        if (sl.includes(props)) {
+          console.log(json);
+          useDataStore.getState().setData({"detail":json.detail, "checked":true, "data":json.data, "agency":json.agency || "","address":json.address || ""},props);
+
+          // 曜日・目的地情報を別storeにも反映。ここが失敗してもファイル自体の読み込みは続ける。
+          if (props.includes("direct_dest")||props.includes("direct_dest")){
+            useDestStore.getState().setDirectdest(json.dest);
+          } else if (props.includes("direct_orig")){
+            useOrigStore.getState().setDirectorig(json.orig);
+          } else if (props.includes("transit_dest")){
+            useDestStore.getState().setTransitdest(json.dest);
+          } else if (props.includes("transit_orig")){
+            useOrigStore.getState().setTransitorig(json.orig);
+          }
+          useWeekdayStore.getState().setWeekday(json.weekday);
+          useDataStore.getState().setRidingtimeall(json.data);
+        } else if (sa.includes(props)) {
+          // geometryを消してデータ量を減らす（元のロジックを維持）。
+          // json.data.featuresが無いケースでも落ちないようoptional chainingで保護。
+          if (json.data?.features) json.data.features.geometry = null;
+          useAreaStore.setArea(json.area);
+          // ★4要素目に agency を追加してグルーピング機能を有効化
+          useDataStore.setData({"detail":json.detail, "checked":true, "data":json.data, "agency":json.agency || "","address":json.address || ""},props);
+        } else if (sp.includes(props)) {
+          // ✅ freshRegistry に直接保存（usePopmeshStore は使わない）
+          useDataStore.setData({"detail":json.detail, "checked":true, "data":json.data, "agency":json.agency || "","address":json.address || ""},props);
+        } else {
+          // ★4要素目に agency を追加してグルーピング機能を有効化
+          useDataStore.setData({"detail":json.detail, "checked":true, "data":json.data, "agency":json.agency || "","address":json.address || ""},props);
+        }
+    }
     console.log(`読み込み成功！（失敗ファイル数: ${failedFileCount}）`);
 
-    // ★デバッグ：freshRegistry の全アイテムを確認
-    console.log("🔍 freshRegistry:", freshRegistry);
-
-    // ★JSON から agency を抽出して親チェックボックスを作成
-    const agencies = new Set();
-    Object.entries(freshRegistry).forEach(([key, items]) => {
-      console.log(`📋 [${key}] のアイテム数: ${items.length}`);
-      items.forEach((item, index) => {
-        console.log(`  [${index}] item[3]="${item[3]}", 全要素:`, item);
-        if (item[3] && item[3] !== "") {
-          agencies.add(item[3]);
+    // 📌 sessionId指定時：フィルタリング済みデータを Vercel KV に送信
+    if (sessionId && filteredTransitData) {
+      try {
+        const response = await fetch('/api/transit-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Session-ID': sessionId,
+          },
+          body: JSON.stringify({
+            sessionId,
+            transitData: filteredTransitData,
+          }),
+        });
+        const result = await response.json();
+        if (result.success) {
+          console.log(`✅ transit-data を Vercel KV に保存: sessionId="${sessionId}"`);
+        } else {
+          console.warn(`⚠️ transit-data 保存失敗: ${result.message}`);
         }
-      });
-    });
-
-    // ★抽出した agencies を setAgency に設定
-    const uniqueAgencies = Array.from(agencies);
-    uniqueAgencies.forEach((agency) => {
-      useDataStore.getState().setAgency(agency);
-    });
-    console.log(`✅ 抽出した agency: ${JSON.stringify(uniqueAgencies)}`);
-
-    // ここで初めてstoreへ反映する（＝新しく作ったfreshRegistryをそのまま渡す）
-    useDataStore.getState().setDatafirst(freshRegistry);
-    useBarchartStore.getState().setBar(true);
-        
-  } catch (error) {
-    // フォルダ自体が開けない・権限が無い等、ループの外側で起きるエラー
-    console.error("アプリの横のフォルダが見つからない、または読み込めません:", error);
-  }
+      } catch (error) {
+        console.error(`❌ transit-data 保存エラー:`, error.message);
+      }
+    }
+    useFlagStore.getState().setflagspatial(1);
 }
 // フォルダ内のJSON群を読み込んでuseDataStoreに反映する。
 // path: ディレクトリハンドル（Tauriのファイル選択などから渡される）
-export async function refreshJsonData(path) {
+export async function refreshJsonData(path, sessionId, propertyFilter) {
   // sl: 「時刻・曜日情報を別途useDestStore/useWeekdayStoreにも登録する」対象のレイヤー種別
-  const sl=["ridingtime_direct_dest","ridingtime_transit","fare","frequency"];
+  const sl=["ridingtime_direct_staytime","ridingtime_direct_orig","ridingtime_direct_dest","ridingtime_transit_dest","fare","frequency"];
   // sa: 「区域名(area)を別途useAreaStoreにも登録する」対象のレイヤー種別
   const sa=["addressed"];
   // folderlist: ファイル内のproperty値として受け付けるレイヤー種別の一覧
-  const folderlist=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","addressed","popmesh","rosenbus","busstop","facility","fare_direct","fare_transit","railline","railstop","spatialbuffer","ridingtime_direct_dest","ridingtime_transit","addressed","lipt","frequency_on_routes"];
+  const folderlist=["od_visual","odtime_dest_mesh","odtime_orig_mesh","area","area_addressed","addressed","popmesh","rosenbus","busstop","facility","fare_direct","fare_transit","railline","railstop","spatialbuffer","ridingtime_direct_dest","ridingtime_transit_dest","addressed","lipt","frequency_on_routes"];
   const sp=["popmesh"]
   // ★重要：ここで毎回「新しいregistry」を作る。
   // 以前はモジュール変数を直接pushし続けていたため、再読み込みするたびに
   // 前回分のデータが残ったまま積み上がり、最終的にメモリ膨張でクラッシュする原因になっていた。
   const freshRegistry = createEmptyRegistry();
   let failedFileCount = 0; // 読み込みに失敗したファイル数（デバッグ・ユーザー通知用）
+  let filteredTransitData = null; // sessionId指定時のフィルタリング結果
 
-          console.log("222")
+          console.log("222 - sessionId:", sessionId, "propertyFilter:", propertyFilter)
     for await (const entry of path.values()) {
       if (entry.kind !== 'file') continue;
 
       // ★重要：1ファイルの処理をここで個別にtry/catchする。
       // 以前は全体を1つのtry/catchで囲っていたため、1件でもフォーマット異常のファイルがあると
       // それ以降の正常なファイルまで一切読み込まれなくなっていた。
-      try {
         const file = await entry.getFile();
         const text = await file.text();
         const props = JSON.parse(text).property;
-
+        console.log(props)
         // propertyがfolderlistのどれにも該当しない場合は、警告だけ出してスキップする
         // （以前は何もログを出さずに黙って無視していたため、原因調査がしづらかった）
         const ls = folderlist.find((key) => key === props);
-        if (!ls) {
-          console.warn(`refreshJsonData: 未知のproperty="${props}" のファイルをスキップしました（${entry.name}）`);
-          continue;
         
-        
+
         const json = JSON.parse(text);
 
-        if (sl.includes(ls)) {
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","",json.point])
-          // 曜日・目的地情報を別storeにも反映。ここが失敗してもファイル自体の読み込みは続ける。
+        // 📌 sessionId指定時：transit-data を一度だけ Vercel KV に送信
+        if (sessionId && props === propertyFilter) {
+          filteredTransitData = json;
+          console.log(`✅ Vercel KV 送信対象: property="${props}", sessionId="${sessionId}"`);
+        }
 
-          useDestStore.getState().setDest(json.dest);
+        if (sl.includes(props)) {
+          useDataStore.getState().setData({"detail":json.detail, "checked":true, "data":json.data, "agency":json.agency || "","address":json.address || "","point":json.destpoint},props);
+
+          console.log("11")
+          // 曜日・目的地情報を別storeにも反映。ここが失敗してもファイル自体の読み込みは続ける。
+          if (props.includes("direct_dest")){
+            useDestStore.getState().setDirectdest(json.dest);
+          } else if (props.includes("direct_orig")){
+            useDestStore.getState().setDirectorig(json.orig);
+          } else if (props.includes("transit_dest")){
+            useDestStore.getState().setTransitdest(json.dest);
+          } else if (props.includes("transit_orig")){
+            useDestStore.getState().setTransitorig(json.orig);
+          }
           useWeekdayStore.getState().setWeekday(json.weekday);
-          useDataStore.getState().setRidingtime(json.data);
-          // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[ls].push([json.dest, true, json.data, json.agency || "",json.dimention]);
-        } else if (sa.includes(ls)) {
+          console.log("1")
+        } else if (sa.includes(props)) {
           // geometryを消してデータ量を減らす（元のロジックを維持）。
           // json.data.featuresが無いケースでも落ちないようoptional chainingで保護。
           if (json.data?.features) json.data.features.geometry = null;
           useAreaStore.getState().setArea(json.area);
           // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention]);
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "","","",json.address]);
-        } else if (sp.includes(ls)) {
-          usePopmeshStore.getState().setPopmesh([json.detail, true, json.data, json.agency || "",json.dimention]);
+          useDataStore.getState().setData({"detail":json.detail, "checked":true, "data":json.data, "agency":json.agency || "","address":json.address || ""},props);
+        } else if (sp.includes(props)) {
+          // ✅ freshRegistry に直接保存（usePopmeshStore は使わない）
+          useDataStore.getState().setData({"detail":json.detail, "checked":true, "data":json.data, "agency":json.agency || "","address":json.address || ""},props);
+          usePopmeshStore.getState().setPopmesh({"detail":json.detail, "checked":true, "data":json.data, "agency":json.agency || "","address":json.address || ""})
         } else {
           // ★4要素目に agency を追加してグルーピング機能を有効化
-          freshRegistry[ls].push([json.detail, true, json.data, json.agency || "",json.dimention]);
+          useDataStore.getState().setData({"detail":json.detail, "checked":true, "data":json.data, "agency":json.agency || "","address":json.address || ""},props);
         }
-      }
-    } catch (fileError) {
-      // 1ファイル分の失敗はここで握って、次のファイルの処理を継続する
-      failedFileCount += 1;
-      console.warn(`refreshJsonData: ファイルの読み込みに失敗しました（${entry.name}）`, fileError.message);
     }
-    
+
     console.log(`読み込み成功！（失敗ファイル数: ${failedFileCount}）`);
+    console.log(useDataStore.getState().data)
+
+    // 📌 sessionId指定時：フィルタリング済みデータを Vercel KV に送信
+    if (sessionId && filteredTransitData) {
+      try {
+        const response = await fetch('/api/transit-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Session-ID': sessionId,
+          },
+          body: JSON.stringify({
+            sessionId,
+            transitData: filteredTransitData,
+          }),
+        });
+        const result = await response.json();
+        if (result.success) {
+          console.log(`✅ transit-data を Vercel KV に保存: sessionId="${sessionId}"`);
+        } else {
+          console.warn(`⚠️ transit-data 保存失敗: ${result.message}`);
+        }
+      } catch (error) {
+        console.error(`❌ transit-data 保存エラー:`, error.message);
+      }
+    }
 
     // ★デバッグ：freshRegistry の全アイテムを確認
     console.log("🔍 freshRegistry:", freshRegistry);
 
+    useFlagStore.getState().setflagspatial(1);
     // ★JSON から agency を抽出して親チェックボックスを作成
     const agencies = new Set();
     Object.entries(freshRegistry).forEach(([key, items]) => {
       console.log(`📋 [${key}] のアイテム数: ${items.length}`);
       items.forEach((item, index) => {
-        console.log(`  [${index}] item[3]="${item[3]}", 全要素:`, item);
-        if (item[3] && item[3] !== "") {
-          agencies.add(item[3]);
+        console.log(`  [${index}] item[3]="${item.agency}", 全要素:`, item);
+        if (item.agency && item.agency !== "") {
+          agencies.add(item.agency);
         }
       });
     });
@@ -626,11 +735,9 @@ export async function refreshJsonData(path) {
     });
     console.log(`✅ 抽出した agency: ${JSON.stringify(uniqueAgencies)}`);
 
-    // ここで初めてstoreへ反映する（＝新しく作ったfreshRegistryをそのまま渡す）
-    useDataStore.getState().setDatafirst(freshRegistry);
     useBarchartStore.getState().setBar(true);
   }
-}
+
 export const useBarchartStore = create((set)=>({
   bar:false,
   setBar: (newText) => set({ bar: true }),
@@ -655,7 +762,7 @@ export const usePopStore = create((set)=>({
 }))
 export const useDirectStore = create((set)=>({
   orig:"",
-  selectOrig: (newText) => set({ direct: newText }),
+  selectOrig: (newText) => set({ orig: newText }),
   direct:"",
   selectDirect: (newText) => set({ direct: newText }),
 }))
@@ -663,6 +770,19 @@ export const useTimesliderStore = create((set)=>({
   time:-7/100000000,
   clicktime: (newText) => set({ time: newText }),
 }))
+export const useStaycheckStore = create((set)=>({
+  staycheck:"nostay",
+  
+  setStaycheck: ((newItem) => set((state) => {
+    console.log(newItem)
+    return {
+      
+        staycheck: newItem
+        }
+    })
+  )}
+))
+
 
 export const useWeekdayStore = create((set)=>({
   weekday:[],
@@ -732,16 +852,14 @@ export const useAreaStore = create((set) => ({
   area: [],
   setArea: (newItem) =>
     set((state) => {
-      const prevArray = state.area || [];
-      const newItemStr = JSON.stringify(newItem);
-      
-      const isDuplicate = prevArray.some(
-        (item) => JSON.stringify(item) === newItemStr
-      );
-      
-      return {
-        area: isDuplicate ? prevArray : [...prevArray, newItem],
-      };
+        const prevArray = state.area || [];
+        console.log(newItem);
+        const arrayA=[...prevArray, newItem];
+        const arrayB = Array.from(new Set(arrayA));
+        return {
+          
+            area: arrayB,
+            }
     }),
   areaid:[],
   setAreaid: ((newItem) => 

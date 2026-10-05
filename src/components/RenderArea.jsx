@@ -22,7 +22,7 @@ const RenderArea = () => {
   let kindset=[];
   const fetchArea= async(formData)=>{
       setLoading(true); // ★ここから応答待ち
-      await fetch(`http://52.62.35.205:5000/area`,{
+      await fetch(`https://sip-diagnosis-663815372380.asia-northeast1.run.app/area`,{
                       
                         method: 'POST',
                         body: formData}) // data.json ファイルを非同期で取得
@@ -48,7 +48,7 @@ const RenderArea = () => {
                               // ★GeoJSON に property フィールドを追加
                               d0.property = dp0;
 
-                              let data_existed=[dp1,true,d0,""];
+                              let data_existed={"detail":dp1,"checked":true,"data":d0};
                               console.log(data_existed,dp0);
                               let d01=JSON.stringify({"property":dp0,"data":d0,"detail":data.property[d],"agency":""}, null, 2);
 

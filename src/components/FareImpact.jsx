@@ -23,7 +23,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
     const setData =useDataStore((state) => state.setData);
     const fetchFareImpactAsync = async (formData) => {
     let data_existed={};
-    await fetch(`http://52.62.35.205:5000/fare_impact`,{
+    await fetch(`https://sip-diagnosis-663815372380.asia-northeast1.run.app/fare_impact`,{
                           method:"POST",
                           body: formData}) // data.json ファイルを非同期で取得
                           .then(res => 

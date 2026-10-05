@@ -52,7 +52,7 @@ const MakeMesh = (props) => {
 
   const makemesh= async(formData)=>{
       setLoading(true); // ★ここから応答待ち
-      await fetch(`http://52.62.35.205:5000/render_mesh`,{
+      await fetch(`https://sip-diagnosis-663815372380.asia-northeast1.run.app/render_mesh`,{
                           method:"POST",
                           body: formData}) // data.json ファイルを非同期で取得
                           .then(res => 
@@ -135,13 +135,13 @@ const MakeMesh = (props) => {
                   <FileField
                     label="人口メッシュ統計データ(GeoJSON)"
                     required
-                    hint="国土数値情報の人口メッシュ統計GeoJSONファイルを選択してください。"
+                    hint="国土数値情報/国勢調査の人口メッシュ統計GeoJSONファイルを選択してください。"
                     inputRef={popmeshfilesRef}
                     accept=".geojson"
                     onChange={handleFileChange}
                   />
                   <SelectField
-                    label="市町村コード列名"
+                    label="市町村コード列名(国土数値情報の場合)"
                     value={selectedShicode}
                     onChange={(e) => setSelectedShicode(e.target.value)}
                     inline
