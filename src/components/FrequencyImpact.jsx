@@ -23,7 +23,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
     const setData =useDataStore((state) => state.setData);
     const fetchFrequencyImpactAsync = async (formData) => {
     let data_existed={};
-    await fetch(`https://sip-diagnosis-663815372380.asia-northeast1.run.app/frequency_impact`,{
+    await fetch(`https://www.vl-sip/module/frequency_impact`,{
                           method:"POST",
                           body: formData}) // data.json ファイルを非同期で取得
                           .then(res => 
