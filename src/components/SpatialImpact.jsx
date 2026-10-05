@@ -35,12 +35,7 @@ const SpatialImpact = () => {
         console.error('Error extracting columns:', error);
       }
     };
-    const agencyRef=useRef(null);
     const dataStore = useDataStore((state) => state);  // ★ ここで dataStore を取得
-    const setData =useDataStore((state) => state.setData);
-    const setAgency = useDataStore((state) => state.setAgency);
-    // submit〜レスポンス受信までFundamentalVisualize側にローディング表示を出すための共有state
-    const setLoading = useLoadingStore((state) => state.setLoading);
 
     // ★非専門家向け改善：市町村コード列名(keycode)を手打ちさせず、
     // アップロードされた人口メッシュGeoJSONのproperties列名を自動検出して選択式にする。
@@ -134,141 +129,189 @@ const SpatialImpact = () => {
         setAgencyOptions([]);
       }
     };
-    const fetchSpatialImpactAsync = async (formData) => {
-    let d001=[];
-    let data_existed=[];
-    setLoading(true); // ★ここから応答待ち
-    await fetch(`https://sip-diagnosis-663815372380.asia-northeast1.run.app/spatial_impact`,{
-                          method:"POST",
-                          body: formData}) // data.json ファイルを非同期で取得
-                          .then(res => 
-                            res.json())
-                          .then(async (data) => {
-                            // ★agencyValue を保存
-                            setAgency(agencyValue);
-                            const zip = new JSZip();
-                            let meter0 = parseInt(meterRef.current.value);
-                            console.log(meter0);
-                            let dp0=`spatialbuffer`;
-                            let city=cityRef.current.value
-                            let agency=agencyRef.current.value
-                            const files = popmeshfilesRef.current?.files[0].name.split('.').slice(0, -1);
-                            console.log(dp0);
-                            data_existed={"detail":`${city}_${dimentionRef.current.value}_${agencyValue}`,"checked":true,"data":data.data};
-                            console.log(data_existed);
-                            let d001=JSON.stringify({"property":"spatialbuffer","detail":`${city}_${dimentionRef.current.value}_${agencyValue}`,"data":data.data,"kind":dp0,"agency":agencyValue}, null, 2);
-                            // ★ZIP にファイル追加
-                            let d002=JSON.stringify(data.data, null, 2);
-                            setData(data_existed,dp0);
-                            const metadataBlob1 = new Blob([d001], { type: 'application/json' });
-                            const link = document.createElement("a");
-                            link.href = URL.createObjectURL(metadataBlob1);
-                            link.download = `spatialbuffer_${meter0}_${agency}.json`;
-                            link.click();
-                            const metadataBlob2 = new Blob([d002], { type: 'application/json' });
-                            const link2 = document.createElement("a");
-                            link2.href = URL.createObjectURL(metadataBlob2);
-                            link2.download = `spatialbuffer_${meter0}_${agency}.json`;
-                            link2.click();
-                          })
-                          .catch(error => {
-                            console.log(error);
-                              //modalDialog.close();
-                          })
-                          .finally(() => setLoading(false)); // ★成功・失敗どちらでも必ず解除
-                        };
-    return (
-        <div className='spatial_impact'>
-            <form action="" method="POST" encType="multipart/form-data" onSubmit={(e) => {
-                e.preventDefault(); // リロード防止
-                const formData = new FormData();
-                try{
-                  let bus_stop2file = stopfilesRef.current.files;
-              
-
-                  console.log(bus_stop2file);
-                  
-                  if (bus_stop2file.length === 0) {
-                      
-                      console.log('Please select a file first!');
-                      return;
-                  }
-              
-                  // 'file' must match the key used in request.files['file'] on the server
-                  for (const f of bus_stop2file){
-                    formData.append('stopfl', f); 
-              
-                  }
-                  let meter = meterRef.current.value;
-                  let agency=agencyRef.current.value;
-                  formData.append('meter', meter);
-                  console.log(formData);
-
-                  // ★ 表示メッシュをGeoJSONで統合して送信
-                  const popmesh = dataStore.data["popmesh"] || [];
-
-                  // 全表示メッシュの features を統合
-
-                  // メッシュID を抽出
-                  const meshIds = [];
-                  for (const [name, visible, geojson] of popmesh) {
-                    if (!visible) continue;
-                    if (geojson?.features) {
-                      for (const feature of geojson.features) {
-                        const meshId = feature.properties?.MESH_ID || feature.properties?.KEY_CODE;
-                        if (meshId) {
-                          meshIds.push(meshId);
-                        }
-                      }
-                    }
-                  }
-
-                  console.log('✅ メッシュID 抽出:', {
-                    meshIdCount: meshIds.length,
-                    sampleIds: meshIds.slice(0, 5)
-                  });
-
-                  // メッシュID を元のキー名で送信
-                  formData.append('meshdf', JSON.stringify(meshIds));
-                  console.log(`✓ 表示メッシュを統合: ${allFeatures.length} 個のFeature`);
-
-                  formData.append('agency', agency); 
-                  for (let value of formData.entries()) { 
-                      console.log(value); 
-                  }
-                  fetchSpatialImpactAsync(formData);
-                } catch(e) {
-                  console.log(e.message);
-                }
-              }}>
-                <FileField
-                  label="GTFS(zip)"
-                  required
-                  hint="バス停・便データ（GTFS zip）を選択してください。"
-                  inputRef={stopfilesRef}
-                  accept=".zip"
-                  onChange={handleGtfsZipChange}
-                />
-                <TextField label="メッシュ単位(m)" inputRef={dimentionRef} defaultValue="250" size="20" inline />
-                {agencyOptions.length > 0 ? (
-                  <SelectField
-                    label="事業者"
-                    selectRef={agencyRef}
-                    value={agencyValue}
-                    inline
-                  >
-                    {agencyOptions.map((a) => (
-                      <option key={a} value={a}>{a}</option>
-                    ))}
-                  </SelectField>
-                ) : (
-                  <TextField label="事業者" inputRef={agencyRef} placeholder="GTFS(zip)選択後に自動候補が出ます。出ない場合は入力してください" inline />
-                )}
-                
-                <TextField label="圏域(m)" inputRef={meterRef} defaultValue="300" size="20" type="number" inline />
-                <PrimaryButton name="submit" id="submit_spatial">空間的圏域算出</PrimaryButton>
+    const fileRef = useRef();
+      const destfileRef = useRef();
+      const agencyRef = useRef();
+    
+      const setData = useDataStore((state) => state.setData);
+      const setAgency = useDataStore((state) => state.setAgency);
+      const setLoading = useLoadingStore((state) => state.setLoading);
+    
+      const [taskId, setTaskId] = useState(null);
+      const [progress, setProgress] = useState(0);
+      const [error, setError] = useState(null);
+    
+      const API_BASE = 'https://vl-sip.com/module';
+      const API_ENDPOINT = 'spatial_impact';
+      const POLL_INTERVAL = 1000;
+    
+      const fetchDataAsync = async (formData) => {
+        setLoading(true);
+        setError(null);
+        setProgress(0);
+    
+        try {
+          const response = await fetch(`${API_BASE}/${API_ENDPOINT}`, {
+            method: 'POST',
+            body: formData,
+          });
+    
+          if (!response.ok) throw new Error(`API Error: ${response.status}`);
+    
+          const result = await response.json();
+          if (!result.task_id) throw new Error('No task_id returned');
+    
+          setTaskId(result.task_id);
+          setProgress(10);
+        } catch (err) {
+          console.error('Error:', err);
+          setError(err.message);
+          setLoading(false);
+        }
+      };
+    
+      useEffect(() => {
+        if (!taskId) return;
+    
+        const pollResults = async () => {
+          try {
+            const response = await fetch(`${API_BASE}/result/${taskId}`);
+            if (!response.ok) throw new Error('Status check failed');
+    
+            const result = await response.json();
+    
+            if (result.status === 'completed') {
+              setProgress(90);
+              await handleSuccess(result.result);
+              setTaskId(null);
+              setProgress(100);
+              setLoading(false);
+            } else if (result.status === 'failed') {
+              throw new Error(result.error || '処理に失敗しました');
+            } else {
+              setProgress((prev) => Math.min(prev + 5, 85));
+            }
+          } catch (err) {
+            console.error('Polling error:', err);
+            setError(err.message);
+            setTaskId(null);
+            setLoading(false);
+          }
+        };
+    
+        const interval = setInterval(pollResults, POLL_INTERVAL);
+        return () => clearInterval(interval);
+      }, [taskId]);
+    
+      const handleSuccess = async (data) => {
+        try {
+          const zip = new JSZip();
+          let fileCount = 0;
+    
+          for (let d in data.property) {
+            let dp0 = 'spatial_impact';
+            let dp1 = data.filename[d];
+            let d0 = data.data[d];
+            d0.property = dp0;
+    
+            let d01 = JSON.stringify(
+              { property: dp0, data: d0, detail: data.property[d], agency: '' },
+              null,
+              2
+            );
+    
+            zip.file(`${API_ENDPOINT}_${dp1}_metadata.json`, d01);
+            zip.file(`${API_ENDPOINT}_${dp1}.geojson`, JSON.stringify(d0, null, 2));
+    
+            setData({ detail: dp1, checked: true, data: d0 }, dp0);
+            fileCount++;
+          }
+    
+          const zipBlob = await zip.generateAsync({ type: 'blob' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(zipBlob);
+          link.download = `${API_ENDPOINT}_${new Date().getTime()}.zip`;
+          link.click();
+    
+          window.alert(`✅ 完了: ${fileCount}ファイル`);
+        } catch (err) {
+          console.error('Error:', err);
+          setError(err.message);
+        }
+      };
+    
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        setError(null);
+    
+        try {
+          let formData = new FormData();
+    
+          if (fileRef.current?.files) {
+            for (let f of fileRef.current.files) {
+              formData.append('file', f);
+            }
+          }
+    
+          if (destfileRef.current?.files) {
+            for (let f of destfileRef.current.files) {
+              formData.append('dest_file', f);
+            }
+          }
+    
+          if (agencyRef.current?.value) {
+            formData.append('agency', agencyRef.current.value);
+          }
+    
+          if (!fileRef.current?.files?.length) {
+            setError('ファイルを選択してください');
+            return;
+          }
+    
+          fetchDataAsync(formData);
+        } catch (err) {
+          console.error('Error:', err);
+          setError(err.message);
+        }
+      };
+    
+      return (
+        <div>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {!taskId ? (
+            <form onSubmit={handleSubmit} encType="multipart/form-data">
+              <FileField
+                label="空間ファイル"
+                required
+                hint="処理対象のファイルを選択してください（複数選択可）。"
+                inputRef={fileRef}
+                accept=".geojson,.json,.csv,.zip"
+                multiple
+              />
+              <FileField
+                label="目的地ファイル"
+                inputRef={destfileRef}
+                multiple
+              />
+              <TextField
+                label="グルーピング名称（任意）"
+                inputRef={agencyRef}
+                inline
+              />
+              <PrimaryButton disabled={!!taskId}>アップロード</PrimaryButton>
             </form>
+          ) : (
+            <Box sx={{ p: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1 }}>処理中... {progress}%</Typography>
+              <LinearProgress variant="determinate" value={progress} />
+              <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                Task ID: {taskId}
+              </Typography>
+            </Box>
+          )}
         </div>
-    )};
-
-export default SpatialImpact;
+      );
+    };
+    
+    export default SpatialImpact;
+    

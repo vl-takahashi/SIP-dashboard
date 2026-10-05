@@ -11,7 +11,7 @@ const AllRender = ({ isOpen, onClose }) => {
 
     const fetchDataAsync = async (formData) => {
         
-    await fetch(`http://52.62.35.205:5000/existed`,{
+    await fetch(`https://www.vl-sip/existed`,{
                         
                           method: 'POST',
                           body: formData}) // data.json ファイルを非同期で取得

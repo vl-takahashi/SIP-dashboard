@@ -89,192 +89,170 @@ const categories = [
   },
 ];
 
-export const ODVisualize = () => {
-  const editRef=useRef(null);
-  const dialogRef = useRef();
-  const [activeTab, setActiveTab] = useState(0);
-  // 空白分析タブ内のサブタブ（現状は「空間的圏域算出」「時間帯別到達圏域算出」の2つ）
-  const [activeSubTab, setActiveSubTab] = useState(0);
-  // 各タブ（Jmds/Drm/Render_polygon等）がsubmit〜レスポンス受信の間trueにする共有state。
-  // ここではその値を見て、タブコンテンツの上にローディング表示を重ねるだけ。
-  const loading = useLoadingStore((state) => state.loading);
-  const { isTablet } = useBreakpoint();
-  const handleShowModal = () => dialogRef.current?.showModal();
-  const handleCloseModal = () => dialogRef.current?.close();
-  const activeCategory = categories[activeTab];
+const ODVisualize = () => {
+  const filesRef = useRef();
+  const agencyRef = useRef();
+  const setData = useDataStore((state) => state.setData);
+  const setAgency = useDataStore((state) => state.setAgency);
+  const setLoading = useLoadingStore((state) => state.setLoading);
+
+  const [taskId, setTaskId] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
+
+  const API_BASE = 'https://vl-sip.com/module';
+  const API_ENDPOINT = 'od_visual';
+  const POLL_INTERVAL = 1000;
+
+  const fetchDataAsync = async (formData) => {
+    setLoading(true);
+    setError(null);
+    setProgress(0);
+
+    try {
+      const response = await fetch(`${API_BASE}/${API_ENDPOINT}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
+      const result = await response.json();
+      if (!result.task_id) throw new Error('No task_id returned');
+
+      setTaskId(result.task_id);
+      setProgress(10);
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!taskId) return;
+
+    const pollResults = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/result/${taskId}`);
+        if (!response.ok) throw new Error('Status check failed');
+
+        const result = await response.json();
+
+        if (result.status === 'completed') {
+          setProgress(90);
+          await handleSuccess(result.result);
+          setTaskId(null);
+          setProgress(100);
+          setLoading(false);
+        } else if (result.status === 'failed') {
+          throw new Error(result.error || '処理に失敗しました');
+        } else {
+          setProgress((prev) => Math.min(prev + 5, 85));
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+        setError(err.message);
+        setTaskId(null);
+        setLoading(false);
+      }
+    };
+
+    const interval = setInterval(pollResults, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [taskId]);
+
+  const handleSuccess = async (data) => {
+    try {
+      setAgency('');
+      const zip = new JSZip();
+      let fileCount = 0;
+
+      for (let d in data.property) {
+        let dp0 = 'od';
+        let dp1 = data.filename[d];
+        let d0 = data.data[d];
+        d0.property = dp0;
+
+        let d01 = JSON.stringify(
+          { property: dp0, data: d0, detail: data.property[d], agency: '' },
+          null,
+          2
+        );
+
+        zip.file(`${API_ENDPOINT}_${dp1}_metadata.json`, d01);
+        zip.file(`${API_ENDPOINT}_${dp1}.geojson`, JSON.stringify(d0, null, 2));
+
+        setData({ detail: dp1, checked: true, data: d0 }, dp0);
+        fileCount++;
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = `${API_ENDPOINT}_${new Date().getTime()}.zip`;
+      link.click();
+
+      window.alert(`✅ 完了: ${fileCount}ファイル`);
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      let formData = new FormData();
+      let file = filesRef.current.files;
+
+      if (file.length === 0) {
+        setError('ファイルを選択してください');
+        return;
+      }
+
+      for (let f = 0; f < file.length; f++) {
+        formData.append('file', file[f]);
+      }
+
+      setAgency(agencyRef.current.value);
+      fetchDataAsync(formData);
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err.message);
+    }
+  };
 
   return (
-    <>
-      <button type="button" onClick={handleShowModal} style={{backgroundColor: '#08335c', padding: 5 }}>
-        <font color="white">データ可視化</font>
-      </button>
-      <dialog
-        ref={dialogRef}
-        style={{
-          border: 'none',
-          borderRadius: 16,
-          padding: 0,
-          width: '820px',
-          // タブレット幅では横マージンを詰めて使える面積を増やす
-          maxWidth: isTablet ? '96vw' : '92vw',
-          boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
-          fontFamily: 'inherit',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', maxHeight: isTablet ? '90vh' : '82vh' }}>
-          {/* ヘッダー */}
-          <div style={{ padding: isTablet ? '14px 16px 0' : '20px 24px 0' }}>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: COLORS.text }}>可視化メニュー</h2>
-            <p style={{ margin: '4px 0 16px', fontSize: 13, color: COLORS.subtext }}>
-              レイヤー表示・分析結果を選択します。
-            </p>
-          </div>
-
-          {/* カテゴリタブ（アンダーライン形式）。タブレットではタップしやすいよう縦の余白を広げる */}
-          <div
-            style={{
-              display: 'flex',
-              gap: isTablet ? 12 : 24,
-              borderBottom: `1px solid ${COLORS.border}`,
-              padding: isTablet ? '0 16px' : '0 24px',
-              overflowX: 'auto',
-            }}
-          >
-            {categories.map((cat, index) => (
-              <button
-                key={cat.label}
-                type="button"
-                onClick={() => { setActiveTab(index); setActiveSubTab(0); }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: activeTab === index ? `2px solid ${COLORS.orange}` : '2px solid transparent',
-                  color: activeTab === index ? COLORS.orange : COLORS.subtext,
-                  fontWeight: activeTab === index ? 600 : 500,
-                  fontSize: 14,
-                  // タブレットは指でタップするため、タップ領域(44px目安)を確保する
-                  padding: isTablet ? '14px 8px' : '10px 2px',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {/* タブコンテンツ。カテゴリ説明文＋カード一覧。position:relativeにして、
-              ローディング中はこの上にオーバーレイを重ねる */}
-          <div style={{ position: 'relative', padding: isTablet ? '16px' : '20px 24px', overflowY: 'auto', flex: 1 }}>
-            <p style={{ margin: '0 0 16px', fontSize: 12.5, color: COLORS.subtext }}>
-              {activeCategory.description}
-            </p>
-
-            {activeCategory.subTabs ? (
-              <>
-                {/* サブタブ（横並びのピル型ボタン）。選択中の1件だけを下に表示する */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-                  {activeCategory.cards.map((card, subIndex) => (
-                    <button
-                      key={card.title}
-                      type="button"
-                      onClick={() => setActiveSubTab(subIndex)}
-                      style={{
-                        border: `1px solid ${activeSubTab === subIndex ? COLORS.orange : COLORS.border}`,
-                        background: activeSubTab === subIndex ? COLORS.orange : '#fff',
-                        color: activeSubTab === subIndex ? '#fff' : COLORS.text,
-                        borderRadius: 999,
-                        padding: '7px 16px',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {card.title}
-                    </button>
-                  ))}
-                </div>
-
-                {(() => {
-                  const card = activeCategory.cards[activeSubTab];
-                  return (
-                    <VisualizeCard title={card.title} badge={card.badge} description={card.description}>
-                      {card.node}
-                    </VisualizeCard>
-                  );
-                })()}
-              </>
-            ) : (
-              activeCategory.cards.map((card) => (
-                <VisualizeCard
-                  key={card.title}
-                  title={card.title}
-                  badge={card.badge}
-                  description={card.description}
-                >
-                  {card.node}
-                </VisualizeCard>
-              ))
-            )}
-
-            {loading && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 12,
-                  background: 'rgba(255,255,255,0.85)',
-                  zIndex: 5,
-                }}
-              >
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    border: `3px solid ${COLORS.orangeSoft}`,
-                    borderTopColor: COLORS.orange,
-                    animation: 'fv-spin 0.8s linear infinite',
-                  }}
-                />
-                <span style={{ fontSize: 13, color: COLORS.subtext }}>処理中です。しばらくお待ちください…</span>
-                <style>{`@keyframes fv-spin { to { transform: rotate(360deg); } }`}</style>
-              </div>
-            )}
-          </div>
-
-          {/* フッター */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              padding: '12px 24px',
-              borderTop: `1px solid ${COLORS.border}`,
-            }}
-          >
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: COLORS.subtext,
-                fontSize: 13,
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-            >
-              閉じる
-            </button>
-          </div>
-        </div>
-      </dialog>
-    </>
+    <div>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {!taskId ? (
+        <form onSubmit={handleSubmit} encType="multipart/form-data">
+          <FileField
+            label="OD（出発地・目的地）ファイル"
+            required
+            hint="処理対象のファイルを選択してください（複数選択可）。"
+            inputRef={filesRef}
+            accept=".geojson,.json,.csv,.zip"
+            multiple
+          />
+          <TextField label="グルーピング名称（任意）" inputRef={agencyRef} inline />
+          <PrimaryButton disabled={!!taskId}>アップロード</PrimaryButton>
+        </form>
+      ) : (
+        <Box sx={{ p: 2 }}>
+          <Typography variant="body2" sx={{ mb: 1 }}>処理中... {progress}%</Typography>
+          <LinearProgress variant="determinate" value={progress} />
+          <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+            Task ID: {taskId}
+          </Typography>
+        </Box>
+      )}
+    </div>
   );
 };
+
 export default ODVisualize;
+

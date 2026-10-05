@@ -14,7 +14,7 @@ const Drm = () => {
     e.preventDefault(); // これが必要
       const fetchdrmAsync = async () => {
 setLoading(true); // ★ここから応答待ち
-await fetch("http://52.62.35.205:5000/drm",{
+await fetch("https://www.vl-sip/drm",{
 
                             method: 'GET'}) // data.json ファイルを非同期で取得
                             .then(res =>

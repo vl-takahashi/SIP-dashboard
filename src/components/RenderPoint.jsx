@@ -1,140 +1,240 @@
-import React from 'react';
-import {createContext, useRef,useState,useEffect} from 'react'
-import Map from 'react-map-gl/mapbox';
-// If using with mapbox-gl v1:
-// import Map from 'react-map-gl/mapbox-legacy';
-import 'mapbox-gl/dist/mapbox-gl.css';
-
-import {useDataStore,useRenderStore,useLoadingStore} from "./useStore";
-import { FileField, TextField, SelectField, PrimaryButton } from "./VisualizeUI";
-
-
+import React, { useRef, useState, useEffect } from 'react';
+import { LinearProgress, Box, Typography, Alert } from '@mui/material';
+import JSZip from 'jszip';
+import { useDataStore, useRenderStore, useLoadingStore } from './useStore';
+import { FileField, TextField, SelectField, PrimaryButton } from './VisualizeUI';
 
 const RenderPoint = () => {
-
   const paramRef = useRef();
   const agencyRef = useRef();
   const filesRef = useRef();
+
   const data = useDataStore((state) => state.data);
   const setData = useDataStore((state) => state.setData);
   const setAgency = useDataStore((state) => state.setAgency);
-  // submit〜レスポンス受信までFundamentalVisualize側にローディング表示を出すための共有state
-  // （以前はconst {rendered,setRendered}=useState(false)という未使用・かつ壊れた変数があったが、
-  //   これはローディング表示の下書きだったと思われるためuseLoadingStoreに置き換えた）
   const setLoading = useLoadingStore((state) => state.setLoading);
-  let kindset=[];
-  const fetchPoint= async(formData)=>{
-      setLoading(true); // ★ここから応答待ち
-      await fetch(`https://sip-diagnosis-663815372380.asia-northeast1.run.app/point`,{
-                      
-                        method: 'POST',
-                        body: formData}) // data.json ファイルを非同期で取得
-                        .then(res => 
-                        res.json())
-                        .then(async (data) => {
-                          try{
-                            // ★agencyValue をリセット（グルーピングなし）
-                            setAgency("");
-                            const zip = new JSZip();
-                            let dpl=[];
-                            let fileCount = 0;
-                            console.log(data);
-                            for(let d in data.property){
 
-                              console.log(data.property)
-                              let dp0="area";
-                              console.log(dp0)
-                              dpl.push(dp0);
-                              let dp1=data.filename[d];
-                              let d0=data.data[d];
-                              let d001 =data.detail[d];
-                              // ★GeoJSON に property フィールドを追加
-                              d0.property = dp0;
+  // 非同期 API 用の state
+  const [taskId, setTaskId] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
 
-                              let data_existed={"detail":dp1,"checked":true,"data":d0};
-                              console.log(data_existed,dp0);
-                              let d01=JSON.stringify({"property":dp0,"data":d0,"detail":data.property[d],"agency":""}, null, 2);
+  // API エンドポイント
+  const API_BASE = 'https://vl-sip.com/module';
+  const POLL_INTERVAL = 1000; // 1秒
 
-                              // ★ZIP にファイル追加
-                              zip.file(`point_${dp1}_metadata.json`, d01);
-                              let geojsonData = JSON.stringify(d0, null, 2);
-                              zip.file(`point_${dp1}.geojson`, geojsonData);
+  /**
+   * 非同期 API にリクエスト送信
+   */
+  const fetchPointAsync = async (formData) => {
+    setLoading(true);
+    setError(null);
+    setProgress(0);
 
-                              setData(data_existed,dp);
-                              fileCount++;
-                           }
+    try {
+      // 1. API にリクエスト送信
+      const response = await fetch(`${API_BASE}/point`, {
+        method: 'POST',
+        body: formData,
+      });
 
-                           // ★ZIP を生成してダウンロード
-                           const zipBlob = await zip.generateAsync({type: "blob"});
-                           const link = document.createElement("a");
-                           link.href = URL.createObjectURL(zipBlob);
-                           link.download = `point_${new Date().getTime()}.zip`;
-                           link.click();
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
 
-                           const arrayB = Array.from(new Set(dpl));
-                            window.alert(`✅ 完了しました。\n✅ ダウンロード: ${fileCount}ファイル\n✅ レイヤー欄にも表示されます。`);
-                          } catch(error) {
-                            console.error(error);
-                          }
-                          })
-                        .catch(error => {
-                          console.log(error);
-                            //modalDialog.close();
-                        })
-                        .finally(() => setLoading(false)); // ★成功・失敗どちらでも必ず解除
-    };
-     
-    return (
-          <div>
+      const result = await response.json();
+      console.log('Task started:', result);
 
-            <form action="" method="POST" encType="multipart/form-data" onSubmit={(e) => {
-                e.preventDefault(); // リロード防止
-                
-                  try{
-                    let formData = new FormData();
-                    let file = filesRef.current.files;
-                    
-                    if (file.length === 0) {
-                        
-                        console.log('Please select a file first!');
-                        return;
-                    }
-                    
-                    // 'file' must match the key used in request.files['file'] on the server
-                    for (let f=0;f<file.length;f++){
-                      formData.append('file', file[f]);
-                        console.log(file[f]);
+      if (!result.task_id) {
+        throw new Error('No task_id returned from API');
+      }
 
-                    }
-                    formData.append('parameter', paramRef.current.file);
-                    console.log(formData);
-                    setAgency(agencyRef.current.value);
-                    fetchPoint(formData);
-                    
-                  } catch(e) {
-                  }
-              }}>
-                <FileField
-                  label="区域・メッシュファイル"
-                  required
-                  hint="CSV 形式のポイントデータを選択してください（複数選択可）。"
-                  inputRef={filesRef}
-                  accept=".csv"
-                  multiple
-                />
-                <FileField
-                  label="区域・メッシュファイル"
-                  required
-                  hint="CSV 形式のパラメータデータを選択してください。"
-                  inputRef={paramRef}
-                  accept=".csv"
-                />
-                <TextField label="グルーピング名称（任意）" inputRef={agencyRef} inline />
-                <PrimaryButton>アップロード</PrimaryButton>
-            </form>
-          </div>
-    );
+      // 2. task_id を保存（ポーリング開始）
+      setTaskId(result.task_id);
+      setProgress(10);
+    } catch (err) {
+      console.error('Error starting task:', err);
+      setError(err.message);
+      setLoading(false);
+    }
   };
 
+  /**
+   * ポーリングで結果を確認
+   */
+  useEffect(() => {
+    if (!taskId) return;
+
+    const pollResults = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/result/${taskId}`);
+
+        if (!response.ok) {
+          throw new Error(`Status check failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Task status:', result);
+
+        if (result.status === 'completed') {
+          // 3. 完了 → データ処理
+          setProgress(90);
+          await handleSuccess(result.result);
+          setTaskId(null);
+          setProgress(100);
+          setLoading(false);
+        } else if (result.status === 'failed') {
+          // エラー
+          throw new Error(result.error || '処理に失敗しました');
+        } else {
+          // 処理中：プログレスを更新
+          setProgress((prev) => Math.min(prev + 5, 85));
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+        setError(err.message);
+        setTaskId(null);
+        setLoading(false);
+      }
+    };
+
+    const interval = setInterval(pollResults, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [taskId]);
+
+  /**
+   * API から返された結果を処理
+   */
+  const handleSuccess = async (data) => {
+    try {
+      setAgency('');
+      const zip = new JSZip();
+      let dpl = [];
+      let fileCount = 0;
+
+      console.log('Processing data:', data);
+
+      for (let d in data.property) {
+        let dp0 = 'area';
+        dpl.push(dp0);
+        let dp1 = data.filename[d];
+        let d0 = data.data[d];
+        let d001 = data.detail[d];
+
+        // GeoJSON に property フィールドを追加
+        d0.property = dp0;
+
+        let data_existed = { detail: dp1, checked: true, data: d0 };
+        console.log(data_existed, dp0);
+
+        let d01 = JSON.stringify(
+          {
+            property: dp0,
+            data: d0,
+            detail: data.property[d],
+            agency: '',
+          },
+          null,
+          2
+        );
+
+        // ZIP にファイル追加
+        zip.file(`point_${dp1}_metadata.json`, d01);
+        let geojsonData = JSON.stringify(d0, null, 2);
+        zip.file(`point_${dp1}.geojson`, geojsonData);
+
+        setData(data_existed, dp0);
+        fileCount++;
+      }
+
+      // ZIP を生成してダウンロード
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = `point_${new Date().getTime()}.zip`;
+      link.click();
+
+      window.alert(
+        `✅ 完了しました。\n✅ ダウンロード: ${fileCount}ファイル\n✅ レイヤー欄にも表示されます。`
+      );
+    } catch (err) {
+      console.error('Error processing result:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      let formData = new FormData();
+      let file = filesRef.current.files;
+
+      if (file.length === 0) {
+        setError('ファイルを選択してください');
+        return;
+      }
+
+      for (let f = 0; f < file.length; f++) {
+        formData.append('file', file[f]);
+      }
+
+      formData.append('parameter', paramRef.current.file);
+      setAgency(agencyRef.current.value);
+
+      // 非同期 API を呼び出し
+      fetchPointAsync(formData);
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div>
+      {/* エラー表示 */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* フォーム（処理中は非表示） */}
+      {!taskId ? (
+        <form onSubmit={handleSubmit} encType="multipart/form-data">
+          <FileField
+            label="区域・メッシュファイル"
+            required
+            hint="CSV 形式のポイントデータを選択してください（複数選択可）。"
+            inputRef={filesRef}
+            accept=".csv"
+            multiple
+          />
+          <FileField
+            label="区域・メッシュファイル"
+            required
+            hint="CSV 形式のパラメータデータを選択してください。"
+            inputRef={paramRef}
+            accept=".csv"
+          />
+          <TextField label="グルーピング名称（任意）" inputRef={agencyRef} inline />
+          <PrimaryButton disabled={!!taskId}>アップロード</PrimaryButton>
+        </form>
+      ) : (
+        // 処理中：プログレスバー表示
+        <Box sx={{ p: 2 }}>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            処理中... {progress}%
+          </Typography>
+          <LinearProgress variant="determinate" value={progress} />
+          <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+            Task ID: {taskId}
+          </Typography>
+        </Box>
+      )}
+    </div>
+  );
+};
 
 export default RenderPoint;

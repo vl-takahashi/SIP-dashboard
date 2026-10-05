@@ -10,7 +10,7 @@ const FetchTest = (props) => {
         let testvalue = document.getElementById("testvalue").value;
         let input =JSON.stringify({"id":parseInt(testvalue)});
         console.log(input);
-        await fetch(`http://52.62.35.205:5000/num?id=${testvalue}`,{
+        await fetch(`https://www.vl-sip/module/num?id=${testvalue}`,{
                         
                           headers: {
                             "Content-Type": "application/json"

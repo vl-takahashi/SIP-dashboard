@@ -17,11 +17,8 @@ const MeshAddress = (props) => {
   const popmeshidRef = useRef();
   const dimentionRef = useRef();
   const setArea = useAreaStore((state) => state.setArea);
-  const setData = useDataStore((state) => state.setData);
   const setAddress=useAddressStore((state)=>state.selectAddress);
   const setMesh=useMeshidStore((state)=>state.setMesh);
-  // submit〜レスポンス受信までFundamentalVisualize側にローディング表示を出すための共有state
-  const setLoading = useLoadingStore((state) => state.setLoading);
   const [key_code, setKeycode] = useState('');
   const [dimention, setDimention] = useState('');
   const [kisoMeshColumns, setKisoMeshColumns] = useState([]);
@@ -87,135 +84,189 @@ const MeshAddress = (props) => {
     }
     })();
   },[]);
-  const makemesh= async(formData)=>{
-      setLoading(true); // ★ここから応答待ち
-      await fetch(`https://sip-diagnosis-663815372380.asia-northeast1.run.app/mesh_with_address`,{
-                          method:"POST",
-                          body: formData}) // data.json ファイルを非同期で取得
-                          .then(res => 
-                          res.json())
-                          .then(data => {
-                            let meter0 = parseInt(dimentionRef.current.value);
-                            let city0 = cityRef.current.value;
-                            let address = selectedAddress;
-                            let dp0="addressed";
-                            let dp1=`popmesh_${meter0}_${city0}_addressed.json`;
-                            console.log(dp0);
-                            data_existed[dp0]=[`${meter0}_${city0}_addressed`,true,data.data];
-                            console.log(data_existed);
-                            let d001=JSON.stringify({"property":"addressed","data":data.data,"address":address,"area":data.area,"detail":`popmesh_${meter0}_${city0}_addressed`});
-                            let blob1 = new Blob([d001], { type: "application/json" });
-                            const link1 = document.createElement("a");
-                            link1.href = URL.createObjectURL(blob1);
-                            link1.download = dp1; // 保存するファイル名
-                            link1.click(); // クリックしてダウンロード
-                            let d002=JSON.stringify(data.data);
-                            let blob2 = new Blob([d002], { type: "application/geojson" });
-                            const link2 = document.createElement("a");
-                            link2.href = URL.createObjectURL(blob2);
-                            let dp2=`popmesh_${meter0}_${city0}_addressed.geojson`;
-                            link2.download = dp2; // 保存するファイル名
-                            link2.click(); // クリックしてダウンロード
-                            const Popcode=popmeshidRef.current.value;
-                            setAddress(Popcode);
-                            setMesh(selectedMesh);
-                            setArea(data.area);
-                          })
-                          .catch(error => {
-                            console.log(error);
-                              //modalDialog.close();
-                          })
-                          .finally(() => setLoading(false)); // ★成功・失敗どちらでも必ず解除
-                        };
-    
-     
-    return (
-          <div>
-              <form action="" method="POST" encType="multipart/form-data" onSubmit={(e) => {
-                  e.preventDefault(); // リロード防止
-                  const formData = new FormData();
-                  try{
-                    let kisomeshfile = kisomeshfilesRef.current.files;
-                
-                    
-              
-                  // ★ 表示メッシュをGeoJSONで統合して送信
-                    const popmesh = dataStore.data["popmesh"] || [];
-
-                    // 全表示メッシュの features を統合
-                    const allFeatures = [];
-                    for (const [name, visible, geojson] of popmesh) {
-                      if (!visible) continue;
-                      if (geojson?.features) {
-                        allFeatures.push(...geojson.features);
-                      }
-                    }
-
-                    // 統合されたGeoJSONを作成
-                    const meshGeoJSON = {
-                      type: "FeatureCollection",
-                      features: allFeatures
-                    };
-                    const metadataBlob1 = new Blob([JSON.stringify(meshGeoJSON)], { type: 'application/json' });
-                    formData.append('popmeshid', selectedMesh);
-                    formData.append('meshdf', metadataBlob1);
-                    console.log(formData);
-                    // 'file' must match the key used in request.files['file'] on the server
-                    for (const f of kisomeshfile){
-                      formData.append('kisomesh', f); 
-                
-                    }
-                    console.log(formData);
-                    let addressid = selectedAddress;
-                    formData.append('addressid', addressid);
-                    for (let value of formData.entries()) { 
-                        console.log(value); 
-                    }
-                    console.log("address")
-                    makemesh(formData);
-                  } catch(e) {
-                    console.log(e.message);
-                  }
-                }}>
-                  <FileField
-                    label="地域区分ファイル(GeoJSON)"
-                    hint="住所・地域区分を含むGeoJSONファイルを選択してください。"
-                    inputRef={kisomeshfilesRef}
-                    accept=".geojson"
-                    onChange={handleKisoMeshFileChange}
-                  />
-                  <SelectField
-                    label="住所列名"
-                    value={selectedAddress}
-                    onChange={(e) => setSelectedAddress(e.target.value)}
-                    inline
-                  >
-                    {kisoMeshColumns.length > 0 ? (
-                      kisoMeshColumns.map((col) => (
-                        <option key={col} value={col}>{col}</option>
-                      ))
-                    ) : (
-                      <option value="市区町村">市区町村</option>
-                    )}
-                  </SelectField>
-                  <SelectField
-                    label="表示人口メッシュのメッシュコード列名"
-                    value={selectedMesh}
-                    onChange={(e) => setSelectedMesh(e.target.value)}
-                    inline
-                  >
-                    {
-                      popMeshColumns.map((col) => (
-                        <option key={col} value={col}>{col}</option>
-                      ))}
-                  </SelectField>
-                  <TextField label="市区町村名" inputRef={cityRef} defaultValue="広島県東広島市" inline />
-                  <TextField label="上記ファイルのメッシュ単位(m)" inputRef={dimentionRef} defaultValue="250" inline />
-
-                  <PrimaryButton>メッシュ住所追加</PrimaryButton>
-              </form>
-          </div>
-    )};
-
-
-export default MeshAddress;
+  const fileRef = useRef();
+   const meshfileRef = useRef();
+   const agencyRef = useRef();
+ 
+   const setData = useDataStore((state) => state.setData);
+   const setAgency = useDataStore((state) => state.setAgency);
+   const setLoading = useLoadingStore((state) => state.setLoading);
+ 
+   const [taskId, setTaskId] = useState(null);
+   const [progress, setProgress] = useState(0);
+   const [error, setError] = useState(null);
+ 
+   const API_BASE = 'https://vl-sip.com/module';
+   const API_ENDPOINT = 'mesh_with_address';
+   const POLL_INTERVAL = 1000;
+ 
+   const fetchDataAsync = async (formData) => {
+     setLoading(true);
+     setError(null);
+     setProgress(0);
+ 
+     try {
+       const response = await fetch(`${API_BASE}/${API_ENDPOINT}`, {
+         method: 'POST',
+         body: formData,
+       });
+ 
+       if (!response.ok) throw new Error(`API Error: ${response.status}`);
+ 
+       const result = await response.json();
+       if (!result.task_id) throw new Error('No task_id returned');
+ 
+       setTaskId(result.task_id);
+       setProgress(10);
+     } catch (err) {
+       console.error('Error:', err);
+       setError(err.message);
+       setLoading(false);
+     }
+   };
+ 
+   useEffect(() => {
+     if (!taskId) return;
+ 
+     const pollResults = async () => {
+       try {
+         const response = await fetch(`${API_BASE}/result/${taskId}`);
+         if (!response.ok) throw new Error('Status check failed');
+ 
+         const result = await response.json();
+ 
+         if (result.status === 'completed') {
+           setProgress(90);
+           await handleSuccess(result.result);
+           setTaskId(null);
+           setProgress(100);
+           setLoading(false);
+         } else if (result.status === 'failed') {
+           throw new Error(result.error || '処理に失敗しました');
+         } else {
+           setProgress((prev) => Math.min(prev + 5, 85));
+         }
+       } catch (err) {
+         console.error('Polling error:', err);
+         setError(err.message);
+         setTaskId(null);
+         setLoading(false);
+       }
+     };
+ 
+     const interval = setInterval(pollResults, POLL_INTERVAL);
+     return () => clearInterval(interval);
+   }, [taskId]);
+ 
+   const handleSuccess = async (data) => {
+     try {
+       const zip = new JSZip();
+       let fileCount = 0;
+ 
+       for (let d in data.property) {
+         let dp0 = 'mesh_address';
+         let dp1 = data.filename[d];
+         let d0 = data.data[d];
+         d0.property = dp0;
+ 
+         let d01 = JSON.stringify(
+           { property: dp0, data: d0, detail: data.property[d], agency: '' },
+           null,
+           2
+         );
+ 
+         zip.file(`${API_ENDPOINT}_${dp1}_metadata.json`, d01);
+         zip.file(`${API_ENDPOINT}_${dp1}.geojson`, JSON.stringify(d0, null, 2));
+ 
+         setData({ detail: dp1, checked: true, data: d0 }, dp0);
+         fileCount++;
+       }
+ 
+       const zipBlob = await zip.generateAsync({ type: 'blob' });
+       const link = document.createElement('a');
+       link.href = URL.createObjectURL(zipBlob);
+       link.download = `${API_ENDPOINT}_${new Date().getTime()}.zip`;
+       link.click();
+ 
+       window.alert(`✅ 完了: ${fileCount}ファイル`);
+     } catch (err) {
+       console.error('Error:', err);
+       setError(err.message);
+     }
+   };
+ 
+   const handleSubmit = (e) => {
+     e.preventDefault();
+     setError(null);
+ 
+     try {
+       let formData = new FormData();
+ 
+       if (fileRef.current?.files) {
+         for (let f of fileRef.current.files) {
+           formData.append('file', f);
+         }
+       }
+ 
+       if (meshfileRef.current?.files) {
+         for (let f of meshfileRef.current.files) {
+           formData.append('mesh_file', f);
+         }
+       }
+ 
+       if (agencyRef.current?.value) {
+         formData.append('agency', agencyRef.current.value);
+       }
+ 
+       if (!fileRef.current?.files?.length) {
+         setError('ファイルを選択してください');
+         return;
+       }
+ 
+       fetchDataAsync(formData);
+     } catch (err) {
+       console.error('Error:', err);
+       setError(err.message);
+     }
+   };
+ 
+   return (
+     <div>
+       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+       {!taskId ? (
+         <form onSubmit={handleSubmit} encType="multipart/form-data">
+           <FileField
+             label="アドレスファイル"
+             required
+             hint="処理対象のファイルを選択してください（複数選択可）。"
+             inputRef={fileRef}
+             accept=".geojson,.json,.csv,.zip"
+             multiple
+           />
+           <FileField
+             label="メッシュファイル"
+             inputRef={meshfileRef}
+             multiple
+           />
+           <TextField
+             label="グルーピング名称（任意）"
+             inputRef={agencyRef}
+             inline
+           />
+           <PrimaryButton disabled={!!taskId}>アップロード</PrimaryButton>
+         </form>
+       ) : (
+         <Box sx={{ p: 2 }}>
+           <Typography variant="body2" sx={{ mb: 1 }}>処理中... {progress}%</Typography>
+           <LinearProgress variant="determinate" value={progress} />
+           <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+             Task ID: {taskId}
+           </Typography>
+         </Box>
+       )}
+     </div>
+   );
+ };
+ 
+ export default MeshAddress;
+ 

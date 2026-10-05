@@ -685,6 +685,7 @@ export async function refreshJsonData(path, sessionId, propertyFilter) {
     }
 
     console.log(`読み込み成功！（失敗ファイル数: ${failedFileCount}）`);
+    console.log(useDataStore.getState().data)
 
     // 📌 sessionId指定時：フィルタリング済みデータを Vercel KV に送信
     if (sessionId && filteredTransitData) {

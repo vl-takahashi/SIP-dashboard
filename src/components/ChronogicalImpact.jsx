@@ -1,8 +1,9 @@
 import React from 'react';
-import {createContext, useContext,useState,useRef} from 'react'
+import {createContext, useContext,useState,useRef,useEffect} from 'react'
 import {useDataStore,useDestStore,useOrigStore,usePooledweekdayStore,useWeekdayStore,useLoadingStore} from "./useStore";
 import { FieldLabel, FileField, TextField, SelectField, PrimaryButton } from "./VisualizeUI";
 import { COLORS } from "./Globalvariable";
+import Alert from '@mui/material/Alert';
 import JSZip from "jszip";
 
 // import { fetch as tauriFetch } from '@tauri-apps/plugin-http'; // Tauri removed
@@ -51,7 +52,6 @@ const ChronogicalImpact = () => {
   const setDirectOrig = useDestStore((state)=>state.setDirectorig);
   const setTransitOrig = useDestStore((state)=>state.setTransitorig);
   const setWeekday = useWeekdayStore((state)=>state.setWeekday);
-  const destfileRef = useRef();
   const destRef = useRef();
   const interval_hmRef = useRef();
   const cityRef = useRef();
@@ -59,25 +59,17 @@ const ChronogicalImpact = () => {
   const transitRef = useRef();
   const transit_timeRef = useRef();
   const transit_distanceRef = useRef();
-  const fileRef = useRef();
-  const popmeshfilesRef = useRef();
-  const nearestmeterRef = useRef();
-  const meter2Ref = useRef();
-  const agencyRef= useRef();
   const originRef=useRef();
   const setDirectdest = useDestStore((state)=>state.setDirectdest);
   const setTransitdest = useDestStore((state)=>state.setTransitdest);
   const setPooledweekday=usePooledweekdayStore((state)=>state.setPooledweekday);
-  const dataStore = useDataStore((state) => state);
+  const data = useDataStore((state) => state.data);
   const [origincurrent,originSetcurrent]=useState("dest");
   const [directcurrent,setdirectcurrent]=useState("direct");
   const [submit,submitbutton]=useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
-  const setData =useDataStore((state) => state.setData);
-  const setAgency = useDataStore((state) => state.setAgency);
   const setinner = useDataStore((state) => state.setinner);
   // submit〜レスポンス受信までFundamentalVisualize側にローディング表示を出すための共有state
-  const setLoading = useLoadingStore((state) => state.setLoading);
 const [agencyOptions, setAgencyOptions] = useState([]);
     const [agencyValue, setAgencyValue] = useState("");
     const handleGtfsZipChange = async (e) => {
@@ -119,107 +111,131 @@ const [agencyOptions, setAgencyOptions] = useState([]);
       }
     };
   // ★ 修正：Vercel API ルート経由で診断モジュールを呼び出し（バッファ読み込み版）
-  const fetchChronogicalImpactAsync = async (formData, routingvalue) => {
-    let data_existed = [];
-    console.log(routingvalue);
-
-    // ✅ ECS に直接アクセス（30分処理対応）
-    const endpoint = routingvalue === "frequency"
-      ? "frequency_impact_to_destination_on_route"
-      : "chronogical_impact";
-    const url = `https://sip-diagnosis-663815372380.asia-northeast1.run.app/${endpoint}`;
-
-    setLoading(true);
-    setErrorMessage(null);
-
-    try {
-      const response = await fetch(`${url}`, {
-        method: "POST",
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`API エラー: ${response.status} ${response.statusText}`);
+  const fileRef = useRef();
+    const destfileRef = useRef();
+    const popmeshfilesRef = useRef();
+    const nearestmeterRef = useRef();
+    const meter2Ref = useRef();
+    const agencyRef = useRef();
+  
+    const setData = useDataStore((state) => state.setData);
+    const setAgency = useDataStore((state) => state.setAgency);
+    const setLoading = useLoadingStore((state) => state.setLoading);
+  
+    const [taskId, setTaskId] = useState(null);
+    const [progress, setProgress] = useState(0);
+    const [error, setError] = useState(null);
+    //vl-sip
+    const API_BASE = 'https://www.vl-sip/module';
+    const API_ENDPOINT = 'chronogical_impact';
+    const POLL_INTERVAL = 1000;
+  
+    const fetchDataAsync = async (formData) => {
+      setLoading(true);
+      setError(null);
+      setProgress(0);
+  
+      try {
+        const response = await fetch(`${API_BASE}/${API_ENDPOINT}`, {
+          method: 'POST',
+          body: formData,
+        });
+        for (let [key, value] of formData.entries()) {
+          console.log(`  ${key}:`, value instanceof File ? value.name : value);
+        }
+        console.log(response);
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+  
+        const result = await response.json();
+        if (!result.task_id) throw new Error('No task_id returned');
+  
+        setTaskId(result.task_id);
+        setProgress(10);
+      } catch (err) {
+        console.error('Error:', err);
+        setError(err.message);
+        setLoading(false);
       }
-
-      const data = await response.json();
-
-      setAgency("");
-
-      let transit = transitRef.current.value;
-      let dest_name = destRef.current.value;
-      let dp0 = `${routingvalue}_${transit}_${originRef.current.value}`;
-
-      console.log("API レスポンス:", data);
-
-      data_existed = {"detail":`${dest_name}着_${routingvalue}`, "checked":true, "data":data};
-      if (transit==="direct"){
-        originRef.current.value=="dest"?setDirectDest(dest_name):setDirectOrig(dest_name);
-      } else {
-        originRef.current.value=="dest"?setTransitDest(dest_name):setTransitOrig(dest_name);
+    };
+  
+    useEffect(() => {
+      if (!taskId) return;
+  
+      const pollResults = async () => {
+        try {
+          const response = await fetch(`${API_BASE}/result/${taskId}`);
+          if (!response.ok) throw new Error('Status check failed');
+  
+          const result = await response.json();
+  
+          if (result.status === 'completed') {
+            setProgress(90);
+            await handleSuccess(result.result);
+            setTaskId(null);
+            setProgress(100);
+            setLoading(false);
+          } else if (result.status === 'failed') {
+            throw new Error(result.error || '処理に失敗しました');
+          } else {
+            setProgress((prev) => Math.min(prev + 5, 85));
+          }
+        } catch (err) {
+          console.error('Polling error:', err);
+          setError(err.message);
+          setTaskId(null);
+          setLoading(false);
+        }
+      };
+  
+      const interval = setInterval(pollResults, POLL_INTERVAL);
+      return () => clearInterval(interval);
+    }, [taskId]);
+  
+    const handleSuccess = async (data) => {
+      try {
+        const zip = new JSZip();
+        let fileCount = 0;
+  
+        for (let d in data.property) {
+          let dp0 = 'chronological_impact';
+          let dp1 = data.filename[d];
+          let d0 = data.data[d];
+          d0.property = dp0;
+  
+          let d01 = JSON.stringify(
+            { property: dp0, data: d0, detail: data.property[d], agency: '' },
+            null,
+            2
+          );
+  
+          zip.file(`${API_ENDPOINT}_${dp1}_metadata.json`, d01);
+          zip.file(`${API_ENDPOINT}_${dp1}.geojson`, JSON.stringify(d0, null, 2));
+  
+          setData({ detail: dp1, checked: true, data: d0 }, dp0);
+          fileCount++;
+        }
+  
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(zipBlob);
+        link.download = `${API_ENDPOINT}_${new Date().getTime()}.zip`;
+        link.click();
+  
+        window.alert(`✅ 完了: ${fileCount}ファイル`);
+      } catch (err) {
+        console.error('Error:', err);
+        setError(err.message);
       }
-      setData(data_existed, dp0);
-      setWeekday(data.weekday);
-      setPooledweekday(data.weekday);
-      // ファイルダウンロード（JSON + GeoJSON）
-      const metadataLink1 = document.createElement("a");
-      const metadataLink2 = document.createElement("a");
-      const d01={
-        "property": dp0,
-        "detail": `${dest_name}着_${routingvalue}`,
-        "data": data.data,
-        "interval":data.interval,
-        "dest":data.dest,
-        "weekday":data.weekday,
-        "destpoint":data.point,
-        "inner":innerRef.current.value
-      }
-      const o01={
-        "property": dp0,
-        "detail": `${dest_name}着_${routingvalue}`,
-        "data": data.data,
-        "interval":data.interval,
-        "orig":data.orig,
-        "weekday":data.weekday,
-        "destpoint":data.point,
-        "inner":innerRef.current.value
-      }
-      // Blob1: JSON メタデータ
-      const d001 = JSON.stringify(originRef.current.value=="dest"?d01:o01, null, 2);
-
-      const metadataBlob1 = new Blob([d001], { type: 'application/json' });
-      metadataLink1.href = URL.createObjectURL(metadataBlob1);
-      metadataLink1.download = originRef.current.value=="dest"?`chronogical_${routingvalue}_${transit}_${dest_name}.json`:`chronogical_${routingvalue}_${transit}_${dest_name}.json`;
-      metadataLink1.click();
-      console.log("JSON ファイルをダウンロード:", metadataLink1.download);
-
-      //const d002 = JSON.stringify(data.file, null, 2);
-      //const metadataBlob2 = new Blob([d002], { type: 'application/json' });
-      //metadataLink2.href = URL.createObjectURL(metadataBlob2);
-      //metadataLink2.download = `chronogical_${routingvalue}_${transit}_${data.orig}_${dest_name}.geojson`;
-      //metadataLink2.click();
-
-      // メモリリーク防止
-      setTimeout(() => {
-        URL.revokeObjectURL(metadataLink1.href);
-        URL.revokeObjectURL(metadataLink2.href);
-      }, 1000);
-
-    } catch (error) {
-      console.error("診断 API エラー:", error);
-      setErrorMessage(error.message || "サーバーエラーが発生しました");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-
-    try {
-      // 入力値取得
-      const file = fileRef.current?.files;
+    };
+  
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      setError(null);
+  
+      try {
+        let formData = new FormData();
+  
+        const file = fileRef.current?.files;
       const destr = destRef.current?.value?.trim();
       const destfiler = destfileRef.current?.files;
       const interval_hm = interval_hmRef.current?.value;
@@ -266,15 +282,7 @@ const [agencyOptions, setAgencyOptions] = useState([]);
       }
 
 
-      if (destfiler && destfiler.length > 0) {
-        for (const f of destfiler) {
-          console.log("施設ファイル追加:", f.name);
-          formData.append('destfiles', f);
-        }
-      } else {
-        formData.append('dest', destr);
-      }
-
+      formData.append('dest', destr);
       formData.append('nearestmeter', nearestmeter);
       formData.append('interval_hm', interval_hm);
       formData.append('origin', orig1);
@@ -282,14 +290,14 @@ const [agencyOptions, setAgencyOptions] = useState([]);
       formData.append('inner', inner);
 
       // ✅ メッシュID だけ抽出して送信（ペイロード削減）
-      const popmesh = dataStore.data["popmesh"] || [];
-      console.log(popmesh)
-
+      const popmesh = data["popmesh"] || [];
       // メッシュID を抽出
       const meshIds = [];
-      for (let d in popmesh) {
-        if (popmesh[d]["data"]?.features) {
-          for (const feature of popmesh[d]["data"].features) {
+      for (const geojson of popmesh) {
+      console.log(geojson.data)
+        
+        if (geojson.data?.features) {
+          for (const feature of geojson.data.features) {
             const meshId = feature.properties?.MESH_ID || feature.properties?.KEY_CODE;
             if (meshId) {
               meshIds.push(meshId);
@@ -320,32 +328,20 @@ const [agencyOptions, setAgencyOptions] = useState([]);
       for (let [key, value] of formData.entries()) {
         console.log(`  ${key}: ${value instanceof File ? value.name : value}`);
       }
-
-      fetchChronogicalImpactAsync(formData, submit);
-
-    } catch (error) {
-      console.error("フォーム検証エラー:", error.message);
-      setErrorMessage(error.message);
-    }
-  };
-
-  return (
-        <div className='chronogical_impact_to_destination'>
-              {/* ★ エラーメッセージ表示 */}
-              {errorMessage && (
-                <div style={{
-                  background: '#ffebee',
-                  color: '#c62828',
-                  padding: '12px 16px',
-                  borderRadius: 4,
-                  marginBottom: 16,
-                  border: '1px solid #ef5350'
-                }}>
-                  <strong>エラー:</strong> {errorMessage}
-                </div>
-              )}
-
-              <form action="" method="POST" encType="multipart/form-data" onSubmit={handleSubmit}>
+      console.log('fetchDataAsync を呼び出します');
+      await fetchDataAsync(formData);
+      console.log('fetchDataAsync が完了しました');
+      } catch (err) {
+        console.error('Error:', err);
+        setError(err.message);
+      }
+    };
+  
+    return (
+      <div>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {!taskId ? (
+          <form action="" method="POST" encType="multipart/form-data" onSubmit={handleSubmit}>
                 <div>
                     <div style={stepBoxStyle}>
                       <div style={{"display":"flex"}}>
@@ -357,11 +353,8 @@ const [agencyOptions, setAgencyOptions] = useState([]);
                       </div>
                     </div>
                     <div style={stepBoxStyle}>
-                    <FieldLabel>Step1. 施設の設定</FieldLabel>
-                    <p style={hintTextStyle}>施設名のみがA列に入ったxlsxからそれぞれ(からの/への)到達圏域を時間帯別に算出したいとき</p>
-                    <FileField inputRef={destfileRef} hint="施設一覧(xlsx)を選択してください。" inline/>
-                    <p style={hintTextStyle}>1つの施設(からの/への)到達圏域を時間帯別に算出したいとき</p>
-                    <TextField inputRef={destRef} placeholder="施設等を入力" inline/>
+                    <FieldLabel>Step1. 目的地・出発地の設定</FieldLabel>
+                    <TextField inputRef={destRef} placeholder="目的地・出発地を入力" inline/>
                     </div>
 
                     <div style={stepBoxStyle}>
@@ -435,8 +428,17 @@ const [agencyOptions, setAgencyOptions] = useState([]);
 
                 </form>
                 
-          </div>
-        )
-      }
-
-export default ChronogicalImpact;
+        ) : (
+          <Box sx={{ p: 2 }}>
+            <Typography variant="body2" sx={{ mb: 1 }}>処理中... {progress}%</Typography>
+            <LinearProgress variant="determinate" value={progress} />
+            <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+              Task ID: {taskId}
+            </Typography>
+          </Box>
+        )}
+      </div>
+    );
+  };
+  
+  export default ChronogicalImpact;
