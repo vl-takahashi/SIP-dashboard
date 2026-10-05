@@ -2,11 +2,11 @@ import React, { lazy, Suspense } from 'react';
 import {createContext, useContext,useState,useEffect,useRef,useMemo,useCallback} from 'react'
 import Map from 'react-map-gl/mapbox';
 import ExistedData from "./ExistedData";
-import Ledends from "./Legends";
+import Legends from "./Legends";
 // If using with mapbox-gl v1:
 // import Map from 'react-map-gl/mapbox-legacy';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import UpdateLayers from './AccessibilityRenderLayers';
+import UpdateLayers from './AccessibilityRenderLayers'; // TODO: Migrate to Mapbox
 
 import { Slider, Box, Typography } from '@mui/material';
 import Discuss from './Discuss';
@@ -20,7 +20,7 @@ import RenderLine from './RenderLine';
 import MouseOver1 from './MouseOver1';
 import Mousearea from "./MouseArea";
 import FileValidated from './FileValidated';
-import { useClickareaStore,useOrigStore,useLayerflagStore,useDirectStore,useEditStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore,useViewAccesibilityStore} from "./useStore";
+import { useClickareaStore,useStaycheckStore,useOrigStore,useOrigDestStore,useLayerflagStore,useDirectStore,useEditStore,useLayercheckStore,useBarchartStore,useAreaStore,useWeekdayStore,useKindStore,useTimesliderStore,useDataStore,useClickstopStore,useClickneareststopStore,useClicknearestbuslineStore,useClicknearestridetimeStore,useClicknearestgetofftimeStore, useDestStore,useViewAccesibilityStore} from "./useStore";
 import FetchTest from './FetchTest';
 import SpatialLayercheck from './SpatialLayercheck';
 import ChronogicalLayercheck from './ChronogicalLayercheck';
@@ -40,6 +40,8 @@ const AccessibilityTab = () => {
 // ✅ hookで取る
 const time = useTimesliderStore(state => state.time)
 const clicktime = useTimesliderStore(state => state.clicktime)
+const staycheck = useStaycheckStore(state => state.staycheck)
+const setStaycheck = useStaycheckStore(state => state.setStaycheck)
 const [data, setData] = useState('');
 const [showAddressChart, setShowAddressChart] = useState(false);  // 📌 BarChart 表示/非表示
 const [showBarChart, setShowBarChart] = useState(false);  // 📌 BarChart 表示/非表示
@@ -62,7 +64,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const directorig=useOrigStore((state)=> state.directorig);
   const transitorig=useOrigStore((state)=> state.transitorig);
   const weekday=useWeekdayStore((state)=> state.weekday);
-  const direct=["直通","乗継"];
+  const stay={"単路":"nostay","滞在時間":"stay"};
+  const direct={"直通":"direct","乗継":"transit"};
   const selectDirect=useDirectStore((state)=> state.selectDirect);
   const layercheck=useLayercheckStore((state)=> state.layercheck);
   const setlayercheck=useLayercheckStore((state)=> state.selectLayercheck);
@@ -88,6 +91,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
     setClickareahousehold,
     setClickareapopdensity
   } = useClickareaStore.getState()
+  const setorigdest=useOrigDestStore(state => state.setorigdest)
+  const origdest=useOrigDestStore(state => state.origdest)
   const edit = useEditStore(state => state.edit)
   const setEdit = useEditStore(state => state.setEdit)
   const [check,setLayerchecked] = useState(initialCheck);
@@ -95,6 +100,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const [value, setValue] = useState(time);
     const dest=useDestStore((state)=> state.dest);
   const selectdestref = useRef();
+  const selectstayref=useRef();
   const selectweekdayref = useRef();
   const selectkindref = useRef();
   const selectarearef=useRef();
@@ -106,15 +112,28 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
   const [destcurrent,setdestcurrent]=useState("未選択");
   const [origcurrent,setorigcurrent]=useState("未選択");
   const [origdestcurrent,selectorigdestcurrent]=useState("dest");
+  const [staycurrent,setstaycurrent]=useState("nostay");
   const [directcurrent,setdirectcurrent]=useState("直通");
   const [weekdaycurrent,setweekdaycurrent]=useState("未選択");
   const [layercheckcurrent,setlayercheckcurrent]=useState("複数レイヤー表示");
-  const [kindcurrent,setkindcurrent]=useState("未選択");
+  const [kindcurrent,setkindcurrent]=useState("所要時間");
   const [areacurrent,setareacurrent]=useState("未選択");
   const [selectedCity,setSelectedCity]=useState("東京都新宿区");
   const [searchText,setSearchText]=useState("");
   const viewAccessibility = useViewAccesibilityStore((state)=>state.select);
   const setViewAccessibility = useViewAccesibilityStore((state)=>state.selectView);
+
+  // ✅ マウント時に初期座標（新宿区）にリセット
+  useEffect(() => {
+    const initialViewState = {
+      longitude: yakuba["東京都新宿区"]["lng"],
+      latitude: yakuba["東京都新宿区"]["lat"],
+      zoom: 12,
+      pitch: 0,
+      bearing: 0,
+    };
+    setViewAccessibility(initialViewState);
+  }, []);
 
   // 市町村選択時に地図中心を移動
   const handleCityChange = (e) => {
@@ -446,30 +465,6 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                   <div>に到着できる地区別</div>
                                   <div>{showBarChart ? '人口を閉じる' : '人口を表示'}</div>
                                 </button>
-                                <button
-                                  onClick={() => setShowAddressChart(!showAddressChart)}
-                                  style={{
-                                    padding: '6px 10px',
-                                    background: showBarChart ? '#4CAF50' : '#ff00c8',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 4,
-                                    cursor: 'pointer',
-                                    fontSize: 12,
-                                    fontWeight: 'bold',
-                                    minHeight: '40px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 2
-                                  }}
-                                >
-                                  <div>📊任意の住所から</div>
-                                  <div>{destcurrent}</div>
-                                  <div>に到着できる時間帯</div>
-                                  <div>{showAddressChart ? '時間帯を閉じる' : '時間帯を表示'}</div>
-                                </button>
                               </div>
                             )}
                           </div>
@@ -477,7 +472,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
 
 
                         {/* 左上：レイヤー切替パネル。タブレットでは幅を絞り、セレクトの高さをタップしやすいサイズに保つ。
-                            maxWidthは常に指定し、凡例（Ledends）がタイムスライダー操作で文字幅・行数を変えても
+                            maxWidthは常に指定し、凡例（Legends）がタイムスライダー操作で文字幅・行数を変えても
                             白背景パネルの外に飛び出さないようにする。 */}
                         <div style={floatingStyle({ top: isTablet ? 8 : 100, left: isTablet ? 8 : 16, minWidth: isTablet ? 150 : 180, maxWidth: isTablet ? '45vw' : 260 })}>
                           <select
@@ -503,8 +498,10 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             <h3 style={{margin:'0 0 4px'}}>レイヤー</h3>
                             <SpatialLayercheck checked={check}/>
                           </div>}
-                          {layercheckcurrent==="タイムスライダー"&&
-                          <div style={{ marginTop: 8, maxWidth: '100%', overflow: 'hidden' }}><Ledends selectkind={kindcurrent}/></div>}
+                            {layercheckcurrent==="タイムスライダー"&&
+                            <div style={{ marginTop: 8, maxHeight: isTablet ? '50vh' : undefined, overflowY: isTablet ? 'auto' : undefined }}>
+                            <Legends tabName="AccessibilityTab" selectkind={kindcurrent}/>
+                            </div>}
                         </div>
                       </div>
                       {layercheckcurrent==="タイムスライダー"&&
@@ -523,13 +520,29 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             alignItems: 'center',
                             px: 2,
                             boxShadow: 3,
-                            zIndex: 10
+                            zIndex: 10,
+                            backgroundColor: '#ffffff'
                           }}
                         >
                           <br />
                           <div style={{"display": "flex"}}>
+                            
+                              
                             <div className="select">
+                              <select
+                                value={staycurrent}
+                                onChange={(e) => {setStaycheck(e.target.value);setstaycurrent(e.target.value)}}
+                                ref={selectstayref}
+                                style={{width:'100px',height:'40px'}}
+                              >
+                                <option>単路/滞在</option>
 
+                                {Object.keys(stay).map((item) => (
+                                  <option key={item} value={stay[item]}>
+                                    {item}
+                                  </option>
+                                ))}
+                              </select>
                               <select
                                 value={directcurrent}
                                 onChange={(e) => {selectDirect(e.target.value);setdirectcurrent(e.target.value)}}
@@ -538,8 +551,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               >
                                 <option>直通/乗り継ぎ</option>
 
-                                {direct.map((item, index) => (
-                                  <option key={index} value={item}>
+                                {Object.keys(direct).map((item) => (
+                                  <option key={item} value={direct[item]}>
                                     {item}
                                   </option>
                                 ))}
@@ -547,13 +560,13 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               <br />
                               <fieldset>
                                 <input type="radio" value="dest" ref={origselectref}
-                                onChange={(e) => {selectorigdestcurrent(e.target.value),setorigdestcurrent(e.target.value),origselectref.current.checked?!origselectref.current.checked:!origselectref.current.checked,origselectref.current.checked?destselectref.current.checked=false:destselectref.current.checked=true}}/>
+                                onChange={(e) => {setorigdest(e.target.value),setorigdestcurrent(e.target.value),origselectref.current.checked?!origselectref.current.checked:!origselectref.current.checked,origselectref.current.checked?destselectref.current.checked=false:destselectref.current.checked=true}}/>
                                 <label>目的地</label>
                                 <br></br>
                                 <input type="radio" value="orig" ref={destselectref}
-                                onChange={(e) => {selectorigdestcurrent(e.target.value),setorigdestcurrent(e.target.value),destselectref.current.checked?!destselectref.current.checked:!destselectref.current.checked,destselectref.current.checked?origselectref.current.checked=false:origselectref.current.checked=true}}/>
+                                onChange={(e) => {setorigdest(e.target.value),setorigdestcurrent(e.target.value),destselectref.current.checked?!destselectref.current.checked:!destselectref.current.checked,destselectref.current.checked?origselectref.current.checked=false:origselectref.current.checked=true}}/>
                                 <label>出発地</label>
-                              {origdestcurrent==="dest"&&directcurrent=="直通"&&<div><select
+                              {origdest==="dest"&&directcurrent=="direct"&&<div><select
                                 value={destcurrent}
                                 onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
                                 ref={selectdestref}
@@ -569,7 +582,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                 ))}
                               </select>
                               <br /></div>}
-                              {origdestcurrent==="dest"&&directcurrent=="乗継"&&<div><select
+                              {origdest==="dest"&&directcurrent=="transit"&&<div><select
                                 value={destcurrent}
                                 onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
                                 ref={selectdestref}
@@ -585,10 +598,10 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                                 ))}
                               </select>
                               <br /></div>}
-                              {origdestcurrent==="orig"&&directcurrent=="直通"&&<div>
+                              {origdest==="orig"&&directcurrent=="direct"&&<div>
                               <select
                                 value={origcurrent}
-                                onChange={(e) => {selectOrig(e.target.value);setorigcurrent(e.target.value)}}
+                                onChange={(e) => {selectDest(e.target.value);setorigcurrent(e.target.value)}}
                                 ref={selectorigref}
                                 style={{width:'100px',height:'40px'}}
 
@@ -603,7 +616,7 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                               </select>
                               <br />
                                 </div>}
-                              {origdestcurrent==="orig"&&directcurrent=="乗継"&&<div><select
+                              {origdest==="orig"&&directcurrent=="transit"&&<div><select
                                 value={destcurrent}
                                 onChange={(e) => {selectDest(e.target.value);setdestcurrent(e.target.value)}}
                                 ref={selectdestref}
@@ -675,20 +688,12 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             }}
                             aria-label="Volume"  ref={volumeRef} />
 
-                          <div>
-                            <p style={{fontSize:'13px'}}>地図データ © Google</p>
-                          </div>
 
                         </Box>}
                       </div>
 
-                      {layercheckcurrent==="複数レイヤー表示"&&
-                    <div>
-                      <h1>タイムスライダー表示は利用できません</h1>
-
-                    </div>}
                     {/* 📌 ドラッグ・リサイズ可能なデータ表示パネル */}
-                    {(showBarChart || showAccessibleList|| showAddressChart) && (
+                    {(showBarChart || showAccessibleList) && (
                     <div
                       ref={panelRef}
                       onMouseDown={handlePanelMouseDown}
@@ -756,13 +761,8 @@ const [showAccessibleList, setShowAccessibleList] = useState(false);  // 📌 Ac
                             </div>
                           )}
 
-                          {showAddressChart && (
-                            <div style={{ flex: 1, minHeight: '300px', border: '1px solid #e0e0e0', borderRadius: 6, padding: 8 }}>
-                              <AddressChart layercheckcurrent={layercheckcurrent} selectdirect={directcurrent} selectorigdest={origdestcurrent} selectorig={origcurrent} selectkind={kindcurrent} selectarea={areacurrent} selectweekday={weekdaycurrent} selectdest={destcurrent} selecthour ={parseInt(11+time*100000000)} style={{ width: '100%' }}/>
-                            </div>
-                          )}
 
-                          {!showAccessibleList && !showBarChart && !showAddressChart&&(
+                          {!showAccessibleList && !showBarChart&&(
                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
                               <p>テーブルまたはグラフボタンをクリック</p>
                             </div>

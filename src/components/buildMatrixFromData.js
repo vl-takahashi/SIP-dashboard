@@ -92,11 +92,11 @@ export const buildHourlyMatrix = (ridingtimeDataArray, meshid, destinations = []
     // meshidに対応するルートを探す
     let minRidingTime = null;
     data.forEach((route) => {
-      if (route && route.meshid && Array.isArray(route.meshid)) {
-        if (route.meshid.includes(meshid)) {
+      if (route && route.directmeshid && Array.isArray(route.directmeshid)) {
+        if (route.directmeshid.includes(meshid)) {
           foundData++;
-          if (!minRidingTime || route.ridingtime < minRidingTime) {
-            minRidingTime = route.ridingtime;
+          if (!minRidingTime || route.directridingtime < minRidingTime) {
+            minRidingTime = route.directridingtime;
           }
         }
       }

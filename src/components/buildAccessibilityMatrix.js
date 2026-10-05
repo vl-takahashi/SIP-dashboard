@@ -58,8 +58,8 @@ export const buildAccessibilityMatrix = (routeDataArray) => {
       let minRidingTime = null;
       if (record.data && Array.isArray(record.data)) {
         record.data.forEach((route) => {
-          if (!minRidingTime || route.ridingtime < minRidingTime) {
-            minRidingTime = route.ridingtime;
+          if (!minRidingTime || route.directridingtime < minRidingTime) {
+            minRidingTime = route.directridingtime;
           }
         });
       }
